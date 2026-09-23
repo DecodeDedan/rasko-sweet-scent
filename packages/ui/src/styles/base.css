@@ -1,0 +1,116 @@
+/*
+ * Minimal reset + brand defaults. Presentational foundation only —
+ * component styles arrive with their modules.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--rasko-surface);
+  color: var(--rasko-text);
+  font-family: var(--rasko-font-body);
+  font-size: var(--rasko-text-14);
+  font-weight: var(--rasko-weight-regular);
+  line-height: var(--rasko-leading-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-family: var(--rasko-font-heading);
+  font-weight: var(--rasko-weight-semibold);
+  line-height: var(--rasko-leading-tight);
+  color: var(--rasko-text);
+}
+
+h1 {
+  font-size: var(--rasko-text-32);
+}
+h2 {
+  font-size: var(--rasko-text-24);
+}
+h3 {
+  font-size: var(--rasko-text-20);
+}
+h4 {
+  font-size: var(--rasko-text-16);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--rasko-green);
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--rasko-green-hover);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--rasko-focus-ring);
+  border-radius: var(--rasko-radius-sm);
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rasko-border);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+/*
+ * Money and quantity columns use tabular numerals so figures align in
+ * columns and totals read straight down (docs/brand.md).
+ */
+.rsk-numeric {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/*
+ * Documents (invoice, receipt, payslip, order summary) are A4, print-friendly,
+ * ink on white. Rasko Green is limited to the header rule, section headings and
+ * the totals row — enforced by the document components, not here.
+ */
+@page {
+  size: A4;
+  margin: 18mm 16mm;
+}
+
+@media print {
+  body {
+    background: var(--rasko-surface);
+    font-size: var(--rasko-text-12);
+  }
+
+  .rsk-no-print {
+    display: none !important;
+  }
+}

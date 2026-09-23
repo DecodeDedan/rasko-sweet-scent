@@ -1,0 +1,754 @@
+/*
+ * App shell layout. Colours and spacing come from @rasko/ui tokens only.
+ * Desktop: fixed sidebar. Mobile: bottom navigation (PRD §7 density rules).
+ */
+
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--rasko-surface-subtle);
+}
+
+/* ----------------------------------------------------------------- Sidebar */
+
+.shell__sidebar {
+  display: none;
+  flex-direction: column;
+  width: 232px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--rasko-border);
+  background: var(--rasko-surface);
+}
+
+@media (min-width: 768px) {
+  .shell__sidebar {
+    display: flex;
+  }
+}
+
+.shell__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--rasko-space-3);
+  padding: var(--rasko-space-4);
+  border-bottom: 1px solid var(--rasko-border);
+}
+
+.shell__brand-mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: var(--rasko-radius-md);
+  background: var(--rasko-green);
+  color: var(--rasko-on-green);
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-semibold);
+  letter-spacing: 0.02em;
+}
+
+.shell__brand-name {
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-14);
+  font-weight: var(--rasko-weight-semibold);
+  line-height: var(--rasko-leading-tight);
+}
+
+.shell__brand-sub {
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-12);
+}
+
+.shell__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--rasko-space-3) var(--rasko-space-2);
+  overflow-y: auto;
+}
+
+.shell__nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--rasko-space-3);
+  width: 100%;
+  padding: var(--rasko-space-2) var(--rasko-space-3);
+  border: 0;
+  border-radius: var(--rasko-radius-md);
+  background: transparent;
+  color: var(--rasko-text-secondary);
+  font-family: var(--rasko-font-body);
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-medium);
+  text-align: left;
+  cursor: pointer;
+}
+
+.shell__nav-item:hover {
+  background: var(--rasko-surface-subtle);
+  color: var(--rasko-text);
+}
+
+.shell__nav-item--active {
+  background: var(--rasko-green-tint);
+  color: var(--rasko-green-active);
+}
+
+.shell__nav-icon {
+  flex-shrink: 0;
+}
+
+.shell__nav-scope {
+  margin-left: auto;
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-12);
+  font-weight: var(--rasko-weight-regular);
+}
+
+.shell__sidebar-footer {
+  margin-top: auto;
+  padding: var(--rasko-space-3);
+  border-top: 1px solid var(--rasko-border);
+}
+
+/* -------------------------------------------------------------------- Main */
+
+.shell__main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.shell__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rasko-space-3);
+  height: 56px;
+  padding: 0 var(--rasko-space-4);
+  border-bottom: 1px solid var(--rasko-border);
+  background: var(--rasko-surface);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.shell__topbar-title {
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-16);
+  font-weight: var(--rasko-weight-semibold);
+}
+
+@media (min-width: 768px) {
+  .shell__topbar-title {
+    display: none;
+  }
+}
+
+.shell__topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--rasko-space-2);
+  margin-left: auto;
+}
+
+.shell__content {
+  flex: 1;
+  padding: var(--rasko-space-5) var(--rasko-space-4);
+  /* Clears the fixed bottom navigation, including the iOS/Android safe area. */
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  .shell__content {
+    padding: var(--rasko-space-6);
+    padding-bottom: var(--rasko-space-6);
+  }
+}
+
+.shell__container {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* ------------------------------------------------------------- Sample data */
+
+.shell__demo-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--rasko-space-2);
+  padding: var(--rasko-space-2) var(--rasko-space-4);
+  border-bottom: 1px solid var(--rasko-green-tint-border);
+  background: var(--rasko-green-tint);
+  color: var(--rasko-green-active);
+  font-size: var(--rasko-text-12);
+}
+
+/* ------------------------------------------------------------- Bottom nav */
+
+.shell__bottom-nav {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  border-top: 1px solid var(--rasko-border);
+  background: var(--rasko-surface);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (min-width: 768px) {
+  .shell__bottom-nav {
+    display: none;
+  }
+}
+
+.shell__bottom-item {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: var(--rasko-space-1);
+  border: 0;
+  border-top: 2px solid transparent;
+  background: transparent;
+  color: var(--rasko-text-secondary);
+  font-family: var(--rasko-font-body);
+  font-size: var(--rasko-text-12);
+  font-weight: var(--rasko-weight-medium);
+  cursor: pointer;
+}
+
+.shell__bottom-item--active {
+  border-top-color: var(--rasko-green);
+  color: var(--rasko-green);
+}
+
+.shell__more-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* -------------------------------------------------------------- Sync / user */
+
+.shell__sync {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rasko-space-2);
+  height: 30px;
+  padding: 0 var(--rasko-space-2) 0 var(--rasko-space-3);
+  border: 1px solid var(--rasko-border);
+  border-radius: var(--rasko-radius-md);
+  background: var(--rasko-surface);
+  font-size: var(--rasko-text-12);
+  color: var(--rasko-text-secondary);
+}
+
+.shell__sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--rasko-green);
+}
+
+.shell__sync-dot--pending {
+  background: var(--rasko-warning);
+}
+
+.shell__sync-dot--offline {
+  background: var(--rasko-disabled);
+}
+
+.shell__user {
+  position: relative;
+}
+
+.shell__user-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rasko-space-2);
+  height: 32px;
+  padding: 0 var(--rasko-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--rasko-radius-md);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--rasko-font-body);
+  font-size: var(--rasko-text-13);
+  color: var(--rasko-text);
+}
+
+.shell__user-trigger:hover {
+  background: var(--rasko-surface-subtle);
+}
+
+.shell__avatar {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--rasko-green-tint);
+  border: 1px solid var(--rasko-green-tint-border);
+  color: var(--rasko-green-active);
+  font-size: var(--rasko-text-12);
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.shell__user-popover {
+  position: absolute;
+  top: calc(100% + var(--rasko-space-2));
+  right: 0;
+  z-index: 40;
+  width: 260px;
+  padding: var(--rasko-space-3);
+  border: 1px solid var(--rasko-border);
+  border-radius: var(--rasko-radius-lg);
+  background: var(--rasko-surface);
+}
+
+.shell__user-name {
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.shell__user-email {
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-12);
+  overflow-wrap: anywhere;
+}
+
+.shell__user-divider {
+  margin: var(--rasko-space-3) 0;
+  border: 0;
+  border-top: 1px solid var(--rasko-border);
+}
+
+.shell__dev-label {
+  display: block;
+  margin-bottom: var(--rasko-space-1);
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-12);
+}
+
+/* ------------------------------------------------------------- Stat tiles */
+
+.shell__stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--rasko-space-3);
+}
+
+.shell__stat-label {
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-12);
+}
+
+.shell__stat-value {
+  margin-top: var(--rasko-space-1);
+  font-size: var(--rasko-text-24);
+  font-weight: var(--rasko-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.shell__stat-note {
+  margin-top: 2px;
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-12);
+}
+
+/* ------------------------------------------------------------------- Auth */
+
+.auth-screen {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: var(--rasko-space-4);
+  background: var(--rasko-surface-subtle);
+}
+
+.auth-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rasko-space-4);
+  width: min(400px, 100%);
+  padding: var(--rasko-space-6);
+  border: 1px solid var(--rasko-border);
+  border-radius: var(--rasko-radius-lg);
+  background: var(--rasko-surface);
+  text-align: left;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--rasko-space-3);
+}
+
+.auth-title {
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-20);
+  font-weight: var(--rasko-weight-semibold);
+  line-height: var(--rasko-leading-tight);
+}
+
+.auth-subtitle {
+  margin-top: 2px;
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-13);
+}
+
+.auth-error {
+  padding: var(--rasko-space-2) var(--rasko-space-3);
+  border: 1px solid var(--rasko-danger);
+  border-radius: var(--rasko-radius-md);
+  color: var(--rasko-danger);
+  font-size: var(--rasko-text-13);
+}
+
+.auth-link {
+  align-self: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--rasko-green);
+  font-family: var(--rasko-font-body);
+  font-size: var(--rasko-text-13);
+  cursor: pointer;
+}
+
+.auth-link:hover {
+  color: var(--rasko-green-hover);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.auth-loading-text {
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-13);
+}
+
+/* Offline banner: the app is running from the cached identity (NFR-S6). */
+.shell__offline-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--rasko-space-2);
+  padding: var(--rasko-space-2) var(--rasko-space-4);
+  border-bottom: 1px solid var(--rasko-border);
+  background: var(--rasko-surface-subtle);
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-12);
+}
+
+/* ---------------------------------------------------------------- Clients */
+
+.client-filters {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--rasko-space-2);
+}
+
+@media (min-width: 768px) {
+  .client-filters {
+    grid-template-columns: 1fr 200px 200px;
+  }
+}
+
+.client-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--rasko-space-2) var(--rasko-space-4);
+  margin: 0;
+  font-size: var(--rasko-text-13);
+}
+
+.client-facts dt {
+  color: var(--rasko-text-secondary);
+}
+
+.client-facts dd {
+  margin: 0;
+}
+
+.client-figures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--rasko-space-3);
+  padding: var(--rasko-space-3);
+  border: 1px solid var(--rasko-border);
+  border-radius: var(--rasko-radius-md);
+  background: var(--rasko-surface-subtle);
+}
+
+.client-figure {
+  margin-top: 2px;
+  font-size: var(--rasko-text-20);
+  font-weight: var(--rasko-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.client-section-title {
+  margin-bottom: var(--rasko-space-2);
+  font-size: var(--rasko-text-14);
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.client-empty {
+  padding: var(--rasko-space-3);
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-13);
+}
+
+.client-card-button {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rasko-space-1);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.client-card-line {
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-13);
+}
+
+.client-blocked-reason {
+  margin-right: auto;
+  align-self: center;
+  max-width: 34ch;
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-12);
+}
+
+/* ----------------------------------------------------------------- Orders */
+
+.order-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--rasko-space-2);
+  font-size: var(--rasko-text-13);
+  color: var(--rasko-text-secondary);
+}
+
+.order-line {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--rasko-space-2);
+  padding: var(--rasko-space-3);
+  border: 1px solid var(--rasko-border);
+  border-radius: var(--rasko-radius-md);
+}
+
+@media (min-width: 768px) {
+  .order-line {
+    grid-template-columns: 1.4fr 1.6fr 80px 120px 32px;
+    align-items: center;
+    padding: var(--rasko-space-2);
+  }
+}
+
+.order-add-line {
+  margin-top: var(--rasko-space-2);
+}
+
+.order-totals {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--rasko-space-1) var(--rasko-space-4);
+  padding: var(--rasko-space-3);
+  border-top: 1px solid var(--rasko-border);
+  font-size: var(--rasko-text-13);
+}
+
+/* ------------------------------------------------------- Printed documents */
+
+/*
+ * A4, ink on white (docs/brand.md). Rasko Green appears only on the header
+ * rule, section headings and the totals row.
+ */
+.doc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: auto;
+  background: var(--rasko-surface-subtle);
+  padding: var(--rasko-space-5) var(--rasko-space-4);
+}
+
+.doc-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--rasko-space-2);
+  max-width: 210mm;
+  margin: 0 auto var(--rasko-space-4);
+}
+
+.doc-page {
+  width: 210mm;
+  max-width: 100%;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 18mm 16mm;
+  background: var(--rasko-surface);
+  border: 1px solid var(--rasko-border);
+  color: var(--rasko-text);
+}
+
+.doc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--rasko-space-5);
+}
+
+.doc-company {
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-16);
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.doc-title-block {
+  text-align: right;
+}
+
+.doc-title {
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-24);
+  font-weight: var(--rasko-weight-semibold);
+  color: var(--rasko-green);
+}
+
+.doc-rule {
+  height: 2px;
+  margin: var(--rasko-space-4) 0;
+  background: var(--rasko-green);
+}
+
+.doc-parties,
+.doc-event {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--rasko-space-5);
+  margin-bottom: var(--rasko-space-5);
+}
+
+.doc-event {
+  grid-template-columns: 1fr;
+}
+
+.doc-label {
+  color: var(--rasko-green);
+  font-size: var(--rasko-text-12);
+  font-weight: var(--rasko-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.doc-strong {
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.doc-meta {
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-13);
+}
+
+.doc-table {
+  width: 100%;
+  margin: var(--rasko-space-4) 0;
+  border-collapse: collapse;
+  font-size: var(--rasko-text-13);
+}
+
+.doc-table th {
+  padding: var(--rasko-space-2) var(--rasko-space-2);
+  border-bottom: 1px solid var(--rasko-green);
+  color: var(--rasko-green);
+  text-align: left;
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.doc-table td {
+  padding: var(--rasko-space-2);
+  border-bottom: 1px solid var(--rasko-border);
+}
+
+.doc-table tfoot td {
+  border-bottom: 0;
+  padding-top: var(--rasko-space-2);
+}
+
+.doc-total-row td {
+  border-top: 2px solid var(--rasko-green);
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.doc-footer {
+  margin-top: var(--rasko-space-6);
+  padding-top: var(--rasko-space-3);
+  border-top: 1px solid var(--rasko-border);
+}
+
+@media print {
+  .doc-overlay {
+    position: static;
+    padding: 0;
+    background: var(--rasko-surface);
+  }
+
+  .doc-page {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  /* Only the document prints — the app behind it must not. */
+  .shell {
+    display: none !important;
+  }
+}
+
+/* ------------------------------------------------------- Stock count sheet */
+
+/*
+ * An empty, ruled box the counter writes into by hand. The left border matters:
+ * without it two adjacent boxes read as one long rule and it is not obvious
+ * there are two figures to write.
+ */
+.doc-table td.count-box {
+  min-width: 80px;
+  border-bottom: 1px solid var(--rasko-text);
+  border-left: 1px solid var(--rasko-border);
+}
+
+.count-signoff {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--rasko-space-5);
+  margin-top: var(--rasko-space-5);
+}
+
+.count-rule {
+  margin-top: var(--rasko-space-6);
+  border-bottom: 1px solid var(--rasko-text);
+}
+
+.stock-figure {
+  font-variant-numeric: tabular-nums;
+}

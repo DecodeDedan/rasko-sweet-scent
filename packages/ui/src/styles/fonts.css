@@ -1,0 +1,56 @@
+/*
+ * Lora + Manrope, self-hosted.
+ *
+ * BINDING (docs/brand.md): both families are SIL OFL and must be BUNDLED.
+ * Never load them from a CDN — the app is required to work fully offline.
+ * Only the weights the brand actually uses are vendored: Lora 500/600,
+ * Manrope 400/500/600/700. Latin subset only (English UI).
+ */
+
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../../fonts/lora-latin-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../../fonts/lora-latin-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../fonts/manrope-latin-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../../fonts/manrope-latin-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../../fonts/manrope-latin-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../../fonts/manrope-latin-700.woff2') format('woff2');
+}

@@ -1,0 +1,745 @@
+/*
+ * Component styles. Every colour, size and weight resolves to a token from
+ * tokens.css, which mirrors docs/brand.md. No gradients, no new hues, no
+ * glassmorphism, no dark mode (PRD §7).
+ */
+
+/* ------------------------------------------------------------------ Button */
+
+.rsk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rasko-space-2);
+  height: 36px;
+  padding: 0 var(--rasko-space-4);
+  border: 1px solid transparent;
+  border-radius: var(--rasko-radius-md);
+  background: transparent;
+  font-family: var(--rasko-font-body);
+  font-size: var(--rasko-text-14);
+  font-weight: var(--rasko-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.rsk-btn--sm {
+  height: 30px;
+  padding: 0 var(--rasko-space-3);
+  font-size: var(--rasko-text-13);
+}
+
+.rsk-btn--block {
+  width: 100%;
+}
+
+.rsk-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.rsk-btn--primary {
+  background: var(--rasko-green);
+  border-color: var(--rasko-green);
+  color: var(--rasko-on-green);
+}
+.rsk-btn--primary:hover:not(:disabled) {
+  background: var(--rasko-green-hover);
+  border-color: var(--rasko-green-hover);
+}
+.rsk-btn--primary:active:not(:disabled) {
+  background: var(--rasko-green-active);
+  border-color: var(--rasko-green-active);
+}
+
+.rsk-btn--secondary {
+  background: var(--rasko-surface);
+  border-color: var(--rasko-border);
+  color: var(--rasko-text);
+}
+.rsk-btn--secondary:hover:not(:disabled) {
+  background: var(--rasko-surface-subtle);
+  border-color: var(--rasko-disabled);
+}
+
+.rsk-btn--ghost {
+  color: var(--rasko-text-secondary);
+}
+.rsk-btn--ghost:hover:not(:disabled) {
+  background: var(--rasko-surface-subtle);
+  color: var(--rasko-text);
+}
+
+.rsk-btn--danger {
+  background: var(--rasko-surface);
+  border-color: var(--rasko-danger);
+  color: var(--rasko-danger);
+}
+.rsk-btn--danger:hover:not(:disabled) {
+  background: var(--rasko-danger);
+  color: var(--rasko-on-green);
+}
+
+.rsk-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--rasko-radius-md);
+  background: transparent;
+  color: var(--rasko-text-secondary);
+  cursor: pointer;
+}
+.rsk-icon-btn:hover {
+  background: var(--rasko-surface-subtle);
+  color: var(--rasko-text);
+}
+.rsk-icon-btn--sm {
+  width: 24px;
+  height: 24px;
+}
+
+.rsk-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: rsk-spin 600ms linear infinite;
+}
+
+@keyframes rsk-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rsk-spinner {
+    animation-duration: 2s;
+  }
+}
+
+/* ------------------------------------------------------- Field / Input / Select */
+
+.rsk-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rasko-space-1);
+}
+
+.rsk-field__label {
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-medium);
+  color: var(--rasko-text);
+}
+
+.rsk-field__required {
+  margin-left: 2px;
+  color: var(--rasko-danger);
+}
+
+.rsk-field__hint {
+  font-size: var(--rasko-text-12);
+  color: var(--rasko-text-secondary);
+}
+
+.rsk-field__error {
+  font-size: var(--rasko-text-12);
+  color: var(--rasko-danger);
+}
+
+.rsk-input,
+.rsk-select__control {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--rasko-space-3);
+  border: 1px solid var(--rasko-border);
+  border-radius: var(--rasko-radius-md);
+  background: var(--rasko-surface);
+  color: var(--rasko-text);
+  font-size: var(--rasko-text-14);
+}
+
+.rsk-input::placeholder {
+  color: var(--rasko-disabled);
+}
+
+.rsk-input:hover:not(:disabled),
+.rsk-select__control:hover:not(:disabled) {
+  border-color: var(--rasko-disabled);
+}
+
+.rsk-input:focus,
+.rsk-select__control:focus {
+  outline: none;
+  border-color: var(--rasko-green);
+}
+
+.rsk-input:disabled,
+.rsk-select__control:disabled {
+  background: var(--rasko-surface-subtle);
+  color: var(--rasko-disabled);
+  cursor: not-allowed;
+}
+
+.rsk-input[aria-invalid='true'],
+.rsk-select__control[aria-invalid='true'] {
+  border-color: var(--rasko-danger);
+}
+
+textarea.rsk-input {
+  height: auto;
+  min-height: 80px;
+  padding: var(--rasko-space-2) var(--rasko-space-3);
+  line-height: var(--rasko-leading-normal);
+  resize: vertical;
+}
+
+.rsk-select {
+  position: relative;
+  display: block;
+}
+
+.rsk-select__control {
+  appearance: none;
+  padding-right: var(--rasko-space-6);
+  cursor: pointer;
+}
+
+.rsk-select__icon {
+  position: absolute;
+  top: 50%;
+  right: var(--rasko-space-3);
+  transform: translateY(-50%);
+  color: var(--rasko-text-secondary);
+  pointer-events: none;
+}
+
+/* -------------------------------------------------------------- StatusChip */
+
+.rsk-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--rasko-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--rasko-radius-sm);
+  font-size: var(--rasko-text-12);
+  font-weight: var(--rasko-weight-medium);
+  white-space: nowrap;
+}
+
+.rsk-chip--neutral {
+  border-color: var(--rasko-border);
+  background: var(--rasko-surface-subtle);
+  color: var(--rasko-text-secondary);
+}
+
+/* The green tint is the only fill the palette provides. */
+.rsk-chip--success {
+  border-color: var(--rasko-green-tint-border);
+  background: var(--rasko-green-tint);
+  color: var(--rasko-green-active);
+}
+
+/* Warning and danger stay outlined: colour is text and icon only, never a large fill. */
+.rsk-chip--warning {
+  border-color: var(--rasko-warning);
+  background: var(--rasko-surface);
+  color: var(--rasko-warning);
+}
+
+.rsk-chip--danger {
+  border-color: var(--rasko-danger);
+  background: var(--rasko-surface);
+  color: var(--rasko-danger);
+}
+
+.rsk-chip--muted {
+  border-color: var(--rasko-border);
+  background: var(--rasko-surface);
+  color: var(--rasko-disabled);
+}
+
+/* -------------------------------------------------------------------- Card */
+
+.rsk-card {
+  border: 1px solid var(--rasko-border);
+  border-radius: var(--rasko-radius-lg);
+  background: var(--rasko-surface);
+}
+
+.rsk-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rasko-space-3);
+  padding: var(--rasko-space-3) var(--rasko-space-4);
+  border-bottom: 1px solid var(--rasko-border);
+}
+
+.rsk-card__title {
+  font-size: var(--rasko-text-14);
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.rsk-card__body {
+  padding: var(--rasko-space-4);
+}
+
+.rsk-card__body--flush {
+  padding: 0;
+}
+
+.rsk-card__footer {
+  padding: var(--rasko-space-3) var(--rasko-space-4);
+  border-top: 1px solid var(--rasko-border);
+  background: var(--rasko-surface-subtle);
+  border-radius: 0 0 var(--rasko-radius-lg) var(--rasko-radius-lg);
+}
+
+/* ------------------------------------------------------------------- Table */
+
+.rsk-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.rsk-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--rasko-text-13);
+}
+
+/*
+ * A caption is the table's section title, so it aligns with the column headers
+ * beneath it rather than sitting flush against the card edge. Without the
+ * horizontal padding it reads as a stray label floating above the card instead
+ * of a heading belonging to it.
+ */
+.rsk-table__caption {
+  padding: var(--rasko-space-3) var(--rasko-space-3) var(--rasko-space-2);
+  color: var(--rasko-text);
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-semibold);
+  text-align: left;
+}
+
+.rsk-table th {
+  padding: var(--rasko-space-2) var(--rasko-space-3);
+  border-bottom: 1px solid var(--rasko-border);
+  color: var(--rasko-text-secondary);
+  font-weight: var(--rasko-weight-medium);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.rsk-table th.rsk-numeric {
+  text-align: right;
+}
+
+.rsk-table td {
+  padding: var(--rasko-space-3);
+  border-bottom: 1px solid var(--rasko-border);
+  color: var(--rasko-text);
+  vertical-align: middle;
+}
+
+.rsk-table tbody tr:nth-child(even) {
+  background: var(--rasko-surface-subtle);
+}
+
+.rsk-table__row--selectable {
+  cursor: pointer;
+}
+
+.rsk-table__row--selectable:hover {
+  background: var(--rasko-green-tint);
+}
+
+/* -------------------------------------------------------------- EmptyState */
+
+.rsk-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--rasko-space-2);
+  padding: var(--rasko-space-7) var(--rasko-space-5);
+  text-align: center;
+}
+
+.rsk-empty__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--rasko-space-1);
+  border: 1px solid var(--rasko-green-tint-border);
+  border-radius: var(--rasko-radius-lg);
+  background: var(--rasko-green-tint);
+  color: var(--rasko-green);
+}
+
+.rsk-empty__title {
+  font-size: var(--rasko-text-16);
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.rsk-empty__description {
+  max-width: 46ch;
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-13);
+}
+
+.rsk-empty__action {
+  margin-top: var(--rasko-space-2);
+}
+
+/* -------------------------------------------------------------- PageHeader */
+
+.rsk-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--rasko-space-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--rasko-space-4);
+}
+
+.rsk-page-header__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--rasko-space-3);
+}
+
+.rsk-page-header__title {
+  font-size: var(--rasko-text-24);
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.rsk-page-header__description {
+  margin-top: var(--rasko-space-1);
+  max-width: 68ch;
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-13);
+}
+
+.rsk-page-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--rasko-space-2);
+}
+
+/* -------------------------------------------------------------------- Tabs */
+
+.rsk-tabs {
+  display: flex;
+  gap: var(--rasko-space-1);
+  border-bottom: 1px solid var(--rasko-border);
+  overflow-x: auto;
+}
+
+.rsk-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rasko-space-2);
+  padding: var(--rasko-space-2) var(--rasko-space-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rsk-tabs__tab:hover {
+  color: var(--rasko-text);
+}
+
+.rsk-tabs__tab--active {
+  border-bottom-color: var(--rasko-green);
+  color: var(--rasko-green);
+}
+
+.rsk-tabs__badge {
+  padding: 0 6px;
+  border-radius: var(--rasko-radius-sm);
+  background: var(--rasko-surface-subtle);
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-12);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ----------------------------------------------------------- Modal / Drawer */
+
+.rsk-modal,
+.rsk-drawer {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--rasko-text);
+}
+
+.rsk-modal::backdrop,
+.rsk-drawer::backdrop {
+  background: var(--rasko-scrim);
+}
+
+.rsk-modal {
+  width: min(560px, calc(100vw - 2 * var(--rasko-space-4)));
+  max-height: calc(100vh - 2 * var(--rasko-space-6));
+}
+
+.rsk-modal--sm {
+  width: min(400px, calc(100vw - 2 * var(--rasko-space-4)));
+}
+
+.rsk-modal--lg {
+  width: min(800px, calc(100vw - 2 * var(--rasko-space-4)));
+}
+
+.rsk-modal__panel,
+.rsk-drawer__panel {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+  border-radius: var(--rasko-radius-lg);
+  background: var(--rasko-surface);
+  border: 1px solid var(--rasko-border);
+}
+
+.rsk-modal__header,
+.rsk-drawer__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--rasko-space-3);
+  padding: var(--rasko-space-4);
+  border-bottom: 1px solid var(--rasko-border);
+}
+
+.rsk-modal__title,
+.rsk-drawer__title {
+  font-size: var(--rasko-text-16);
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.rsk-modal__description,
+.rsk-drawer__description {
+  margin-top: var(--rasko-space-1);
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-13);
+}
+
+.rsk-modal__body,
+.rsk-drawer__body {
+  padding: var(--rasko-space-4);
+  overflow-y: auto;
+}
+
+.rsk-modal__footer,
+.rsk-drawer__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--rasko-space-2);
+  padding: var(--rasko-space-3) var(--rasko-space-4);
+  border-top: 1px solid var(--rasko-border);
+  background: var(--rasko-surface-subtle);
+  border-radius: 0 0 var(--rasko-radius-lg) var(--rasko-radius-lg);
+}
+
+/* Right edge on desktop. `margin: auto` is how a native dialog is positioned. */
+.rsk-drawer--end {
+  width: min(480px, 100vw);
+  height: 100%;
+  max-height: 100%;
+  margin: 0 0 0 auto;
+}
+
+.rsk-drawer--end .rsk-drawer__panel {
+  height: 100%;
+  border-radius: 0;
+  border-right: 0;
+}
+
+/* Bottom sheet on mobile. */
+.rsk-drawer--bottom {
+  width: 100vw;
+  max-width: 100vw;
+  margin: auto auto 0;
+}
+
+.rsk-drawer--bottom .rsk-drawer__panel {
+  max-height: 85vh;
+  border-radius: var(--rasko-radius-lg) var(--rasko-radius-lg) 0 0;
+  border-bottom: 0;
+}
+
+/* ------------------------------------------------------------------- Toast */
+
+.rsk-toast-region {
+  position: fixed;
+  right: var(--rasko-space-4);
+  bottom: var(--rasko-space-4);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: var(--rasko-space-2);
+  width: min(360px, calc(100vw - 2 * var(--rasko-space-4)));
+  pointer-events: none;
+}
+
+.rsk-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--rasko-space-2);
+  padding: var(--rasko-space-3);
+  border: 1px solid var(--rasko-border);
+  border-left-width: 3px;
+  border-radius: var(--rasko-radius-md);
+  background: var(--rasko-surface);
+  pointer-events: auto;
+}
+
+.rsk-toast--neutral {
+  border-left-color: var(--rasko-text-secondary);
+}
+.rsk-toast--success {
+  border-left-color: var(--rasko-green);
+}
+.rsk-toast--warning {
+  border-left-color: var(--rasko-warning);
+}
+.rsk-toast--danger {
+  border-left-color: var(--rasko-danger);
+}
+
+.rsk-toast__icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--rasko-text-secondary);
+}
+.rsk-toast--success .rsk-toast__icon {
+  color: var(--rasko-green);
+}
+.rsk-toast--warning .rsk-toast__icon {
+  color: var(--rasko-warning);
+}
+.rsk-toast--danger .rsk-toast__icon {
+  color: var(--rasko-danger);
+}
+
+.rsk-toast__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.rsk-toast__title {
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.rsk-toast__description {
+  margin-top: 2px;
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-12);
+}
+
+/* --------------------------------------------------------------- Utilities */
+
+.rsk-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rasko-space-3);
+}
+
+/*
+ * Metric row (FR-2.1). Cards on mobile, four across on desktop — the same
+ * responsive rule the rest of the system follows. auto-fit rather than a fixed
+ * four columns so a role that sees fewer figures still fills the row.
+ */
+.rsk-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--rasko-space-3);
+}
+
+.rsk-metric__label {
+  display: flex;
+  align-items: center;
+  gap: var(--rasko-space-1);
+  margin: 0;
+  font-size: var(--rasko-text-13);
+  color: var(--rasko-text-secondary);
+}
+
+.rsk-metric__value {
+  margin: var(--rasko-space-1) 0 0;
+  font-size: var(--rasko-text-24);
+  font-weight: var(--rasko-weight-semibold);
+  color: var(--rasko-text);
+}
+
+.rsk-section-title {
+  margin: 0 0 var(--rasko-space-2);
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-20);
+  font-weight: var(--rasko-weight-semibold);
+  color: var(--rasko-text);
+}
+
+.rsk-row {
+  display: flex;
+  align-items: center;
+  gap: var(--rasko-space-2);
+}
+
+.rsk-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/*
+ * Responsive visibility — tables on desktop, cards on mobile (PRD §7).
+ *
+ * Declared last and flagged important so they beat any layout utility sharing
+ * the element: `rsk-mobile-only rsk-stack` is a normal pairing, and plain
+ * source order would let `.rsk-stack`'s display win and render both views.
+ *
+ * `.rsk-mobile-only` deliberately has no base rule — it stays visible using
+ * whatever display its layout class supplies (flex, from rsk-stack), and is
+ * only ever switched off above the breakpoint. `.rsk-desktop-only` is for
+ * plain wrappers; it reveals as `block`, so do not pair it with a layout class.
+ */
+.rsk-desktop-only {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .rsk-desktop-only {
+    display: block !important;
+  }
+
+  .rsk-mobile-only {
+    display: none !important;
+  }
+}

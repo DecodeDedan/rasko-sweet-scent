@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Environment — never commit keys
+.env
+.env.*
+!.env.example
+
+# Build outputs.
+# Patterns with an internal slash are root-anchored, so nested build output
+# needs an explicit ** prefix — without it `src-tauri/target/` matches nothing
+# and 3.6 GB of Rust artefacts land in the commit.
+dist/
+build/
+**/src-tauri/target/
+**/src-tauri/gen/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local SQLite dev databases
+*.sqlite
+*.sqlite-journal
+*.db
+
+# Signing keys — NEVER commit
+*.keystore
+*.jks
+minisign.key
+*.pfx
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Turbo / tooling caches
+.turbo/
+*.tsbuildinfo
+.tsbuild/

@@ -1,0 +1,29 @@
+{
+  "name": "rasko-sweetscent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rasko Sweet Scent — Business Management System (offline-first app + marketing website)",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.19.0",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "app:dev": "pnpm --filter @rasko/app dev",
+    "app:build": "pnpm --filter @rasko/app build",
+    "app:android:init": "pnpm --filter @rasko/app android:init",
+    "app:android:dev": "pnpm --filter @rasko/app android:dev",
+    "app:android:build": "pnpm --filter @rasko/app android:build",
+    "web:dev": "pnpm --filter @rasko/website dev",
+    "web:build": "pnpm --filter @rasko/website build",
+    "typecheck": "pnpm -r --parallel typecheck",
+    "lint": "pnpm -r --parallel lint",
+    "format": "prettier --write \"**/*.{ts,tsx,mjs,css,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,mjs,css,json,md}\"",
+    "clean": "pnpm -r exec rm -rf dist .next node_modules && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3"
+  }
+}

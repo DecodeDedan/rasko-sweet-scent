@@ -1,0 +1,76 @@
+/*
+ * Rasko Sweet Scent — brand tokens.
+ * Transcribed from docs/brand.md. That document is the source of truth:
+ * change it there first, then mirror the change here and in tokens.ts.
+ *
+ * Palette is locked to green / white / black. There is no accent colour.
+ * Do not introduce new hues. Do not add gradients. No dark mode in v1.
+ */
+:root {
+  color-scheme: light;
+
+  /* --- Rasko Green --------------------------------------------------- */
+  --rasko-green: #2d6a2f;
+  --rasko-green-hover: #1f4d22;
+  --rasko-green-active: #16381a;
+  --rasko-green-tint: #e9f2e7;
+  --rasko-green-tint-border: #cfe3cc;
+  --rasko-on-green: #ffffff;
+
+  /* --- Surfaces ------------------------------------------------------ */
+  --rasko-surface: #ffffff;
+  --rasko-surface-subtle: #f7f7f5;
+
+  /* --- Text, icons, lines (black is never a large fill) --------------- */
+  --rasko-text: #111111;
+  --rasko-text-secondary: #5c5f58;
+  --rasko-border: #e4e4e0;
+  --rasko-disabled: #a3a69b;
+
+  /* --- Semantic ------------------------------------------------------ */
+  --rasko-success: #2d6a2f;
+  --rasko-warning: #b45309;
+  --rasko-danger: #b3261e;
+
+  /* --- Typography ---------------------------------------------------- */
+  --rasko-font-heading: 'Lora', Georgia, 'Times New Roman', serif;
+  --rasko-font-body: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --rasko-text-12: 0.75rem;
+  --rasko-text-13: 0.8125rem;
+  --rasko-text-14: 0.875rem;
+  --rasko-text-16: 1rem;
+  --rasko-text-20: 1.25rem;
+  --rasko-text-24: 1.5rem;
+  --rasko-text-32: 2rem;
+
+  --rasko-weight-regular: 400;
+  --rasko-weight-medium: 500;
+  --rasko-weight-semibold: 600;
+  --rasko-weight-bold: 700;
+
+  --rasko-leading-tight: 1.25;
+  --rasko-leading-normal: 1.5;
+
+  /* --- Space / radius / elevation ------------------------------------
+   * 4px base step. Businesslike density: tables on desktop, cards on mobile. */
+  --rasko-space-1: 0.25rem;
+  --rasko-space-2: 0.5rem;
+  --rasko-space-3: 0.75rem;
+  --rasko-space-4: 1rem;
+  --rasko-space-5: 1.5rem;
+  --rasko-space-6: 2rem;
+  --rasko-space-7: 3rem;
+
+  --rasko-radius-sm: 2px;
+  --rasko-radius-md: 4px;
+  --rasko-radius-lg: 8px;
+
+  --rasko-focus-ring: 0 0 0 2px var(--rasko-surface), 0 0 0 4px var(--rasko-green);
+
+  /* Overlay scrim: the black text token at opacity. Not a new hue. */
+  --rasko-scrim: rgb(17 17 17 / 45%);
+
+  /* Single breakpoint: tables above, cards below (PRD 7). */
+  --rasko-breakpoint-md: 768px;
+}

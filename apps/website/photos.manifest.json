@@ -1,0 +1,62 @@
+{
+  "widths": [
+    640,
+    960,
+    1280
+  ],
+  "quality": 74,
+  "source": "../../../photos",
+  "photos": [
+    {
+      "name": "field-silver-sky",
+      "file": "WhatsApp Image 2026-09-11 at 23.40.19.jpeg",
+      "alt": "A silver-blue eucalyptus growing in an open field bed, its branches reaching across a bright sky."
+    },
+    {
+      "name": "variety-silver",
+      "file": "WhatsApp Image 2026-09-11 at 23.40.19 (1).jpeg",
+      "alt": "Dense silver-blue eucalyptus foliage, the round leaves set in opposite pairs along every stem."
+    },
+    {
+      "name": "variety-pink",
+      "file": "WhatsApp Image 2026-09-11 at 23.40.25 (3).jpeg",
+      "alt": "A eucalyptus bush carrying pink and bronze new growth at the tips of its green leaves."
+    },
+    {
+      "name": "field-silver-row",
+      "file": "WhatsApp Image 2026-09-11 at 23.40.21.jpeg",
+      "alt": "A young eucalyptus plant in a field bed of red soil, with further rows running away behind it."
+    },
+    {
+      "name": "cut-stems",
+      "file": "WhatsApp Image 2026-09-11 at 23.40.21 (2).jpeg",
+      "alt": "Freshly cut eucalyptus stems laid against a timber wall, cut ends turned to face the same way."
+    },
+    {
+      "name": "sorting",
+      "file": "WhatsApp Image 2026-09-11 at 23.40.22 (1).jpeg",
+      "alt": "Cut eucalyptus being sorted into bunches on a bench, with the stem ends gathered and aligned."
+    },
+    {
+      "name": "bunch-tied",
+      "file": "WhatsApp Image 2026-09-11 at 23.40.24 (1).jpeg",
+      "alt": "A tied bunch of eucalyptus resting on card, its stems trimmed level across the base."
+    },
+    {
+      "name": "shed-rows",
+      "file": "WhatsApp Image 2026-09-11 at 23.40.23.jpeg",
+      "alt": "Cut eucalyptus held in quantity inside the packing shed, banked in rows against a timber wall."
+    },
+    {
+      "name": "shed-wide",
+      "file": "WhatsApp Image 2026-09-11 at 23.40.24 (2).jpeg",
+      "alt": "The packing shed seen wide, filled with cut eucalyptus waiting to be graded and tied."
+    },
+    {
+      "name": "stem-single",
+      "file": "WhatsApp Image 2026-09-11 at 23.40.24.jpeg",
+      "alt": "One eucalyptus stem laid out flat, showing the full length and the regular pairing of its leaves."
+    }
+  ],
+  "referenceSource": "./reference"
+}

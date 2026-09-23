@@ -1,0 +1,84 @@
+name: Release
+
+# Tag a version to ship it:
+#   git tag v0.1.1 && git push origin v0.1.1
+# Bump the version in apps/app/package.json, apps/app/src-tauri/tauri.conf.json
+# and apps/app/src-tauri/Cargo.toml first — Tauri compares the manifest version
+# against the installed one, so a tag alone updates nothing.
+#
+# tauri-action builds the NSIS installer, signs the updater artifacts with the
+# minisign private key, creates the GitHub Release, and generates the
+# `latest.json` manifest installed copies poll on launch.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows installer
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/app/src-tauri
+
+      - run: pnpm install --frozen-lockfile
+
+      # A release must never ship code that does not pass its own tests.
+      - name: Verify before building
+        run: |
+          pnpm typecheck
+          pnpm --filter @rasko/app test
+          pnpm --filter @rasko/ui test
+
+      - name: Build, sign and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The app ships with the anon key only — the service key never reaches
+          # a build (PRD §7).
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          APP_ENV: production
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/app
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Rasko Sweet Scent ${{ github.ref_name }}'
+          releaseBody: |
+            Windows installer. Installed copies update themselves on next launch.
+
+            Updates never destroy unsynced local data: the device database lives
+            outside the install directory, and schema changes are versioned.
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: true
+
+      - name: Keep the installer as a build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rasko-windows-installer
+          path: |
+            apps/app/src-tauri/target/release/bundle/nsis/*.exe
+            apps/app/src-tauri/target/release/bundle/nsis/*.sig
+          if-no-files-found: error
+          retention-days: 90

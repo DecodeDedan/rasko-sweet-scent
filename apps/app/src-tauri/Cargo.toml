@@ -1,0 +1,34 @@
+[package]
+name = "rasko-app"
+version = "0.1.0"
+description = "Rasko Sweet Scent business management system"
+authors = ["Rasko Sweet Scent"]
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+# The mobile targets link the app as a library; the desktop binary calls into it.
+name = "rasko_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+# Local SQLite is the primary store on every device (PRD NFR-S1).
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Desktop auto-update (PRD §7). Android does an in-app version check against the
+# manifest instead, so the updater plugin is not built for mobile.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

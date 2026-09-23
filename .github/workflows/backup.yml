@@ -1,0 +1,151 @@
+name: Nightly backup
+
+# PRD §7 Reliability: nightly pg_dump to Cloudflare R2, 30 daily + 12 monthly
+# retained, failures open an issue.
+#
+# Restore procedure: docs/restore-runbook.md. A backup nobody has restored is a
+# hypothesis, not a backup — the runbook is tested quarterly.
+on:
+  schedule:
+    # 01:30 UTC = 04:30 Africa/Nairobi, well outside business hours.
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  dump:
+    name: Dump and upload
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The client must match the server major version or pg_dump refuses.
+      # Supabase runs Postgres 15.
+      - name: Install postgresql-client 15
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-15
+
+      - name: Dump
+        id: dump
+        env:
+          PGCONN: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          test -n "$PGCONN" || { echo "SUPABASE_DB_URL is not set"; exit 1; }
+
+          DAY=$(date -u +%F)
+          FILE="rasko-${DAY}.dump"
+
+          # Custom format: compressed, and pg_restore can be selective with it.
+          pg_dump "$PGCONN" --format=custom --no-owner --no-privileges --file="$FILE"
+
+          # A dump that restores to nothing is the failure this catches: a
+          # healthy dump of this schema is far larger than 20 KB.
+          SIZE=$(stat -c%s "$FILE")
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+          echo "day=$DAY" >> "$GITHUB_OUTPUT"
+          if [ "$SIZE" -lt 20480 ]; then
+            echo "Dump is only ${SIZE} bytes — refusing to upload a probably-empty backup."
+            exit 1
+          fi
+
+          # Verify it is a readable archive before it is trusted as a backup.
+          pg_restore --list "$FILE" > /dev/null
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          set -euo pipefail
+          FILE="${{ steps.dump.outputs.file }}"
+
+          aws s3 cp "$FILE" "s3://${R2_BUCKET}/daily/${FILE}" \
+            --endpoint-url "$R2_ENDPOINT"
+
+          # The first of the month is also kept as a monthly, retained 12 months.
+          if [ "$(date -u +%d)" = "01" ]; then
+            aws s3 cp "$FILE" "s3://${R2_BUCKET}/monthly/rasko-$(date -u +%Y-%m).dump" \
+              --endpoint-url "$R2_ENDPOINT"
+          fi
+
+      - name: Prune daily backups older than 30 days
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          set -euo pipefail
+          CUTOFF=$(date -u -d '30 days ago' +%F)
+          aws s3 ls "s3://${R2_BUCKET}/daily/" --endpoint-url "$R2_ENDPOINT" \
+            | awk '{print $4}' | while read -r KEY; do
+              [ -n "$KEY" ] || continue
+              STAMP=$(echo "$KEY" | sed -n 's/^rasko-\([0-9-]\{10\}\)\.dump$/\1/p')
+              [ -n "$STAMP" ] || continue
+              if [ "$STAMP" \< "$CUTOFF" ]; then
+                aws s3 rm "s3://${R2_BUCKET}/daily/${KEY}" --endpoint-url "$R2_ENDPOINT"
+              fi
+            done
+
+      - name: Prune monthly backups older than 12 months
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          set -euo pipefail
+          CUTOFF=$(date -u -d '12 months ago' +%Y-%m)
+          aws s3 ls "s3://${R2_BUCKET}/monthly/" --endpoint-url "$R2_ENDPOINT" \
+            | awk '{print $4}' | while read -r KEY; do
+              [ -n "$KEY" ] || continue
+              STAMP=$(echo "$KEY" | sed -n 's/^rasko-\([0-9]\{4\}-[0-9]\{2\}\)\.dump$/\1/p')
+              [ -n "$STAMP" ] || continue
+              if [ "$STAMP" \< "$CUTOFF" ]; then
+                aws s3 rm "s3://${R2_BUCKET}/monthly/${KEY}" --endpoint-url "$R2_ENDPOINT"
+              fi
+            done
+
+      # A silent backup failure is indistinguishable from a working backup until
+      # the day you need it, so a failure has to be noisy.
+      - name: Open an issue if the backup failed
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const day = new Date().toISOString().slice(0, 10)
+            const title = `Nightly backup failed — ${day}`
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'backup-failure',
+            })
+            if (existing.data.some((issue) => issue.title === title)) return
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              labels: ['backup-failure'],
+              body: [
+                'The nightly `pg_dump` to R2 did not complete.',
+                '',
+                `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+                '',
+                'Restore procedure: `docs/restore-runbook.md`.',
+                'Until this is fixed the business has no off-site copy of its data.',
+              ].join('\n'),
+            })

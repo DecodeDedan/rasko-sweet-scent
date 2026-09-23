@@ -1,0 +1,1106 @@
+/*
+ * Rasko Sweet Scent — marketing website.
+ *
+ * Everything here sits on top of @rasko/ui's tokens. No colour, font or radius
+ * is invented: each one resolves to a --rasko-* custom property, per the
+ * source-of-truth rule in CLAUDE.md. The website adds exactly one thing the
+ * app does not have, a display type scale, because the app's scale stops at
+ * 32px, which is correct for a dense business table and far too small for a
+ * page whose job is to be looked at. That addition is recorded in
+ * docs/brand.md under "Website".
+ *
+ * THE RULE THIS PAGE IS BUILT ON
+ * Type never sits on top of a photograph. The usual way to put a headline over
+ * an image is to lay a dark gradient scrim under it, and the brand forbids
+ * gradients. Rather than work around that, the page takes it as the brief:
+ * photographs are subjects, never backgrounds. Every one sits in a bounded
+ * plate with white around it. That is also the honest response to the source
+ * material, which is phone photography at 1200x1600 and turns to mush if it is
+ * stretched edge to edge across a desktop monitor.
+ *
+ * MOTION
+ * One orchestrated sequence on load, in the hero, and almost nothing after it.
+ * Entrance animations on every section are the single most recognisable tell
+ * of a generated page, so scroll reveals are limited to the plates settling
+ * and the hairline rules extending from the left. Everything animates transform
+ * and opacity only, so it stays on the compositor and cannot stutter, and all
+ * of it is switched off under prefers-reduced-motion.
+ */
+
+:root {
+  /* --- Display scale (website only) ---------------------------------
+   * Fluid between a phone and a large desktop. The ratio is roughly 1.5
+   * at the top of the scale and tightens further down, so a headline can
+   * dominate without the sub-heads competing with it. */
+  --rw-display-1: clamp(2.5rem, 1.35rem + 5.1vw, 5.75rem);
+  --rw-display-2: clamp(1.625rem, 1.28rem + 1.55vw, 2.5rem);
+  --rw-display-3: clamp(1.25rem, 1.12rem + 0.58vw, 1.5rem);
+  --rw-lede: clamp(1.0625rem, 1rem + 0.33vw, 1.3125rem);
+
+  /* --- Measure and rhythm ------------------------------------------- */
+  --rw-container: 78rem;
+  --rw-measure: 34rem;
+  --rw-gutter: clamp(1.25rem, 0.8rem + 1.8vw, 3rem);
+  --rw-section-y: clamp(5rem, 3rem + 7.5vw, 11rem);
+
+  /* --- Motion --------------------------------------------------------
+   * One easing curve for entrances, one for interface response. Using a
+   * single pair everywhere is what makes the page feel like one object. */
+  --rw-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --rw-ease-ui: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --rw-enter-duration: 900ms;
+}
+
+/*
+ * Website body text is 16px. The app runs at 14px because it is a dense table
+ * interface; a page meant for reading should not.
+ *
+ * Deliberately no `overflow-x: hidden` here. It looks like a safety net and it
+ * is really a blindfold: it hides a too-wide element by cutting the end off
+ * whatever it overflows into, so the bug ships as clipped text instead of a
+ * scrollbar. Layout that fits is the fix.
+ */
+body {
+  font-size: var(--rasko-text-16);
+}
+
+/* ------------------------------------------------------------------ *
+ * Layout primitives
+ * ------------------------------------------------------------------ */
+
+.rw-container {
+  width: 100%;
+  max-width: var(--rw-container);
+  margin-inline: auto;
+  padding-inline: var(--rw-gutter);
+}
+
+.rw-section {
+  padding-block: var(--rw-section-y);
+}
+
+/* The one recessed band on the page. Used once, so it reads as a change of
+ * ground rather than as striping. */
+.rw-section--sunk {
+  background: var(--rasko-green-active);
+}
+
+/*
+ * The green page. Everything below the white header sits on Rasko Green, so
+ * the text tokens are redefined for it here: white for text, the brand tint
+ * for secondary text (5.0:1 on #2D6A2F), and a translucent white hairline.
+ * `.rw-card` restores the dark tokens inside itself.
+ */
+main,
+.rw-footer {
+  --rasko-text: #ffffff;
+  --rasko-text-secondary: #e9f2e7;
+  --rasko-border: rgba(255, 255, 255, 0.22);
+  --rasko-disabled: #cfe3cc;
+  background: var(--rasko-green);
+  color: var(--rasko-text);
+}
+
+/* A green button on a green page would vanish, so actions on it are white. */
+main .rw-button:not([aria-disabled='true']) {
+  background: var(--rasko-surface);
+  color: var(--rasko-green);
+}
+
+main .rw-button:not([aria-disabled='true']):hover {
+  background: var(--rasko-green-tint);
+  color: var(--rasko-green-active);
+}
+
+.rw-measure {
+  max-width: var(--rw-measure);
+}
+
+/* Skip link, visible only when focused. */
+.rw-skip {
+  position: absolute;
+  left: var(--rw-gutter);
+  top: -100%;
+  z-index: 100;
+  padding: var(--rasko-space-3) var(--rasko-space-4);
+  background: var(--rasko-surface);
+  border: 1px solid var(--rasko-border);
+  border-radius: var(--rasko-radius-md);
+  font-weight: var(--rasko-weight-semibold);
+  text-decoration: none;
+}
+
+.rw-skip:focus-visible {
+  top: var(--rasko-space-3);
+}
+
+/* ------------------------------------------------------------------ *
+ * Type
+ * ------------------------------------------------------------------ */
+
+/*
+ * Lora at display sizes needs its tracking pulled in and its leading tightened.
+ * A serif set large at the default metrics of a body face is the commonest way
+ * a headline ends up looking undesigned.
+ */
+.rw-display-1,
+.rw-display-2,
+.rw-display-3 {
+  font-family: var(--rasko-font-heading);
+  font-weight: var(--rasko-weight-semibold);
+  color: var(--rasko-text);
+  text-wrap: balance;
+}
+
+.rw-display-1 {
+  font-size: var(--rw-display-1);
+  line-height: 1.03;
+  letter-spacing: -0.024em;
+  text-indent: -0.045em;
+}
+
+.rw-display-2 {
+  font-size: var(--rw-display-2);
+  line-height: 1.1;
+  letter-spacing: -0.016em;
+  text-indent: -0.035em;
+}
+
+.rw-display-3 {
+  font-size: var(--rw-display-3);
+  line-height: 1.16;
+  letter-spacing: -0.012em;
+}
+
+.rw-lede {
+  font-size: var(--rw-lede);
+  line-height: 1.55;
+  color: var(--rasko-text-secondary);
+  text-wrap: pretty;
+}
+
+.rw-body {
+  line-height: 1.65;
+  color: var(--rasko-text-secondary);
+  text-wrap: pretty;
+}
+
+.rw-body + .rw-body {
+  margin-top: var(--rasko-space-4);
+}
+
+/* Figures a buyer reads off the page. Tabular so they align and compare. */
+.rw-figure-value {
+  font-family: var(--rasko-font-heading);
+  font-weight: var(--rasko-weight-semibold);
+  font-size: var(--rw-display-2);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--rasko-text);
+}
+
+/* ------------------------------------------------------------------ *
+ * Links and buttons
+ * ------------------------------------------------------------------ */
+
+/*
+ * An underline that extends from the left on hover rather than switching on.
+ * Same gesture as the section rules, so the page has one idea about how a line
+ * comes into being. Built from a transformed pseudo-element, not a background
+ * gradient, because the brand forbids gradients and a hairline drawn with
+ * linear-gradient is still a gradient.
+ */
+.rw-link {
+  position: relative;
+  color: inherit;
+  text-decoration: none;
+}
+
+.rw-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.15em;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 340ms var(--rw-ease-ui);
+}
+
+.rw-link:hover::after,
+.rw-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.rw-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.875rem;
+  padding-inline: var(--rasko-space-5);
+  border: 1px solid transparent;
+  border-radius: var(--rasko-radius-md);
+  background: var(--rasko-green);
+  color: var(--rasko-on-green);
+  font-family: var(--rasko-font-body);
+  font-size: var(--rasko-text-16);
+  font-weight: var(--rasko-weight-semibold);
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 200ms var(--rw-ease-ui),
+    transform 200ms var(--rw-ease-ui);
+}
+
+.rw-button:hover {
+  background: var(--rasko-green-hover);
+  color: var(--rasko-on-green);
+}
+
+.rw-button:active {
+  background: var(--rasko-green-active);
+  transform: translateY(1px);
+}
+
+/* Inverted, for use inside the green band where green on green would vanish. */
+.rw-button--inverse {
+  background: var(--rasko-surface);
+  color: var(--rasko-green);
+}
+
+.rw-button--inverse:hover {
+  background: var(--rasko-green-tint);
+  color: var(--rasko-green-active);
+}
+
+/* No number yet, so the action cannot work. Says so rather than pretending. */
+.rw-button[aria-disabled='true'] {
+  background: var(--rasko-surface-subtle);
+  border-color: var(--rasko-border);
+  color: var(--rasko-disabled);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * Plates
+ *
+ * Every photograph on the page is one of these. Bounded, never full-bleed,
+ * with the intrinsic ratio held so the browser reserves the space and nothing
+ * shifts as the images arrive.
+ * ------------------------------------------------------------------ */
+
+.rw-plate {
+  display: block;
+  overflow: hidden;
+  background: var(--rasko-surface-subtle);
+}
+
+.rw-plate img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rw-plate--portrait {
+  aspect-ratio: 3 / 4;
+}
+
+.rw-plate--landscape {
+  aspect-ratio: 4 / 3;
+}
+
+.rw-plate--wide {
+  aspect-ratio: 16 / 10;
+}
+
+/* On a phone the same ratio is a 220px letterbox strip, which reads as a
+ * banner rather than as a photograph. Standing it up gives it back its
+ * subject. */
+@media (max-width: 47.99rem) {
+  .rw-plate--wide {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+.rw-plate--square {
+  aspect-ratio: 1 / 1;
+}
+
+/* The hero photograph keeps the sky in frame when it is cropped to a band. */
+.rw-plate--sky img {
+  object-position: center 22%;
+}
+
+.rw-caption {
+  margin-top: var(--rasko-space-3);
+  font-size: var(--rasko-text-13);
+  letter-spacing: 0.01em;
+  color: var(--rasko-text-secondary);
+}
+
+/* ------------------------------------------------------------------ *
+ * Rules
+ * ------------------------------------------------------------------ */
+
+/*
+ * A rule is drawn, not switched on. It extends from the left as its block
+ * arrives, the same gesture the links use on hover, so every line on this page
+ * comes into being the same way.
+ *
+ * Full width by default and only collapsed once scripting is confirmed, for
+ * the same reason the reveals are: a rule nobody can see is a worse outcome
+ * than a rule that does not animate.
+ */
+.rw-rule {
+  height: 1px;
+  border: 0;
+  background: var(--rasko-border);
+  transform-origin: left center;
+}
+
+/* ------------------------------------------------------------------ *
+ * Header
+ * ------------------------------------------------------------------ */
+
+/* Solid white at every scroll position: the one white bar above a green page. */
+.rw-header {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 50;
+  background-color: var(--rasko-surface);
+  border-bottom: 1px solid var(--rasko-border);
+}
+
+.rw-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rasko-space-4);
+  min-height: 4.25rem;
+}
+
+.rw-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rasko-space-3);
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-16);
+  font-weight: var(--rasko-weight-semibold);
+  letter-spacing: -0.01em;
+  color: var(--rasko-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* Height-led so the wide monogram (3184 x 1664) keeps its proportions. */
+.rw-wordmark__mark {
+  display: block;
+  height: 1.75rem;
+  width: auto;
+}
+
+.rw-footer__mark {
+  display: block;
+  height: 1.5rem;
+  width: auto;
+  margin-right: auto;
+}
+
+.rw-header__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--rasko-space-5);
+}
+
+.rw-header__nav a:not(.rw-button) {
+  font-size: var(--rasko-text-14);
+  font-weight: var(--rasko-weight-medium);
+  color: var(--rasko-text-secondary);
+}
+
+.rw-header__nav .rw-button {
+  min-height: 2.375rem;
+  padding-inline: var(--rasko-space-4);
+  font-size: var(--rasko-text-14);
+}
+
+/* Below this width there is no room for in-page links beside the action, and
+ * a four-section page does not need a hamburger to reach them. */
+@media (max-width: 47.99rem) {
+  .rw-header__nav a:not(.rw-button) {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Hero
+ * ------------------------------------------------------------------ */
+
+.rw-hero {
+  padding-top: clamp(7rem, 5rem + 9vw, 12rem);
+  padding-bottom: var(--rw-section-y);
+}
+
+.rw-hero__headline {
+  max-width: 18ch;
+  /* The mask the headline rises out of. The padding and matching negative
+   * margin give descenders room so they are not shaved off by the overflow. */
+  overflow: hidden;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+
+.rw-hero__headline > span {
+  display: block;
+}
+
+/*
+ * The standfirst and the action read down, not across.
+ *
+ * They were side by side, which balanced the headline nicely at one particular
+ * width and spent the rest of its time being re-tuned: three interacting
+ * numbers (the indent, the paragraph's measure, the action's content width)
+ * that only have to disagree by a few pixels to push the link off the page.
+ * Stacked, the hero reads headline, then what we do, then what to do about it,
+ * and there is nothing left to break. The indent still carries the asymmetry.
+ */
+.rw-hero__deck {
+  margin-top: clamp(2.25rem, 1.2rem + 3.4vw, 4rem);
+}
+
+/* Indented from the headline on wide screens. The offset is what keeps the
+ * hero from being a stack of centred blocks. */
+@media (min-width: 62rem) {
+  .rw-hero__deck {
+    padding-left: 8.5rem;
+  }
+}
+
+/* A comfortable reading measure, well short of the column edge. */
+.rw-hero__deck p {
+  max-width: 32rem;
+}
+
+.rw-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rasko-space-4) var(--rasko-space-5);
+  margin-top: clamp(1.75rem, 1.2rem + 1.8vw, 2.75rem);
+}
+
+.rw-hero__plate {
+  margin-top: clamp(3rem, 2rem + 4vw, 5.5rem);
+}
+
+/* ------------------------------------------------------------------ *
+ * Section headings
+ * ------------------------------------------------------------------ */
+
+.rw-section__rule {
+  margin-bottom: clamp(1.75rem, 1.3rem + 1.6vw, 2.75rem);
+}
+
+.rw-section__head {
+  max-width: 38rem;
+  margin-bottom: clamp(3rem, 2rem + 3.2vw, 5rem);
+}
+
+.rw-section__head p {
+  margin-top: var(--rasko-space-4);
+  max-width: 32rem;
+}
+
+/* ------------------------------------------------------------------ *
+ * Cards (components/PhotoCard.tsx)
+ *
+ * One four-column grid for every photograph below the hero. A card is always
+ * one column and its plate always 3:4, so every image on the page is the same
+ * size. Section text takes `.rw-cards__lead`, two columns wide.
+ * ------------------------------------------------------------------ */
+
+.rw-cards {
+  display: grid;
+  gap: clamp(1.25rem, 0.8rem + 1.6vw, 2rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 40rem) {
+  .rw-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rw-cards__lead {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 64rem) {
+  .rw-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .rw-cards__lead {
+    grid-column: span 2;
+    padding-right: var(--rasko-space-5);
+  }
+}
+
+.rw-cards__lead .rw-lede {
+  margin-top: var(--rasko-space-4);
+}
+
+/* White on the green page, with the dark text tokens restored inside so any
+ * content reads as it would on white. */
+.rw-card {
+  --rasko-text: #111111;
+  --rasko-text-secondary: #5c5f58;
+  --rasko-border: #e4e4e0;
+  --rasko-disabled: #a3a69b;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--rasko-radius-lg);
+  background: var(--rasko-surface);
+  color: var(--rasko-text);
+}
+
+.rw-process > li {
+  height: 100%;
+}
+
+.rw-card__body {
+  flex: 1 1 auto;
+  padding: var(--rasko-space-4) var(--rasko-space-5) var(--rasko-space-5);
+}
+
+.rw-card__title {
+  margin: 0;
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-20);
+  font-weight: var(--rasko-weight-semibold);
+  color: var(--rasko-text);
+}
+
+.rw-card__text {
+  margin: var(--rasko-space-2) 0 0;
+  font-size: var(--rasko-text-14);
+  line-height: 1.6;
+  color: var(--rasko-text-secondary);
+}
+
+.rw-variety__body {
+  margin-top: var(--rasko-space-5);
+}
+
+.rw-variety__name {
+  margin-bottom: var(--rasko-space-2);
+}
+
+/*
+ * The botanical name, when there is one. Italic is how a binomial is set, so
+ * the styling is carrying information rather than adding emphasis.
+ */
+.rw-variety__botanical {
+  font-family: var(--rasko-font-heading);
+  font-style: italic;
+  font-size: var(--rasko-text-16);
+  color: var(--rasko-text-secondary);
+}
+
+.rw-variety__description {
+  margin-top: var(--rasko-space-4);
+}
+
+/* Specification rows. Hairline separated, label left, value right, tabular. */
+.rw-spec {
+  margin-top: var(--rasko-space-5);
+  border-top: 1px solid var(--rasko-border);
+}
+
+.rw-spec__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--rasko-space-4);
+  padding-block: var(--rasko-space-3);
+  border-bottom: 1px solid var(--rasko-border);
+}
+
+.rw-spec__label {
+  font-size: var(--rasko-text-14);
+  color: var(--rasko-text-secondary);
+}
+
+.rw-spec__value {
+  font-size: var(--rasko-text-14);
+  font-weight: var(--rasko-weight-medium);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--rasko-text);
+}
+
+/* ------------------------------------------------------------------ *
+ * Process — a genuine sequence, which is why it is the one place on the
+ * page that carries numbers.
+ * ------------------------------------------------------------------ */
+
+.rw-step__meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--rasko-space-3);
+}
+
+.rw-step__number {
+  flex: 0 0 auto;
+  min-width: 0.9rem;
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-medium);
+  font-variant-numeric: tabular-nums;
+  color: var(--rasko-disabled);
+}
+
+
+/* ------------------------------------------------------------------ *
+ * Farm
+ * ------------------------------------------------------------------ */
+
+.rw-figures {
+  display: grid;
+  gap: var(--rasko-space-5);
+  margin-top: var(--rasko-space-6);
+  padding-top: var(--rasko-space-5);
+  border-top: 1px solid var(--rasko-border);
+}
+
+.rw-figure__unit {
+  margin-top: var(--rasko-space-2);
+  font-size: var(--rasko-text-14);
+  color: var(--rasko-text-secondary);
+}
+
+/* ------------------------------------------------------------------ *
+ * Enquiry — the only large field of green on the site, and the only
+ * place the page asks for anything.
+ * ------------------------------------------------------------------ */
+
+.rw-enquiry {
+  background: var(--rasko-green-active);
+  color: var(--rasko-on-green);
+}
+
+.rw-enquiry .rw-display-2 {
+  color: var(--rasko-on-green);
+}
+
+.rw-enquiry__grid {
+  display: grid;
+  gap: clamp(2.5rem, 1.5rem + 4vw, 5rem);
+}
+
+@media (min-width: 56rem) {
+  .rw-enquiry__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 26rem);
+  }
+}
+
+.rw-enquiry__body {
+  margin-top: var(--rasko-space-4);
+  max-width: 34rem;
+  font-size: var(--rw-lede);
+  line-height: 1.55;
+  /* White at reduced opacity rather than a second green. The palette has one
+   * green and adding a lighter one would be inventing a hue. */
+  color: rgb(255 255 255 / 82%);
+}
+
+.rw-enquiry__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rasko-space-4) var(--rasko-space-5);
+  margin-top: var(--rasko-space-6);
+}
+
+.rw-enquiry__phone {
+  color: rgb(255 255 255 / 88%);
+  font-weight: var(--rasko-weight-medium);
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+}
+
+.rw-checklist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgb(255 255 255 / 24%);
+}
+
+.rw-checklist li {
+  padding-block: var(--rasko-space-3);
+  border-bottom: 1px solid rgb(255 255 255 / 24%);
+  color: rgb(255 255 255 / 92%);
+}
+
+.rw-checklist__title {
+  margin-bottom: var(--rasko-space-4);
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-semibold);
+  color: rgb(255 255 255 / 70%);
+}
+
+/* Trade terms, when they are known. Same shape as the checklist so the two
+ * columns of the green band agree with each other. */
+.rw-terms {
+  margin-top: var(--rasko-space-6);
+  border-top: 1px solid rgb(255 255 255 / 24%);
+}
+
+.rw-terms__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--rasko-space-4);
+  padding-block: var(--rasko-space-3);
+  border-bottom: 1px solid rgb(255 255 255 / 24%);
+}
+
+.rw-terms__label {
+  font-size: var(--rasko-text-14);
+  color: rgb(255 255 255 / 70%);
+}
+
+.rw-terms__value {
+  font-size: var(--rasko-text-14);
+  font-weight: var(--rasko-weight-medium);
+  text-align: right;
+  color: var(--rasko-on-green);
+}
+
+/* ------------------------------------------------------------------ *
+ * Footer
+ * ------------------------------------------------------------------ */
+
+.rw-footer {
+  padding-block: clamp(3rem, 2rem + 3vw, 4.5rem);
+  border-top: 1px solid var(--rasko-border);
+}
+
+.rw-footer__grid {
+  display: grid;
+  gap: var(--rasko-space-6);
+}
+
+@media (min-width: 48rem) {
+  .rw-footer__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.rw-footer h2 {
+  margin-bottom: var(--rasko-space-3);
+  font-family: var(--rasko-font-body);
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-semibold);
+  color: var(--rasko-text-secondary);
+}
+
+.rw-footer address {
+  font-style: normal;
+  font-size: var(--rasko-text-14);
+  line-height: 1.7;
+  color: var(--rasko-text-secondary);
+}
+
+.rw-footer a {
+  color: var(--rasko-text);
+  text-decoration: none;
+}
+
+.rw-footer__legal {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--rasko-space-3) var(--rasko-space-5);
+  margin-top: var(--rasko-space-7);
+  padding-top: var(--rasko-space-5);
+  border-top: 1px solid var(--rasko-border);
+  font-size: var(--rasko-text-13);
+  color: var(--rasko-text-secondary);
+}
+
+/* ------------------------------------------------------------------ *
+ * Prose, for the privacy page
+ * ------------------------------------------------------------------ */
+
+.rw-prose {
+  max-width: 40rem;
+}
+
+.rw-prose h2 {
+  margin-top: var(--rasko-space-7);
+  margin-bottom: var(--rasko-space-4);
+  font-size: var(--rw-display-3);
+  letter-spacing: -0.012em;
+}
+
+.rw-prose p,
+.rw-prose li {
+  line-height: 1.7;
+  color: var(--rasko-text-secondary);
+}
+
+.rw-prose p + p {
+  margin-top: var(--rasko-space-4);
+}
+
+.rw-prose ul {
+  margin: var(--rasko-space-4) 0 0;
+  padding-left: 1.1rem;
+}
+
+.rw-prose li + li {
+  margin-top: var(--rasko-space-2);
+}
+
+/* ------------------------------------------------------------------ *
+
+/* ------------------------------------------------------------------ *
+ * Motion
+ *
+ * The animation itself is no longer here. Three libraries own it:
+ *
+ *   GSAP + ScrollTrigger   every scroll-linked effect
+ *                          components/motion/ScrollMotion.tsx
+ *   Framer Motion          the hero load sequence, the header resolving,
+ *                          button hover and press
+ *                          components/Hero.tsx, components/SiteHeader.tsx
+ *   three.js               the turning stem in the specimen section
+ *                          components/StemCanvas.tsx
+ *
+ * WHAT THIS FILE MUST NEVER CONTAIN AGAIN
+ * A hidden start state. Not `opacity: 0`, not `transform: scaleX(0)`, not a
+ * `visibility` toggle waiting on a class. Every from-state is written at
+ * runtime by GSAP or Framer Motion, which means a visitor whose JavaScript
+ * never arrives gets the entire page, unanimated and completely readable.
+ * Putting the hidden state back in CSS reintroduces a blank page for exactly
+ * the people least able to work out why.
+ *
+ * What stays below is structure the libraries animate against: the mask the
+ * headline rises out of, and the geometry of the stem canvas.
+ * ------------------------------------------------------------------ */
+
+/*
+ * The mask. The heading clips its own child, and the padding with a matching
+ * negative margin gives descenders room so the overflow does not shave them.
+ */
+.rw-hero__headline {
+  max-width: 18ch;
+  overflow: hidden;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+
+.rw-hero__headline > span {
+  display: block;
+  /* Framer Motion writes transforms here; declaring the containing block up
+   * front stops the first animated frame from reflowing the heading. */
+  will-change: transform;
+}
+
+/*
+ * The header is transparent until Framer Motion interpolates it. Declared
+ * here so the bar has a border box to animate the colour of, and so the
+ * layout is identical before hydration.
+ */
+/* ------------------------------------------------------------------ *
+ * Baby Blue, pinned (components/StemStudy.tsx)
+ *
+ * The one deep-green ground on the page besides the enquiry band. Green is
+ * a fill here, never black (docs/brand.md). White on #16381A and the tint on
+ * #16381A both clear 10:1.
+ * ------------------------------------------------------------------ */
+
+.rw-study {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 100svh;
+  overflow: hidden;
+  background-color: var(--rasko-green-active);
+  color: var(--rasko-surface);
+}
+
+.rw-study__inner {
+  display: grid;
+  gap: var(--rasko-space-5);
+  width: 100%;
+  padding-block: calc(4.25rem + var(--rasko-space-5)) var(--rasko-space-6);
+}
+
+@media (min-width: 56rem) {
+  .rw-study__inner {
+    grid-template-columns: minmax(0, 28rem) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--rasko-space-7);
+  }
+}
+
+.rw-study__eyebrow {
+  margin: 0 0 var(--rasko-space-3);
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rasko-green-tint-border);
+}
+
+.rw-study__name {
+  margin: 0;
+  color: var(--rasko-surface);
+}
+
+.rw-study__botanical {
+  margin: var(--rasko-space-2) 0 0;
+  font-family: var(--rasko-font-heading);
+  font-style: italic;
+  font-size: var(--rw-display-3);
+  color: var(--rasko-green-tint-border);
+}
+
+.rw-study__notes {
+  display: grid;
+  gap: var(--rasko-space-5);
+  margin: var(--rasko-space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Added by script once the timeline exists: the notes share one cell and
+ * GSAP hands them off. Without it they are a plain stacked list. */
+.rw-study__notes.is-staged > li {
+  grid-area: 1 / 1;
+}
+
+.rw-study__note h3 {
+  margin: 0 0 var(--rasko-space-2);
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-24);
+  font-weight: var(--rasko-weight-semibold);
+  color: var(--rasko-surface);
+}
+
+.rw-study__note p {
+  max-width: 26rem;
+  margin: 0;
+  font-size: var(--rasko-text-16);
+  line-height: 1.6;
+  color: var(--rasko-green-tint-border);
+}
+
+.rw-study__meter {
+  height: 2px;
+  margin-top: var(--rasko-space-6);
+  max-width: 26rem;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.rw-study__meter span {
+  display: block;
+  height: 100%;
+  background-color: var(--rasko-surface);
+  transform-origin: left center;
+}
+
+.rw-study__canvas {
+  width: 100%;
+  height: 44svh;
+}
+
+/* Wide: the canvas fills the whole section behind the text column, so the
+ * leaves have no edge to be cut off at. StemCanvas frames the stem to the
+ * right at the same breakpoint (WIDE_FROM, 56rem = 896px). */
+@media (min-width: 56rem) {
+  .rw-study__text {
+    position: relative;
+    z-index: 1;
+  }
+
+  .rw-study__canvas {
+    position: absolute;
+    inset: 0;
+    height: auto;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * The variety band (components/VarietyBand.tsx)
+ * ------------------------------------------------------------------ */
+
+.rw-band {
+  overflow: hidden;
+  padding-block: clamp(2.5rem, 1.5rem + 3vw, 4.5rem);
+  border-block: 1px solid var(--rasko-border);
+}
+
+.rw-band__track {
+  display: flex;
+  gap: clamp(2rem, 1rem + 3vw, 4rem);
+  width: max-content;
+  will-change: transform;
+}
+
+.rw-band__word {
+  font-family: var(--rasko-font-heading);
+  font-size: clamp(3rem, 1.5rem + 6vw, 7.5rem);
+  font-weight: var(--rasko-weight-semibold);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: var(--rasko-surface);
+}
+
+/* The botanical names are drawn in outline so the band alternates weight
+ * without introducing a second colour. */
+.rw-band__word--outline {
+  font-style: italic;
+  font-weight: 400;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--rasko-green-tint-border);
+}
+
+/* Reading progress along the foot of the header (Framer Motion scrollYProgress). */
+.rw-header__progress {
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 2px;
+  background-color: var(--rasko-green);
+  transform-origin: left center;
+}
+
+/*
+ * Reduced motion.
+ *
+ * Framer Motion reads the preference through useReducedMotion(), GSAP is not
+ * registered at all, and the canvas renders a single still frame. Nothing is
+ * left for CSS to switch off except the two transitions it still owns.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .rw-link::after,
+  .rw-button {
+    transition: none;
+  }
+}

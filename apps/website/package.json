@@ -1,0 +1,33 @@
+{
+  "name": "@rasko/website",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rasko Sweet Scent marketing website.",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-content.mjs && next build",
+    "start": "npx serve out",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "photos": "node scripts/build-photos.mjs",
+    "content": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-content.mjs"
+  },
+  "dependencies": {
+    "@rasko/ui": "workspace:*",
+    "framer-motion": "^13.4.2",
+    "gsap": "^3.15.0",
+    "lucide-react": "^0.469.0",
+    "next": "^15.1.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@types/three": "^0.186.0",
+    "sharp": "^0.35.4",
+    "typescript": "^5.7.3"
+  }
+}

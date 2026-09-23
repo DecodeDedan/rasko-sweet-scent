@@ -1,0 +1,71 @@
+// FR-1.4 / T4: deactivate or reactivate a user.
+//
+// Deactivation is two things, and both are needed:
+//
+//   1. profiles.is_active = false. Every RLS policy tests it, so the user's
+//      NEXT REQUEST is refused — immediately, even with a valid unexpired JWT
+//      in hand. This is the part that actually revokes access.
+//   2. Banning the auth user. An access token already issued stays
+//      cryptographically valid until it expires (an hour by default), but a
+//      banned user cannot refresh it or sign in again. This closes the window
+//      rather than opening the door.
+//
+// Step 1 alone would let a token keep being refreshed forever. Step 2 alone
+// would leave up to an hour of continued access. architecture.md §2.1.
+import { corsHeaders, json, requireOwner } from '../_shared/owner.ts'
+
+const BAN_FOREVER = '876000h' // 100 years; GoTrue has no unbounded ban.
+
+Deno.serve(async (request) => {
+  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+
+  const context = await requireOwner(request)
+  if (context instanceof Response) return context
+  const { admin, ownerId } = context
+
+  let body: { userId?: string; isActive?: boolean }
+  try {
+    body = await request.json()
+  } catch {
+    return json({ error: 'Malformed request.' }, 400)
+  }
+
+  const { userId, isActive } = body
+  if (typeof userId !== 'string' || typeof isActive !== 'boolean') {
+    return json({ error: 'Malformed request.' }, 400)
+  }
+
+  // An owner locking themselves out would leave the business with no way back
+  // in without a database administrator.
+  if (userId === ownerId && !isActive) {
+    return json({ error: 'You cannot deactivate your own account.' }, 400)
+  }
+
+  const { error: profileError } = await admin
+    .from('profiles')
+    .update({
+      is_active: isActive,
+      deactivated_at: isActive ? null : new Date().toISOString(),
+    })
+    .eq('id', userId)
+
+  if (profileError) return json({ error: profileError.message }, 500)
+
+  const { error: banError } = await admin.auth.admin.updateUserById(userId, {
+    ban_duration: isActive ? 'none' : BAN_FOREVER,
+  })
+
+  if (banError) {
+    // The profile flag already landed, so access is revoked at the data layer.
+    // Report the partial result rather than claiming full success.
+    return json(
+      {
+        error:
+          'Access was revoked, but the sign-in ban could not be applied. Retry so their existing session cannot be refreshed.',
+      },
+      500,
+    )
+  }
+
+  return json({ ok: true })
+})
