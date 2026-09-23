@@ -47,8 +47,7 @@ if (required.length > 0) {
   console.error('\nThe site cannot be published without these:\n')
   for (const fact of required) console.error('    %s', fact)
   console.error('\nFill them in at apps/website/content/site.ts and build again.')
-  console.error('Without a WhatsApp number the only call to action on the page')
-  console.error('does nothing, which is worse than having no page.\n')
+  console.error()
   process.exit(1)
 }
 

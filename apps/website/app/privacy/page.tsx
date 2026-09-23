@@ -49,9 +49,8 @@ export default function PrivacyPage() {
 
         <h2>When you message us</h2>
         <p>
-          The buttons on this site open WhatsApp. Sending a message there is a decision you make in
-          WhatsApp, and the message travels through WhatsApp rather than through this website. Their
-          terms and privacy policy govern that.
+          This site currently has no contact form or messaging integration. When contact details are
+          added, this page will explain what happens to an enquiry and which service handles it.
         </p>
         <p>
           Once your enquiry reaches us we keep what we need to answer it and to supply your order:

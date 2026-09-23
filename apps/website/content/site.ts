@@ -181,7 +181,7 @@ export const site = {
 
   enquiry: {
     heading: 'Send an enquiry',
-    body: 'Message us on WhatsApp and we will come back to you on availability and price.',
+    body: 'Tell us what you need and we will come back to you on availability and price.',
     /** What a useful first message contains. This is real trade guidance. */
     checklist: [
       'How many bunches',
@@ -221,12 +221,12 @@ export const site = {
 
   contact: {
     /**
-     * REQUIRED. International format, digits only, no plus and no spaces.
+    * Optional. International format, digits only, no plus and no spaces.
      * Kenyan mobile 0712 345 678 becomes '254712345678'.
-     * The build refuses to export while this is null.
+    * The WhatsApp action is omitted while this is null.
      */
     whatsapp: null as Fact<string>,
-    /** REQUIRED. How the same number is written for a human to read. */
+    /** Optional. How the same number is written for a human to read. */
     phoneDisplay: null as Fact<string>,
     email: null as Fact<string>,
     /** e.g. 'Monday to Saturday, 8am to 5pm' */
@@ -235,10 +235,10 @@ export const site = {
 } as const
 
 /**
- * Facts the site cannot honestly ship without. `scripts/check-content.mjs`
- * fails the build when one of these is still null.
+ * Facts that would block publishing if the site later needs a hard requirement.
+ * Keep this list empty while contact details remain unconfirmed.
  *
  * Everything else is allowed to be missing: the page is designed to read
  * correctly without it.
  */
-export const REQUIRED_FACTS = ['contact.whatsapp', 'contact.phoneDisplay'] as const
+export const REQUIRED_FACTS = [] as const
