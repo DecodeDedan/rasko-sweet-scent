@@ -1,3 +1,4 @@
+import { BrandMark } from '../components/BrandMark'
 import { Enquiry } from '../components/Enquiry'
 import { Farm } from '../components/Farm'
 import { Hero } from '../components/Hero'
@@ -5,6 +6,7 @@ import { Process } from '../components/Process'
 import { StemStudy } from '../components/StemStudy'
 import { VarietyBand } from '../components/VarietyBand'
 import { Varieties } from '../components/Varieties'
+import { site } from '../content/site'
 
 /**
  * One page, read top to bottom: what this is, the variety the farm is known
@@ -14,7 +16,7 @@ import { Varieties } from '../components/Varieties'
 export default function HomePage() {
   return (
     <>
-      <Hero />
+      <Hero brand={<BrandMark className="rw-hero__mark" label={site.name} />} />
       <StemStudy />
       <Varieties />
       <VarietyBand />

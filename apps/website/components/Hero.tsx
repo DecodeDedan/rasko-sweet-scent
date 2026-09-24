@@ -1,6 +1,8 @@
 'use client'
 
 import { Fragment } from 'react'
+import type { ReactNode } from 'react'
+import dynamic from 'next/dynamic'
 import { motion, useReducedMotion } from 'framer-motion'
 
 import { Plate } from './Plate'
@@ -9,8 +11,25 @@ import { ENTER_BEZIER } from '../lib/motion'
 import { whatsappLink } from '../lib/whatsapp'
 
 /**
- * The only entrance on the page that fires on load, orchestrated with Framer
- * Motion. Everything below the hero waits to be scrolled to and is driven by
+ * three.js loads after first paint; the hero is complete without it. No
+ * placeholder is needed because the canvas is absolutely positioned and
+ * takes no space in the layout.
+ */
+const LeafDrift = dynamic(() => import('./LeafDrift').then((module) => module.LeafDrift), {
+  ssr: false,
+})
+
+type Props = {
+  /** The inline monogram, rendered on the server (components/BrandMark.tsx). */
+  brand: ReactNode
+}
+
+/**
+ * The brand block leads: the monogram and the slogan, both drawn in by GSAP
+ * on load (components/motion/ScrollMotion.tsx), over leaves falling in
+ * three.js (components/LeafDrift.tsx).
+ *
+ * Below it, the headline and standfirst are Framer Motion's entrance, Everything below the hero waits to be scrolled to and is driven by
  * GSAP instead (components/motion/ScrollMotion.tsx).
  *
  * Four beats: the headline rises out of its mask, the standfirst follows, then
@@ -22,7 +41,7 @@ import { whatsappLink } from '../lib/whatsapp'
  * slide over it. Letting it wrap naturally with text-wrap: balance, rather than
  * hand-breaking the lines, keeps it from stranding a word at an awkward width.
  */
-export function Hero() {
+export function Hero({ brand }: Props) {
   const enquire = whatsappLink(site.contact.whatsapp, site.enquiry.prefill)
   const reduced = useReducedMotion()
 
@@ -40,7 +59,14 @@ export function Hero() {
 
   return (
     <section className="rw-container rw-hero" id="top">
-      <h1 className="rw-display-1 rw-hero__headline">
+      <LeafDrift className="rw-hero__leaves" />
+
+      <div className="rw-hero__brand">
+        {brand}
+        <p className="rw-hero__slogan">{site.slogan}</p>
+      </div>
+
+      <h1 className="rw-display-2 rw-hero__headline">
         <motion.span
           initial={reduced ? false : { y: '110%' }}
           animate={{ y: 0 }}

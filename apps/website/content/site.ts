@@ -59,12 +59,15 @@ export type Variety = {
 export const site = {
   name: 'Rasko Sweet Scent',
 
+  /** Confirmed by the project owner, 2026-09-24. */
+  slogan: 'All that nature gives.',
+
   /** Used for the page title and the meta description. */
   summary:
     'A eucalyptus farm in Nakuru, Kenya, supplying fresh-cut foliage to florists, decorators and wholesalers.',
 
   hero: {
-    headline: 'Eucalyptus foliage, cut and graded in Nakuru.',
+    headline: 'Eucalyptus foliage, cut and graded by experts.',
     standfirst:
       'We grow it ourselves, sort it by hand, and tie it into bunches before it leaves the farm. Tell us what you need and the day you need it.',
     photo: 'field-silver-sky',

@@ -26,9 +26,10 @@ Money and quantity columns: tabular numerals(font-variant-numeric: tabular-nums)
 Type scale: 12 / 13 / 14 / 16 / 20 / 24 / 32
 Both fonts are SIL OFL and must be BUNDLED inside the app — never CDN-loaded(the app must work fully offline). Website self-hosts the same files.
 Logo
-Final art: docs/brand/logo.svg, an overlapping "RSS" monogram in five greens (#1F5C3D, #3E8E59, #70A287, #083317, #1B5930). These are the logo's own artwork colours, not UI tokens; the UI palette stays as above.
-Wide format, 3184 x 1664. Always size by height, never stretch, no effects, clear space = height of the S.
+Final art: docs/brand/logo.svg, the stacked "RSS" monogram: one tall serif R with an S either side, each S separated from the R by a thin knockout line. Recreated by the client from the original printed mark, supplied 2026-09-24.
+Single colour, the artwork's own green #134B21 (not a UI token). Reversed to white on green grounds. Taller than wide; always size by height, never stretch, no effects.
 App icons use docs/brand/logo-square.svg, generated from logo.svg by apps/app/scripts/logo-square.mjs.
+Slogan: "All that nature gives."
 Voice
 Plain, professional Kenyan English
 Never: emojis, exclamation marks in UI copy, marketing fluff inside the app

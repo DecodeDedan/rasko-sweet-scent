@@ -181,9 +181,16 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
   documents the four steps to switch it on at release-signing time.
 - **Fonts are vendored in `packages/ui/fonts/`** with their OFL licences. Never replace them
   with `next/font/google` or a CDN link; the app must work fully offline.
-- **`docs/brand/logo.svg` is the final logo** (supplied 2026-09-23) and is wide, 3184 x 1664.
-  `tauri icon` needs a square, so the icon script first generates `logo-square.svg`; never
-  edit that file by hand. The website imports `logo.svg` directly, so there is no copy to drift.
+- **`docs/brand/logo.svg` is the stacked RSS monogram** (the client's recreation, supplied
+  2026-09-24), taller than wide, in its own green `#134B21`. `tauri icon` needs a square, so the
+  icon script first generates `logo-square.svg` from the logo's viewBox; never edit that file
+  by hand. The website reads `logo.svg` directly: `<img>` in the header and footer (the footer
+  reverses it to white with a CSS filter) and inline SVG in the hero via `BrandMark.tsx`, which
+  reads the file at build time. There is no copy to drift.
+- **The hero monogram draws itself with GSAP DrawSVG** and the slogan scramble-reveals on a
+  loop (SplitText + ScrambleText, `ScrollMotion.tsx`); each word is locked to its finished width
+  so the line never rewraps while it flickers. The line path carries no stroke in the markup; GSAP adds it for the
+  animation only, so without script the mark is simply filled.
 - **`shell/navigation.ts` is a transcription of the PRD §3.1 matrix.** When that table
   changes, change this and nothing else. Hiding a module there is a usability decision, not
   a security one — the server refuses the data regardless (RLS is the boundary).
@@ -368,8 +375,9 @@ danger `#B3261E`.
   states instruct and link to the next action.
 - Documents (invoice, receipt, payslip, order summary) are A4, print-friendly, ink on white,
   with Rasko Green used only for the header rule, section headings, and totals row.
-- The logo is `docs/brand/logo.svg`, an overlapping "RSS" monogram in its own five greens.
-  Those are artwork colours, not UI tokens: they never enter the palette.
+- The logo is `docs/brand/logo.svg`, the stacked "RSS" monogram in its own green `#134B21`.
+  That is an artwork colour, not a UI token: it never enters the palette. The slogan is
+  "All that nature gives." (`content/site.ts`).
 - Voice: plain, professional Kenyan English; no marketing fluff inside the app.
 - **The client is a eucalyptus cut-foliage grower, not a florist** (PRD §12 q1, answered
   2026-09-12). `docs/brand.md` used to say the website should show "photography of real

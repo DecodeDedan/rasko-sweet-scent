@@ -3,7 +3,6 @@
 import { useEffect, useRef } from 'react'
 import type { MutableRefObject } from 'react'
 import {
-  CircleGeometry,
   Color,
   CylinderGeometry,
   DirectionalLight,
@@ -20,6 +19,7 @@ import {
   WebGLRenderer,
 } from 'three'
 
+import { buildLeafGeometry, seeded, wrap } from '../lib/leaves'
 import { prefersReducedMotion } from '../lib/motion'
 
 /**
@@ -56,8 +56,6 @@ const STEM_RADIUS = 0.07
 const LEAF_OFFSET = 0.7
 const LEAF_RADIUS_BASE = 0.72
 const LEAF_RADIUS_TIP = 0.28
-/** Depth of the leaf's cup, as a fraction of its radius. */
-const LEAF_CUP = 0.2
 /** Loose leaves drifting in the space around the stem. */
 const DRIFT_COUNT = 46
 const DRIFT_BOX = { x: 7, y: 10, z: 5 } as const
@@ -80,34 +78,6 @@ const POINTER_EASE = 0.06
 const STEM_COLOUR = '#1F5C3D'
 const LEAF_COLOURS = ['#70A287', '#3E8E59'] as const
 const LEAF_LIFT = '#CFE3CC'
-
-/** Round leaf, gently cupped so the light rolls across it as it turns. */
-function buildLeafGeometry(): CircleGeometry {
-  const geometry = new CircleGeometry(1, 28)
-  const position = geometry.getAttribute('position')
-  for (let i = 0; i < position.count; i += 1) {
-    const x = position.getX(i)
-    const y = position.getY(i)
-    position.setZ(i, -LEAF_CUP * (x * x + y * y))
-  }
-  position.needsUpdate = true
-  geometry.computeVertexNormals()
-  return geometry
-}
-
-/** Deterministic scatter, so the drift is identical on every visit. */
-function seeded(seed: number): () => number {
-  let state = seed
-  return () => {
-    state = (state * 1664525 + 1013904223) % 4294967296
-    return state / 4294967296
-  }
-}
-
-/** Wrap a value into [-span / 2, span / 2). */
-function wrap(value: number, span: number): number {
-  return ((((value + span / 2) % span) + span) % span) - span / 2
-}
 
 export function StemCanvas({ className, progress }: Props) {
   const hostRef = useRef<HTMLDivElement | null>(null)

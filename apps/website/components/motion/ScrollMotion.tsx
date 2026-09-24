@@ -2,7 +2,10 @@
 
 import { useEffect } from 'react'
 import gsap from 'gsap'
+import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin'
+import { ScrambleTextPlugin } from 'gsap/ScrambleTextPlugin'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { SplitText } from 'gsap/SplitText'
 
 import { ENTER_EASE, prefersReducedMotion } from '../../lib/motion'
 
@@ -42,12 +45,25 @@ const COLOUR_DURATION = 0.9
 const COLOUR_HOLD = 1.4
 /** Seconds between neighbouring words, so each colour runs across the line as a wave. */
 const COLOUR_STAGGER = 0.09
+/** Stroke of the drawing line, in the logo's own user units (about 2px on screen). */
+const DRAW_STROKE = 36
+/**
+ * The slogan's scramble. Lowercase only: every stand-in glyph is close to the
+ * width of the letter it replaces, so the line never jumps while it flickers.
+ */
+const SCRAMBLE_CHARS = 'abcdefghijklmnopqrstuvwxyz'
+/** Seconds each word scrambles before it has fully locked in. */
+const SCRAMBLE_DURATION = 1.3
+/** Seconds between one word starting and the next. */
+const SCRAMBLE_STAGGER = 0.35
+/** Seconds the finished slogan rests before scrambling again. */
+const SCRAMBLE_REST = 4
 
 export function ScrollMotion() {
   useEffect(() => {
     if (prefersReducedMotion()) return
 
-    gsap.registerPlugin(ScrollTrigger)
+    gsap.registerPlugin(ScrollTrigger, DrawSVGPlugin, ScrambleTextPlugin, SplitText)
 
     // gsap.context scopes every tween and trigger created inside it, so the
     // single revert() below tears all of them down. Without it, ScrollTriggers
@@ -110,6 +126,85 @@ export function ScrollMotion() {
         ease: 'none',
         scrollTrigger: { trigger: '.rw-hero', start: 'top top', end: 'bottom top', scrub: true },
       })
+
+      /* --- The monogram draws itself; the slogan scrambles in -----------
+       * The line path has no stroke in the markup (components/BrandMark.tsx);
+       * it is given one here, drawn along the outline, and faded as the fill
+       * arrives.
+       *
+       * The slogan is split into words, each locked to its finished width so
+       * wrapping never shifts, then each word flickers through random
+       * letters and locks in, one after another, on a loop. SplitText puts
+       * the real phrase on the element as its accessible name and hides the
+       * flickering words from assistive technology, so a screen reader hears
+       * "All that nature gives." once, never the noise. `autoSplit` re-runs
+       * the split when fonts load or the width changes, and the animation
+       * returned from `onSplit` is rebuilt with it. */
+      const mark = document.querySelector<SVGSVGElement>('.rw-hero__mark')
+      const slogan = document.querySelector<HTMLElement>('.rw-hero__slogan')
+      if (mark !== null && slogan !== null) {
+        const line = mark.querySelector('.rw-brandmark__line')
+        const fill = mark.querySelector('.rw-brandmark__fill')
+
+        gsap
+          .timeline({ defaults: { ease: ENTER_EASE } })
+          .set(line, { attr: { stroke: 'currentColor', 'stroke-width': DRAW_STROKE } })
+          .fromTo(line, { drawSVG: '0%' }, { drawSVG: '100%', duration: 1.9, ease: 'power2.inOut' })
+          .from(fill, { opacity: 0, duration: 0.9 }, '-=0.7')
+          .to(line, { opacity: 0, duration: 0.7 }, '<0.3')
+
+        let scramble: gsap.core.Timeline | null = null
+        SplitText.create(slogan, {
+          type: 'words',
+          wordsClass: 'rw-hero__slogan-word',
+          autoSplit: true,
+          onSplit: (self) => {
+            self.words.forEach((word) => {
+              // SplitText types its pieces as Element; they are always spans.
+              if (word instanceof HTMLElement) word.style.width = `${word.offsetWidth}px`
+            })
+            const timeline = gsap.timeline({ repeat: -1, repeatDelay: SCRAMBLE_REST, delay: 0.4 })
+            self.words.forEach((word, index) => {
+              timeline.to(
+                word,
+                {
+                  duration: SCRAMBLE_DURATION,
+                  ease: 'none',
+                  scrambleText: {
+                    text: word.textContent ?? '',
+                    chars: SCRAMBLE_CHARS,
+                    revealDelay: 0.35,
+                    speed: 0.5,
+                  },
+                },
+                index * SCRAMBLE_STAGGER,
+              )
+            })
+            scramble = timeline
+            return timeline
+          },
+        })
+
+        // A loop nobody can see is still a repaint every frame.
+        ScrollTrigger.create({
+          trigger: '.rw-hero',
+          start: 'top bottom',
+          end: 'bottom top',
+          onToggle: (self) => {
+            if (self.isActive) scramble?.play()
+            else scramble?.pause()
+          },
+        })
+
+        // Leaving the hero, the brand block lifts and settles back.
+        gsap.to('.rw-hero__brand', {
+          yPercent: -25,
+          scale: 0.92,
+          transformOrigin: 'left top',
+          ease: 'none',
+          scrollTrigger: { trigger: '.rw-hero', start: 'top top', end: 'bottom top', scrub: true },
+        })
+      }
 
       /* --- The headline cycles through colour, word by word -------------
        * A looping timeline, played only while the hero is on screen: a loop

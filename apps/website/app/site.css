@@ -91,6 +91,12 @@ body {
  * for secondary text (5.0:1 on #2D6A2F), and a translucent white hairline.
  * `.rw-card` restores the dark tokens inside itself.
  */
+/* The hero's leaf layer is wider than the container; clip, not hidden, so
+ * `main` does not become a scroll container and the GSAP pin still works. */
+main {
+  overflow-x: clip;
+}
+
 main,
 .rw-footer {
   --rasko-text: #ffffff;
@@ -399,18 +405,21 @@ main .rw-button:not([aria-disabled='true']):hover {
   white-space: nowrap;
 }
 
-/* Height-led so the wide monogram (3184 x 1664) keeps its proportions. */
+/* Height-led so the monogram keeps its proportions (it is taller than wide). */
 .rw-wordmark__mark {
   display: block;
-  height: 1.75rem;
+  height: 2.5rem;
   width: auto;
 }
 
+/* Reversed to white on the green footer. The filter flattens the artwork's
+ * green to black, then inverts it, so there is still only one logo file. */
 .rw-footer__mark {
   display: block;
-  height: 1.5rem;
+  height: 2.25rem;
   width: auto;
   margin-right: auto;
+  filter: brightness(0) invert(1);
 }
 
 .rw-header__nav {
@@ -444,8 +453,64 @@ main .rw-button:not([aria-disabled='true']):hover {
  * ------------------------------------------------------------------ */
 
 .rw-hero {
+  position: relative;
   padding-top: clamp(7rem, 5rem + 9vw, 12rem);
   padding-bottom: var(--rw-section-y);
+}
+
+/* Everything in the hero sits above the falling leaves. */
+.rw-hero > :not(.rw-hero__leaves) {
+  position: relative;
+  z-index: 1;
+}
+
+/* The three.js leaves (components/LeafDrift.tsx) run the full viewport width
+ * behind the hero, not just the container, so no leaf is cut at a column
+ * edge. `main` clips the overflow horizontally. */
+.rw-hero__leaves {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Monogram and slogan, side by side and left aligned at every width. */
+.rw-hero__brand {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.25rem, 0.5rem + 3vw, 3.5rem);
+  margin-bottom: clamp(2.5rem, 1.5rem + 4vw, 5rem);
+}
+
+.rw-hero__mark {
+  flex: none;
+  width: auto;
+  height: clamp(7.5rem, 4rem + 14vw, 15rem);
+  color: var(--rasko-surface);
+  overflow: visible;
+}
+
+.rw-hero__slogan {
+  max-width: 9ch;
+  margin: 0;
+  font-family: var(--rasko-font-heading);
+  font-size: clamp(2.25rem, 0.9rem + 5.6vw, 6.25rem);
+  font-style: italic;
+  font-weight: var(--rasko-weight-semibold);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: var(--rasko-surface);
+  text-wrap: balance;
+}
+
+/* Set by SplitText at runtime: each word holds its finished width while it
+ * scrambles, so stand-in letters never push the line to rewrap. */
+.rw-hero__slogan-word {
+  white-space: nowrap;
 }
 
 .rw-hero__headline {

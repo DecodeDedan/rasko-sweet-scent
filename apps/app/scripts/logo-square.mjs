@@ -1,26 +1,29 @@
 // Writes docs/brand/logo-square.svg from docs/brand/logo.svg.
 //
-// `tauri icon` refuses a non-square source and the monogram is wide
-// (3184 x 1664), so this centres it on a white square with a margin. The
-// square is generated, never hand-edited, so the logo has one source.
+// `tauri icon` refuses a non-square source, so this centres the logo on a
+// white square with a margin. The square is generated, never hand-edited, so
+// the logo has one source.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const brandDir = fileURLToPath(new URL('../../../docs/brand/', import.meta.url))
 const source = readFileSync(`${brandDir}logo.svg`, 'utf8')
 
-const WIDTH = 3184
-const HEIGHT = 1664
-// Room around the mark so launcher masks (circle, squircle) never clip it.
-const MARGIN = 400
-const side = WIDTH + MARGIN * 2
-const x = -MARGIN
-const y = -(side - HEIGHT) / 2
-
-const rootTag = /<svg\b[^>]*viewBox="0 0 3184 1664"[^>]*>/
-if (!rootTag.test(source)) {
-  throw new Error('logo.svg root <svg> no longer has viewBox "0 0 3184 1664"; update logo-square.mjs')
+// Read the logo's own frame rather than hard-coding it, so a new logo with
+// different proportions needs no change here.
+const rootTag = /<svg\b[^>]*viewBox="([-\d.]+) ([-\d.]+) ([\d.]+) ([\d.]+)"[^>]*>/
+const match = rootTag.exec(source)
+if (match === null) {
+  throw new Error('logo.svg has no numeric viewBox on its root <svg>; cannot build the square icon')
 }
+const [minX, minY, width, height] = match.slice(1).map(Number)
+
+// Room around the mark so launcher masks (circle, squircle) never clip it.
+const MARGIN = Math.max(width, height) * 0.14
+const round = (value) => Math.round(value * 100) / 100
+const side = round(Math.max(width, height) + MARGIN * 2)
+const x = round(minX - (side - width) / 2)
+const y = round(minY - (side - height) / 2)
 
 const square = source.replace(
   rootTag,

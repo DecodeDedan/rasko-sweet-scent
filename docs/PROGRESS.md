@@ -357,3 +357,12 @@ the enquiry checklist no longer asks which variety. Everything below the white
 header sits on Rasko Green, and the header carries no WhatsApp button. Every
 photograph below the hero is a `PhotoCard`, one column of a four-column grid
 at a 3:4 ratio, so all cards render at one size. Needs client sign-off.
+
+**9. Stacked RSS monogram and slogan.** Project owner, 2026-09-24. The logo is
+now the client's recreation of the original printed monogram
+(`docs/brand/logo.svg`, #134B21), replacing the overlapping-letter mark. The
+slogan "All that nature gives." leads the hero beside the monogram, which
+draws itself on load (GSAP DrawSVG) while the slogan scramble-reveals word
+by word and replays every few seconds (ScrambleText, owner's choice) over leaves falling in three.js. App icons are not yet
+regenerated from the new logo: run `pnpm --filter @rasko/app icon`.
+
