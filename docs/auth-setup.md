@@ -95,7 +95,7 @@ supabase functions deploy invite-user
 supabase functions deploy set-user-active
 
 # SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically.
-supabase secrets set APP_PASSWORD_RESET_URL="https://raskosweetscent.co.ke/reset-password"
+supabase secrets set APP_PASSWORD_RESET_URL="https://www.raskosweetscent.com/reset-password"
 ```
 
 Both functions re-verify that the caller is a signed-in, active **owner** before

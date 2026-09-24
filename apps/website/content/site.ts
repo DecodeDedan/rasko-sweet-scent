@@ -77,13 +77,13 @@ export const site = {
   slogan: 'All that nature gives.',
 
   /**
-   * The site's public address, e.g. 'https://raskosweetscent.co.ke', with no
-   * trailing slash. Not yet confirmed. While null, the build omits
+   * The site's public address, with no
+   * trailing slash. While null, the build omits
    * everything that needs an absolute URL: the canonical link, the sitemap
    * entries, the share image and the JSON-LD `url` / `logo`. The page still
    * indexes without them; with them it indexes faster and previews properly.
    */
-  url: null as Fact<string>,
+  url: 'https://www.raskosweetscent.com' as Fact<string>,
 
   /**
    * What a search result shows. The title leads with the brand, because a
@@ -355,9 +355,9 @@ export const site = {
      * Kenyan mobile 0712 345 678 becomes '254712345678'.
      * The WhatsApp action is omitted while this is null.
      */
-    whatsapp: null as Fact<string>,
+    whatsapp: '254704860552' as Fact<string>,
     /** Optional. How the same number is written for a human to read. */
-    phoneDisplay: null as Fact<string>,
+    phoneDisplay: '+254 704 860 552' as Fact<string>,
     email: null as Fact<string>,
     /** e.g. 'Monday to Saturday, 8am to 5pm' */
     hours: null as Fact<string>,

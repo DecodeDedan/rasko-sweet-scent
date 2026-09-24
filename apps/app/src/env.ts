@@ -71,7 +71,7 @@ export function loadConfig(): AppConfig {
     environment: readEnvironment(),
     passwordResetUrl:
       import.meta.env.APP_PASSWORD_RESET_URL?.trim() ||
-      'https://raskosweetscent.co.ke/reset-password',
+      'https://www.raskosweetscent.com/reset-password',
   }
 }
 

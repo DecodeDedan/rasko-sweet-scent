@@ -17,7 +17,7 @@ No one can guarantee a first-place result; these steps are what earns one.
 ## Needs one fact: the domain
 
 Set `url` in `apps/website/content/site.ts` (for example
-`https://raskosweetscent.co.ke`). That single change switches on the canonical
+`https://www.raskosweetscent.com`). That single change switches on the canonical
 link, the sitemap entries, the share image and the JSON-LD `url` and `logo`.
 
 ## Only the business can do these (in order of impact)
