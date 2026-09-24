@@ -379,4 +379,3 @@ sitemap.xml and share cards. The domain (`site.url`) is still unconfirmed and
 gates the canonical link, sitemap entries and share image. The off-site steps
 that decide ranking (Google Business Profile, Search Console, listings) are in
 `docs/seo.md` and need the business to act.
-

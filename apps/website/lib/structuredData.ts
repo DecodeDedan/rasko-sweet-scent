@@ -19,7 +19,8 @@ function mapUrl(): string {
 
 export function homeJsonLd(logoPath: string, imagePath: string): JsonLd {
   const { location, contact, url } = site
-  const absolute = url === null ? null : { url, logo: `${url}${logoPath}`, image: `${url}${imagePath}` }
+  const absolute =
+    url === null ? null : { url, logo: `${url}${logoPath}`, image: `${url}${imagePath}` }
 
   const business: JsonLd = {
     '@type': 'LocalBusiness',

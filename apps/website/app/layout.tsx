@@ -23,9 +23,7 @@ const shareWidth = heroPhoto.widths[heroPhoto.widths.length - 1] ?? heroPhoto.wi
  * then Next would resolve it against localhost, which is worse than nothing.
  */
 export const metadata: Metadata = {
-  ...(site.url !== null
-    ? { metadataBase: new URL(site.url), alternates: { canonical: '/' } }
-    : {}),
+  ...(site.url !== null ? { metadataBase: new URL(site.url), alternates: { canonical: '/' } } : {}),
   title: {
     default: site.seo.title,
     template: `%s | ${site.name}`,

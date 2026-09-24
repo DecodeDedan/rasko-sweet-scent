@@ -5,12 +5,12 @@
   "description": "Rasko Sweet Scent marketing website.",
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-content.mjs && next build",
+    "build": "tsx scripts/check-content.mjs && next build",
     "start": "npx serve out",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "photos": "node scripts/build-photos.mjs",
-    "content": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-content.mjs"
+    "content": "tsx scripts/check-content.mjs"
   },
   "dependencies": {
     "@rasko/ui": "workspace:*",
@@ -28,6 +28,7 @@
     "@types/react-dom": "^18.3.5",
     "@types/three": "^0.186.0",
     "sharp": "^0.35.4",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }
 }
