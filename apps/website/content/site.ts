@@ -341,7 +341,7 @@ export const site = {
      * than the shared link: that link is a person's live location and
      * expires, while the pin does not move.
      */
-    mapQuery: '-0.3542512,35.6862408',
+    mapQuery: '-0.3542512, 35.69654',
   },
 
   map: {
@@ -355,9 +355,9 @@ export const site = {
      * Kenyan mobile 0712 345 678 becomes '254712345678'.
      * The WhatsApp action is omitted while this is null.
      */
-    whatsapp: '254704860552' as Fact<string>,
+    whatsapp: '254724349141' as Fact<string>,
     /** Optional. How the same number is written for a human to read. */
-    phoneDisplay: '+254 704 860 552' as Fact<string>,
+    phoneDisplay: '+254 724 349 141' as Fact<string>,
     email: null as Fact<string>,
     /** e.g. 'Monday to Saturday, 8am to 5pm' */
     hours: null as Fact<string>,
