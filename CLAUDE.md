@@ -121,6 +121,9 @@ WhatsApp number its build guard requires. See `docs/PROGRESS.md`.
 
 ### Things that will bite you
 
+- **`site.url` gates every absolute URL** (canonical, sitemap entries, share image, JSON-LD
+  `url`/`logo`). While it is null those are omitted rather than resolved against localhost.
+  JSON-LD is built from `content/site.ts` only and must never state more than the page does.
 - **The Google map loads on click, never on render** (`components/FarmMap.tsx`). The privacy
   notice promises no third-party contact unless the visitor asks; an eager iframe would make
   that false for every visitor. Change one and you must change `app/privacy/page.tsx` too.

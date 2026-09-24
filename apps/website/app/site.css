@@ -148,6 +148,19 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
   text-decoration: none;
 }
 
+/* Read by screen readers and search engines, not drawn. */
+.rw-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .rw-skip:focus-visible {
   top: var(--rasko-space-3);
 }
@@ -490,8 +503,10 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
   z-index: 0;
 }
 
-/* Monogram and slogan, side by side and left aligned at every width. */
+/* Monogram and slogan, side by side and left aligned at every width. It is
+ * the page's h1, so the heading's own margins are cleared here. */
 .rw-hero__brand {
+  margin-top: 0;
   display: flex;
   align-items: center;
   gap: clamp(1.25rem, 0.5rem + 3vw, 3.5rem);
@@ -507,6 +522,7 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
 }
 
 .rw-hero__slogan {
+  display: block;
   max-width: 9ch;
   margin: 0;
   font-family: var(--rasko-font-heading);

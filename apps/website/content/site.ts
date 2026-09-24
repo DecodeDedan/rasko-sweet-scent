@@ -62,6 +62,34 @@ export const site = {
   /** Confirmed by the project owner, 2026-09-24. */
   slogan: 'All that nature gives.',
 
+  /**
+   * The site's public address, e.g. 'https://raskosweetscent.co.ke', with no
+   * trailing slash. Not yet confirmed. While null, the build omits
+   * everything that needs an absolute URL: the canonical link, the sitemap
+   * entries, the share image and the JSON-LD `url` / `logo`. The page still
+   * indexes without them; with them it indexes faster and previews properly.
+   */
+  url: null as Fact<string>,
+
+  /**
+   * What a search result shows. The title leads with the brand, because a
+   * search for the name must land here; the description carries the terms a
+   * trade buyer types: Baby Blue, eucalyptus, foliage, Molo, Nakuru, Kenya.
+   */
+  seo: {
+    title: 'Rasko Sweet Scent | Baby Blue Eucalyptus Foliage, Kenya',
+    description:
+      'Rasko Sweet Scent grows Baby Blue eucalyptus in Molo, Nakuru County, and supplies fresh-cut eucalyptus foliage to florists and floral decorators in Kenya.',
+    /** What the business knows about, for the structured data. */
+    topics: [
+      'Eucalyptus',
+      'Baby Blue eucalyptus',
+      'Eucalyptus pulverulenta',
+      'Cut foliage',
+      'Floral greenery',
+    ],
+  },
+
   /** Used for the page title and the meta description. */
   summary:
     'A eucalyptus farm in Nakuru, Kenya, supplying fresh-cut foliage to florists, decorators and wholesalers.',
@@ -69,7 +97,7 @@ export const site = {
   hero: {
     headline: 'Eucalyptus foliage, cut and graded by experts.',
     standfirst:
-      'We grow it ourselves, sort it by hand, and tie it into bunches before it leaves the farm. Tell us what you need and the day you need it.',
+      'We grow it ourselves in Molo, Nakuru County, sort it by hand, and tie it into bunches before it leaves the farm. Tell us what you need and the day you need it.',
     photo: 'field-silver-sky',
   },
 

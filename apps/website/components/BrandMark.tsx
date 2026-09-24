@@ -26,14 +26,22 @@ function readLogo(): { viewBox: string; d: string } {
   return { viewBox, d }
 }
 
-type Props = { className?: string; label: string }
+type Props = {
+  className?: string
+  /** Accessible name. Omit when the name is already given in text beside the mark. */
+  label?: string
+}
 
 export function BrandMark({ className, label }: Props) {
   const { viewBox, d } = readLogo()
   const classes = className === undefined ? 'rw-brandmark' : `rw-brandmark ${className}`
 
   return (
-    <svg className={classes} viewBox={viewBox} role="img" aria-label={label}>
+    <svg
+      className={classes}
+      viewBox={viewBox}
+      {...(label === undefined ? { 'aria-hidden': true } : { role: 'img', 'aria-label': label })}
+    >
       <path className="rw-brandmark__fill" d={d} fill="currentColor" fillRule="evenodd" />
       <path className="rw-brandmark__line" d={d} fill="none" />
     </svg>

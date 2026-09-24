@@ -372,3 +372,11 @@ above the footer maps "Molo, Nakuru County, Kenya", an area rather than a
 pin, since no exact location has been given. The Google frame is created only
 when a visitor presses Show map, so the site still contacts no third party
 by default; the privacy notice was revised in the same change to say so.
+
+**11. Search visibility.** Project owner, 2026-09-24. Brand-first title and
+keyword description, one brand h1, LocalBusiness + WebSite JSON-LD, robots.txt,
+sitemap.xml and share cards. The domain (`site.url`) is still unconfirmed and
+gates the canonical link, sitemap entries and share image. The off-site steps
+that decide ranking (Google Business Profile, Search Console, listings) are in
+`docs/seo.md` and need the business to act.
+

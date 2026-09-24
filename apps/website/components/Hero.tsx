@@ -61,12 +61,17 @@ export function Hero({ brand }: Props) {
     <section className="rw-container rw-hero" id="top">
       <LeafDrift className="rw-hero__leaves" />
 
-      <div className="rw-hero__brand">
+      {/* The page's one h1: the brand and the slogan. The name is given as
+          text (visually hidden, beside the mark that shows it), because a
+          search for "Rasko Sweet Scent" should match the page's main heading
+          and search engines read text more reliably than an SVG label. */}
+      <h1 className="rw-hero__brand">
+        <span className="rw-sr-only">{site.name}: </span>
         {brand}
-        <p className="rw-hero__slogan">{site.slogan}</p>
-      </div>
+        <span className="rw-hero__slogan">{site.slogan}</span>
+      </h1>
 
-      <h1 className="rw-display-2 rw-hero__headline">
+      <p className="rw-display-2 rw-hero__headline">
         <motion.span
           initial={reduced ? false : { y: '110%' }}
           animate={{ y: 0 }}
@@ -82,7 +87,7 @@ export function Hero({ brand }: Props) {
             </Fragment>
           ))}
         </motion.span>
-      </h1>
+      </p>
 
       <div className="rw-hero__deck">
         <motion.p className="rw-lede" {...fade(0.22)}>

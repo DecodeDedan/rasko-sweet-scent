@@ -7,7 +7,10 @@ import { Process } from '../components/Process'
 import { StemStudy } from '../components/StemStudy'
 import { VarietyBand } from '../components/VarietyBand'
 import { Varieties } from '../components/Varieties'
+import logo from '../../../docs/brand/logo.svg'
+import { photos } from '../content/photos'
 import { site } from '../content/site'
+import { homeJsonLd, serialiseJsonLd } from '../lib/structuredData'
 
 /**
  * One page, read top to bottom: what this is, the variety the farm is known
@@ -15,9 +18,17 @@ import { site } from '../content/site'
  * then the ask, and where to find the farm. Every photograph below the hero is a same-size PhotoCard.
  */
 export default function HomePage() {
+  const heroPhoto = photos[site.hero.photo]
+  const heroImage = `/photos/${site.hero.photo}-${heroPhoto.widths[heroPhoto.widths.length - 1]}.webp`
+
   return (
     <>
-      <Hero brand={<BrandMark className="rw-hero__mark" label={site.name} />} />
+      <script
+        type="application/ld+json"
+        // Serialised from our own content, with `<` escaped: safe to inline.
+        dangerouslySetInnerHTML={{ __html: serialiseJsonLd(homeJsonLd(logo.src, heroImage)) }}
+      />
+      <Hero brand={<BrandMark className="rw-hero__mark" />} />
       <StemStudy />
       <Varieties />
       <VarietyBand />
