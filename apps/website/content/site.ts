@@ -91,7 +91,7 @@ export const site = {
    * trade buyer types: Baby Blue, eucalyptus, foliage, Molo, Nakuru, Kenya.
    */
   seo: {
-    title: 'Rasko Sweet Scent | Baby Blue, Gunni, Parvifolia and Globulus Eucalyptus, Kenya',
+    title: 'Rasko Sweet Scent | Fresh Eucalyptus Foliage, Kenya',
     description:
       'Rasko Sweet Scent grows Baby Blue, Gunni, Parvifolia and Globulus eucalyptus in Molo, Nakuru County, cut as standard stems or sprays, and supplies fresh foliage to florists and floral decorators in Kenya.',
     /** What the business knows about, for the structured data. */
