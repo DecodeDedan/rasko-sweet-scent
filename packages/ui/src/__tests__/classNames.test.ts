@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 /**
@@ -11,7 +12,9 @@ import { describe, expect, it } from 'vitest'
  * app. Nothing caught it: typecheck cannot see CSS, and jsdom loads no
  * stylesheet, so component tests pass either way.
  */
-const ROOT = new URL('../..', import.meta.url).pathname
+// fileURLToPath, not .pathname: on Windows .pathname is '/D:/a/...', which
+// join() turns into 'D:\D:\a\...'.
+const ROOT = fileURLToPath(new URL('../..', import.meta.url))
 
 function readAll(dir: string, extension: string): string {
   let text = ''
