@@ -20,7 +20,13 @@ export function SiteHeader() {
       <div className="rw-container rw-header__inner">
         <a className="rw-wordmark" href="#top">
           {/* Decorative: the name beside it is the accessible label. */}
-          <img className="rw-wordmark__mark" src={logo.src} width={logo.width} height={logo.height} alt="" />
+          <img
+            className="rw-wordmark__mark"
+            src={logo.src}
+            width={logo.width}
+            height={logo.height}
+            alt=""
+          />
           <span>{site.name}</span>
         </a>
 
@@ -35,7 +41,11 @@ export function SiteHeader() {
       </div>
 
       {/* How far through the page the reader is, drawn along the header's foot. */}
-      <motion.div className="rw-header__progress" style={{ scaleX: scrollYProgress }} aria-hidden="true" />
+      <motion.div
+        className="rw-header__progress"
+        style={{ scaleX: scrollYProgress }}
+        aria-hidden="true"
+      />
     </header>
   )
 }

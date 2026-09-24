@@ -39,13 +39,13 @@ export default function PrivacyPage() {
 
         <h2>What this website collects</h2>
         <p>
-          Nothing. This site is a set of static pages. It runs no analytics, sets no cookies, and has
-          no form to fill in. We do not know who visits it.
+          Nothing. This site is a set of static pages. It runs no analytics, sets no cookies, and
+          has no form to fill in. We do not know who visits it.
         </p>
         <p>
-          The map showing where the farm is comes from Google. It is not loaded until you press
-          Show map, so nothing is sent to Google unless you choose it. Once it is shown, Google
-          handles that map under{' '}
+          The map showing where the farm is comes from Google. It is not loaded until you press Show
+          map, so nothing is sent to Google unless you choose it. Once it is shown, Google handles
+          that map under{' '}
           <a
             className="rw-link"
             href="https://policies.google.com/privacy"

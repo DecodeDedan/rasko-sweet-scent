@@ -211,7 +211,11 @@ export function StemCanvas({ className, progress }: Props) {
       drift.forEach((leaf, i) => {
         // Rise with time and with the scroll, wrapping inside the box.
         const y = wrap(leaf.y + elapsed * leaf.rise + p * 5, DRIFT_BOX.y)
-        dummy.position.set(leaf.x + Math.sin(elapsed * 0.4 + leaf.phase) * 0.3, y + cameraY * 0.6, leaf.z)
+        dummy.position.set(
+          leaf.x + Math.sin(elapsed * 0.4 + leaf.phase) * 0.3,
+          y + cameraY * 0.6,
+          leaf.z,
+        )
         dummy.rotation.set(elapsed * leaf.spin + leaf.phase, elapsed * leaf.spin * 0.7, leaf.phase)
         dummy.scale.setScalar(leaf.size)
         dummy.updateMatrix()
@@ -227,7 +231,11 @@ export function StemCanvas({ className, progress }: Props) {
 
       // Travel up the stem, closing in through the middle of the scroll.
       const cameraY = MathUtils.lerp(-2.2, 2.4, p)
-      camera.position.set(pointer.x * 0.8, cameraY - pointer.y * 0.4, 12.5 - Math.sin(p * Math.PI) * 3.4)
+      camera.position.set(
+        pointer.x * 0.8,
+        cameraY - pointer.y * 0.4,
+        12.5 - Math.sin(p * Math.PI) * 3.4,
+      )
       camera.lookAt(0, cameraY * 0.7, 0)
       stemGroup.rotation.y = spin + p * SCROLL_SPIN
 

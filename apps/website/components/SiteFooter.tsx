@@ -70,7 +70,13 @@ export function SiteFooter() {
         </div>
 
         <div className="rw-footer__legal">
-          <img className="rw-footer__mark" src={logo.src} width={logo.width} height={logo.height} alt="" />
+          <img
+            className="rw-footer__mark"
+            src={logo.src}
+            width={logo.width}
+            height={logo.height}
+            alt=""
+          />
           <span>
             {year} {site.name}
           </span>

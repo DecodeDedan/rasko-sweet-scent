@@ -748,7 +748,6 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
   color: var(--rasko-disabled);
 }
 
-
 /* ------------------------------------------------------------------ *
  * Farm
  * ------------------------------------------------------------------ */
@@ -1303,4 +1302,3 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
   height: 100%;
   border: 0;
 }
-

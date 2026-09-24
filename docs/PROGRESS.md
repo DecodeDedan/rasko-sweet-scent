@@ -372,4 +372,3 @@ above the footer maps "Molo, Nakuru County, Kenya", an area rather than a
 pin, since no exact location has been given. The Google frame is created only
 when a visitor presses Show map, so the site still contacts no third party
 by default; the privacy notice was revised in the same change to say so.
-

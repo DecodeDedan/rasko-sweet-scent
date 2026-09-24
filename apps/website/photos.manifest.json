@@ -1,9 +1,5 @@
 {
-  "widths": [
-    640,
-    960,
-    1280
-  ],
+  "widths": [640, 960, 1280],
   "quality": 74,
   "source": "../../../photos",
   "photos": [

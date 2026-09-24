@@ -186,11 +186,7 @@ export const site = {
     heading: 'Send an enquiry',
     body: 'Tell us what you need and we will come back to you on availability and price.',
     /** What a useful first message contains. This is real trade guidance. */
-    checklist: [
-      'How many bunches',
-      'The date you need them',
-      'Where they are going',
-    ],
+    checklist: ['How many bunches', 'The date you need them', 'Where they are going'],
     /**
      * Pre-filled into the WhatsApp composer so the buyer starts mid-task.
      *
@@ -240,9 +236,9 @@ export const site = {
 
   contact: {
     /**
-    * Optional. International format, digits only, no plus and no spaces.
+     * Optional. International format, digits only, no plus and no spaces.
      * Kenyan mobile 0712 345 678 becomes '254712345678'.
-    * The WhatsApp action is omitted while this is null.
+     * The WhatsApp action is omitted while this is null.
      */
     whatsapp: null as Fact<string>,
     /** Optional. How the same number is written for a human to read. */
