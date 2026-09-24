@@ -319,6 +319,12 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
   menu bar: an unbundled dev binary has no app bundle to carry the display name.
 - **App icons come from `pnpm --filter @rasko/app icon`**: the monogram reversed to white
   on a deep-green rounded tile (`scripts/logo-square.mjs`, then `tauri icon`).
+- **Salaries can be paid by M-Pesa B2C** (`payroll_payouts`, migration `20260927000100`).
+  The device names only the payslip line; `app.prepare_payroll_payout` sets the amount
+  (net pay rounded down to whole shillings) and the phone. One live payout per line;
+  `unknown` means money may have moved and is never retried automatically. The app's
+  preview imports the server's own rules from `_shared/mpesa/b2c.js`. Setup:
+  `docs/mpesa-setup.md`.
 - **The first-run tour anchors on `data-tour`** attributes (sidebar and bottom
   nav items, `sync`, `help`). Renaming one without updating `onboarding/tour.ts`
   silently turns that stop into a centred dialog.

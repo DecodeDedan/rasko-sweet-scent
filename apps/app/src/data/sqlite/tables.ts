@@ -375,6 +375,31 @@ export const TABLES: readonly TableSpec[] = [
     ],
   },
   {
+    // M-Pesa B2C salary payouts (migration 20260927000100). The device names
+    // the payslip line; the server sets the amount, the phone and every status
+    // change, so the push is insert-only and pulls bring the outcome back.
+    name: 'payroll_payouts',
+    pushInsertOnly: true,
+    columns: [
+      c('id', 'uuid'),
+      c('payroll_run_id', 'uuid'),
+      c('payroll_item_id', 'uuid'),
+      c('employee_id', 'uuid'),
+      c('amount_cents', 'money'),
+      c('remainder_cents', 'money'),
+      c('msisdn', 'text'),
+      c('status', 'text'),
+      c('attempts', 'int'),
+      c('conversation_id', 'text'),
+      c('mpesa_receipt', 'text'),
+      c('result_code', 'text'),
+      c('result_desc', 'text'),
+      c('recipient_name', 'text'),
+      c('settled_at', 'ts'),
+      ...MUTABLE_BASE,
+    ],
+  },
+  {
     name: 'company_settings',
     columns: [
       c('id', 'uuid'),

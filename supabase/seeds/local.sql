@@ -5,3 +5,7 @@
 -- network. A hosted project sets its own URL instead: docs/email-setup.md.
 update app.email_dispatch
    set function_url = 'http://supabase_kong_rasko-sweetscent:8000/functions/v1/send-email';
+
+-- M-Pesa B2C salary payouts go to the local edge runtime the same way.
+update app.payout_dispatch
+   set function_url = 'http://supabase_kong_rasko-sweetscent:8000/functions/v1/mpesa-b2c';

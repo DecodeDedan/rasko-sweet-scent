@@ -44,6 +44,7 @@ import type {
   PayrollRunDetail,
   PayrollRunStatus,
 } from './types.js'
+import { PayMpesaDialog } from './PayMpesaDialog.js'
 import { usePayrollData, usePayrollRepository } from './usePayroll.js'
 
 function newId(): string {
@@ -101,6 +102,7 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
 
   const canPrepare = canPreparePayroll(role)
   const canApprove = canApprovePayroll(role)
+  const [payingRun, setPayingRun] = useState<PayrollRun | null>(null)
 
   const [refreshError, setRefreshError] = useState<string | null>(null)
 
@@ -293,6 +295,11 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
                       {next === 'approved' && canApprove ? (
                         <Button variant="ghost" onClick={() => void moveRun(run, 'approved')}>
                           Approve
+                        </Button>
+                      ) : null}
+                      {(run.status === 'approved' || run.status === 'paid') && canApprove ? (
+                        <Button variant="ghost" onClick={() => setPayingRun(run)}>
+                          Pay by M-Pesa
                         </Button>
                       ) : null}
                       {run.status === 'approved' && canApprove ? (
@@ -544,6 +551,14 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
           run={payslip.run}
           company={company}
           onClose={() => setPayslip(null)}
+        />
+      ) : null}
+      {payingRun ? (
+        <PayMpesaDialog
+          runId={payingRun.id}
+          periodLabel={`Payroll for ${periodLabel(payingRun)}`}
+          onClose={() => setPayingRun(null)}
+          onRequested={() => void reload()}
         />
       ) : null}
     </div>

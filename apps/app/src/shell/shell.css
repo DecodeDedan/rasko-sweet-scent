@@ -1266,3 +1266,48 @@
   color: var(--rasko-text-secondary);
   font-size: var(--rasko-text-12);
 }
+
+/* ------------------------------------------------ M-Pesa salary payouts */
+
+.payout-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--rasko-border);
+  border-radius: var(--rasko-radius-lg);
+}
+
+.payout-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rasko-space-3);
+  padding: var(--rasko-space-3) var(--rasko-space-4);
+}
+
+.payout-list__item + .payout-list__item {
+  border-top: 1px solid var(--rasko-border);
+}
+
+.payout-list__name {
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.payout-list__meta {
+  margin-top: 2px;
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-12);
+  overflow-wrap: anywhere;
+}
+
+.payout-list__right {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--rasko-space-2);
+}
+
+.payout-list__amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--rasko-weight-semibold);
+}

@@ -401,3 +401,12 @@ In the app, the four varieties are seeded as product categories (relabelled
 the catalogue. The trade meanings used, "standard: one straight stem" and
 "spray: a branched stem carrying side shoots", need client confirmation; they
 live in `content/site.ts` and `features/products/types.ts`.
+
+**13. Salaries paid by M-Pesa B2C.** Project owner, 2026-09-27. An extension
+beyond PRD §4 (which excludes Daraja reconciliation of incoming payments only).
+Decisions taken for sign-off: net pay is sent rounded **down** to whole
+shillings, the cents shown as still owed; only an **owner** can send, only for an
+**approved** run, and must type the exact total; a payout whose outcome is not
+certain is held as "check statement" and never retried automatically. Built and
+tested against the documented Daraja contract; not yet run against the sandbox,
+which needs Daraja keys and the hosted project. See `docs/mpesa-setup.md`.
