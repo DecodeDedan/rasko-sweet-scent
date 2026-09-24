@@ -26,8 +26,8 @@ import { ProductForm } from './ProductForm.js'
 import type { ProductFormValues } from './ProductForm.js'
 import { StockCountSheet } from './StockCountSheet.js'
 import { StockMovementForm } from './StockMovementForm.js'
-import { MOVEMENT_TYPE_LABEL, PRODUCT_UNIT_LABEL } from './types.js'
-import type { MovementType, ProductStock, StockMovement, WastageRow } from './types.js'
+import { MOVEMENT_TYPE_LABEL, PRODUCT_UNIT_LABEL, STEM_FORMS, STEM_FORM_LABEL } from './types.js'
+import type { MovementType, ProductStock, StemForm, StockMovement, WastageRow } from './types.js'
 import { useCategories, useProductList, useProductsRepository } from './useProducts.js'
 
 function newId(): string {
@@ -45,7 +45,7 @@ const TABS: ReadonlyArray<{ id: View; label: string }> = [
   { id: 'movements', label: 'Movements' },
   { id: 'wastage', label: 'Wastage' },
   { id: 'valuation', label: 'Valuation' },
-  { id: 'categories', label: 'Categories' },
+  { id: 'categories', label: 'Varieties' },
 ]
 
 /** FR-6.7: negative first, then low, then fine. */
@@ -63,10 +63,12 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
   const [view, setView] = useState<View>('catalogue')
   const [search, setSearch] = useState('')
   const [categoryId, setCategoryId] = useState<string>('all')
+  const [stemForm, setStemForm] = useState<StemForm | 'all'>('all')
 
   const { products, isLoading, error, reload } = useProductList({
     search,
     categoryId,
+    stemForm,
     view: view === 'low_stock' ? 'low_stock' : 'catalogue',
   })
 
@@ -147,7 +149,12 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
   const catalogueColumns = [
     { key: 'sku', header: 'SKU', render: (p: ProductStock) => p.sku },
     { key: 'name', header: 'Product', render: (p: ProductStock) => p.name },
-    { key: 'category', header: 'Category', render: (p: ProductStock) => p.categoryName },
+    { key: 'category', header: 'Variety', render: (p: ProductStock) => p.categoryName },
+    {
+      key: 'form',
+      header: 'Form',
+      render: (p: ProductStock) => (p.stem_form ? STEM_FORM_LABEL[p.stem_form] : 'Not set'),
+    },
     {
       key: 'price',
       header: 'Price',
@@ -189,14 +196,14 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
         search
           ? 'Search by name or SKU.'
           : categories.length === 0
-            ? 'Every product belongs to a category. Add your first category, then the stems and bunches you sell.'
-            : 'Add the stems and bunches you sell. Stock is built up from recorded movements.'
+            ? 'Every product belongs to a variety. Add one in Varieties, then the standard and spray stems you sell.'
+            : 'Add each variety you sell as standard, spray or both, with its own price. Stock is built up from recorded movements.'
       }
       action={
         canWrite && !search ? (
           categories.length === 0 ? (
             <Button variant="primary" onClick={() => setView('categories')}>
-              Add a category
+              Add a variety
             </Button>
           ) : (
             <Button variant="primary" onClick={() => setIsCreating(true)}>
@@ -254,12 +261,21 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
                 onChange={(e) => setSearch(e.target.value)}
               />
               <Select
-                aria-label="Filter by category"
+                aria-label="Filter by variety"
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 options={[
-                  { value: 'all', label: 'All categories' },
+                  { value: 'all', label: 'All varieties' },
                   ...categories.map((c) => ({ value: c.id, label: c.name })),
+                ]}
+              />
+              <Select
+                aria-label="Filter by form"
+                value={stemForm}
+                onChange={(e) => setStemForm(e.target.value as StemForm | 'all')}
+                options={[
+                  { value: 'all', label: 'Standard and spray' },
+                  ...STEM_FORMS.map((form) => ({ value: form, label: STEM_FORM_LABEL[form] })),
                 ]}
               />
             </div>

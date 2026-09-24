@@ -23,14 +23,22 @@ import { buildLeafGeometry, seeded, wrap } from '../lib/leaves'
 import { prefersReducedMotion } from '../lib/motion'
 
 /**
- * A Baby Blue stem, built rather than photographed, that the reader moves
- * through by scrolling.
+ * A eucalyptus stem, built rather than photographed, that the reader moves
+ * through by scrolling. It reshapes to each of the four varieties in turn, in
+ * step with the text beside it.
  *
  * WHY THIS AND NOT A DECORATIVE 3D OBJECT
  * The signature of this plant is the rhythm of its leaves: opposite pairs,
  * each a quarter turn from the one below, all the way up the stem. A
  * photograph flattens that into a silhouette. Turning the arrangement is the
  * one thing a 3D view shows that a photograph cannot.
+ *
+ * FOUR LEAVES, ONE STEM
+ * Each variety is a set of leaf parameters taken from its description in
+ * content/site.ts: Baby Blue round and held flat, Gunni long, narrow and
+ * hanging, Parvifolia small and close, Globulus broad. The shape blends from
+ * one to the next during the same stretch of scroll in which the text hands
+ * off, so the leaf changes as the name does.
  *
  * WHO DRIVES IT
  * `progress` (0 to 1) is written by the GSAP ScrollTrigger that pins the
@@ -46,6 +54,46 @@ import { prefersReducedMotion } from '../lib/motion'
 type Props = {
   className?: string
   progress: MutableRefObject<number>
+  /** How many varieties the pinned scroll steps through (components/StemStudy.tsx). */
+  count: number
+}
+
+/**
+ * Leaf parameters per variety, in content order. The leaf is a disc: after
+ * the stem's turn its local X runs out from the stem, so `length` stretches
+ * it outward and `width` across. `droop` tips the leaf's outer end down, in
+ * degrees (Gunni hangs; Baby Blue is held flat against the stem). `tone`
+ * multiplies the leaf colour within the logo's greens, because the palette is
+ * locked and cannot show silver, copper or red.
+ */
+const LEAF_FORMS = [
+  { width: 1, length: 1, size: 1, droop: 0, reach: 0.7, tone: '#FFFFFF' }, // Baby Blue
+  { width: 0.34, length: 1.55, size: 1, droop: 42, reach: 1.05, tone: '#DCEBD7' }, // Gunni
+  { width: 0.45, length: 0.8, size: 0.55, droop: 14, reach: 0.5, tone: '#F2F7F0' }, // Parvifolia
+  { width: 1.15, length: 1, size: 1.3, droop: 8, reach: 1, tone: '#C3D9BF' }, // Globulus
+] as const
+type LeafForm = (typeof LEAF_FORMS)[number]
+
+/**
+ * Where on the text's timeline the panels hand off: panel k arrives at time k
+ * (StemStudy's timeline), the last one is held for 0.6, and the whole spans
+ * progress 0 to 1. The shape blends through the same window, just before k.
+ */
+const HANDOFF_FROM = 0.35
+const HANDOFF_TO = 0.05
+const TIMELINE_TAIL = 0.3
+
+function formAt(p: number, count: number): { a: LeafForm; b: LeafForm; mix: number } {
+  const forms = LEAF_FORMS.slice(0, Math.max(1, Math.min(count, LEAF_FORMS.length)))
+  const time = p * Math.max(1, forms.length - TIMELINE_TAIL)
+  let position = 0
+  for (let k = 1; k < forms.length; k += 1) {
+    position += MathUtils.smoothstep(time, k - HANDOFF_FROM, k - HANDOFF_TO)
+  }
+  const index = Math.min(Math.floor(position), forms.length - 1)
+  const a = forms[index] ?? LEAF_FORMS[0]
+  const b = forms[Math.min(index + 1, forms.length - 1)] ?? a
+  return { a, b, mix: position - index }
 }
 
 /** Leaf pairs up the stem. Each pair is a quarter turn from the one below. */
@@ -63,15 +111,15 @@ const DRIFT_BOX = { x: 7, y: 10, z: 5 } as const
 const IDLE_SPIN = 0.12
 /** Total turn the stem makes across the pinned scroll. */
 const SCROLL_SPIN = Math.PI * 2.25
-/** Where the pairs start to loosen from the stem, and how far they travel. */
-const LOOSEN_FROM = 0.62
+/** Where the pairs start to loosen from the stem (after the last variety), and how far. */
+const LOOSEN_FROM = 0.93
 const LOOSEN_DISTANCE = 1.1
 /** Wider than this, the canvas fills the section and the stem is framed right of centre. */
 const WIDE_FROM = 896
 /** Share of the canvas width the view shifts by, so the stem clears the text. */
 const WIDE_SHIFT = 0.24
-/** Static pose for visitors who asked for reduced motion. */
-const REDUCED_PROGRESS = 0.35
+/** Static pose for visitors who asked for reduced motion: the first variety. */
+const REDUCED_PROGRESS = 0
 /** Fraction of the gap to the pointer target closed each frame. */
 const POINTER_EASE = 0.06
 
@@ -79,7 +127,7 @@ const STEM_COLOUR = '#1F5C3D'
 const LEAF_COLOURS = ['#70A287', '#3E8E59'] as const
 const LEAF_LIFT = '#CFE3CC'
 
-export function StemCanvas({ className, progress }: Props) {
+export function StemCanvas({ className, progress, count }: Props) {
   const hostRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -189,17 +237,38 @@ export function StemCanvas({ className, progress }: Props) {
     let spin = 0
     let elapsed = 0
 
+    const toneA = new Color()
+    const toneB = new Color()
     const placePairs = (p: number) => {
       const loosen = MathUtils.smoothstep(p, LOOSEN_FROM, 1)
+      const { a, b, mix } = formAt(p, count)
+      const blend = (key: 'width' | 'length' | 'size' | 'droop' | 'reach') =>
+        MathUtils.lerp(a[key], b[key], mix)
+      const width = blend('width')
+      const length = blend('length')
+      const size = blend('size')
+      const droop = MathUtils.degToRad(blend('droop'))
+      const offset = LEAF_OFFSET * blend('reach')
+      leafMaterial.color.copy(toneA.set(a.tone).lerp(toneB.set(b.tone), mix))
+
       pairs.forEach((pair, node) => {
         const away = loosen * pair.release
+        const radius = pair.radius * size
         for (const side of [0, 1]) {
           const angle = pair.angle + side * Math.PI
-          const reach = LEAF_OFFSET + away * LOOSEN_DISTANCE
-          dummy.position.set(Math.cos(angle) * reach, pair.y + away * 0.5, Math.sin(angle) * reach)
+          // The centre sits half a leaf out along the drooped line, so the
+          // base of a long hanging leaf still meets the stem.
+          const out = offset * Math.max(1, length) * Math.cos(droop) + away * LOOSEN_DISTANCE
+          const down = offset * Math.max(1, length) * Math.sin(droop)
+          dummy.position.set(
+            Math.cos(angle) * out,
+            pair.y - down + away * 0.5,
+            Math.sin(angle) * out,
+          )
           dummy.rotation.set(0, -angle, 0)
+          dummy.rotateZ(-droop * (1 - away))
           dummy.rotateX(MathUtils.degToRad(-72 + away * 50))
-          dummy.scale.setScalar(pair.radius)
+          dummy.scale.set(radius * length, radius * width, radius)
           dummy.updateMatrix()
           pairLeaves.setMatrixAt(node * 2 + side, dummy.matrix)
         }
@@ -294,7 +363,7 @@ export function StemCanvas({ className, progress }: Props) {
       renderer.dispose()
       renderer.domElement.remove()
     }
-  }, [progress])
+  }, [progress, count])
 
   return <div ref={hostRef} className={className} aria-hidden="true" />
 }

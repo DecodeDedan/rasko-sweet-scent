@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Button, Field, Input } from '@rasko/ui'
+import { Button, Field, PasswordInput } from '@rasko/ui'
 
 import { useAuth } from '../../auth/AuthProvider.js'
 import { AuthLayout } from './AuthLayout.js'
@@ -60,8 +60,7 @@ export function ForcePasswordChangeScreen() {
         ) : null}
 
         <Field label="New password" hint={`At least ${MIN_PASSWORD_LENGTH} characters.`}>
-          <Input
-            type="password"
+          <PasswordInput
             autoComplete="new-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
@@ -70,8 +69,7 @@ export function ForcePasswordChangeScreen() {
         </Field>
 
         <Field label="Confirm new password">
-          <Input
-            type="password"
+          <PasswordInput
             autoComplete="new-password"
             value={confirmation}
             onChange={(event) => setConfirmation(event.target.value)}

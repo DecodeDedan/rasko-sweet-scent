@@ -25,7 +25,7 @@ export async function openBrowserDatabase(): Promise<SqlDatabase> {
   const db = new SQL.Database()
   let depth = 0
 
-  return {
+  const adapter: SqlDatabase = {
     async execute(sql, params = []) {
       if (params.length === 0) {
         db.run(sql)
@@ -51,7 +51,7 @@ export async function openBrowserDatabase(): Promise<SqlDatabase> {
       if (depth > 0) {
         depth += 1
         try {
-          await work()
+          await work(adapter)
         } finally {
           depth -= 1
         }
@@ -60,7 +60,7 @@ export async function openBrowserDatabase(): Promise<SqlDatabase> {
       depth = 1
       db.run('BEGIN')
       try {
-        await work()
+        await work(adapter)
         db.run('COMMIT')
       } catch (cause) {
         db.run('ROLLBACK')
@@ -74,4 +74,5 @@ export async function openBrowserDatabase(): Promise<SqlDatabase> {
       db.close()
     },
   }
+  return adapter
 }

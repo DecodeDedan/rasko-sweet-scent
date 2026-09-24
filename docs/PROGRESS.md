@@ -391,3 +391,13 @@ sitemap.xml and share cards. The domain (`site.url`) is still unconfirmed and
 gates the canonical link, sitemap entries and share image. The off-site steps
 that decide ranking (Google Business Profile, Search Console, listings) are in
 `docs/seo.md` and need the business to act.
+
+**12. Four varieties, each standard or spray.** Project owner, 2026-09-26. The
+pinned 3D study now walks all four varieties (Baby Blue, Gunni, Parvifolia,
+Globulus) instead of Baby Blue alone, and every variety is shown as cut both as a
+standard stem and as a spray. The enquiry checklist asks which variety and form.
+In the app, the four varieties are seeded as product categories (relabelled
+"Varieties") and each product records its form, with a filter and a column in
+the catalogue. The trade meanings used, "standard: one straight stem" and
+"spray: a branched stem carrying side shoots", need client confirmation; they
+live in `content/site.ts` and `features/products/types.ts`.

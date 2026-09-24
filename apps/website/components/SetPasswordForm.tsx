@@ -3,7 +3,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Button, Field, Input } from '@rasko/ui'
+import { Button, Field, PasswordInput } from '@rasko/ui'
 
 /** Same rule the app states (ForcePasswordChangeScreen) and the server
  *  enforces (supabase/config.toml minimum_password_length). */
@@ -169,8 +169,7 @@ export function SetPasswordForm() {
             ) : null}
 
             <Field label="New password" hint={`At least ${MIN_PASSWORD_LENGTH} characters.`}>
-              <Input
-                type="password"
+              <PasswordInput
                 autoComplete="new-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -179,8 +178,7 @@ export function SetPasswordForm() {
             </Field>
 
             <Field label="Confirm new password">
-              <Input
-                type="password"
+              <PasswordInput
                 autoComplete="new-password"
                 value={confirmation}
                 onChange={(event) => setConfirmation(event.target.value)}

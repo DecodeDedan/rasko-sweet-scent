@@ -305,6 +305,16 @@ max_frequency = "5s"
 # enabled = true
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
+# Every Auth email (reset, invite, password changed) is handed to our own
+# function instead of Auth's single SMTP server, so it gets the Brevo -> Resend
+# -> Gmail failover the client emails use. The secret signs each call; it lives
+# in supabase/.env (gitignored) and, identically, supabase/functions/.env.
+# Hosted: Dashboard > Authentication > Hooks, see docs/email-setup.md.
+[auth.hook.send_email]
+enabled = true
+uri = "http://host.docker.internal:54321/functions/v1/send-auth-email"
+secrets = "env(SEND_EMAIL_HOOK_SECRET)"
+
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
 [auth.sms.twilio]
 enabled = false
@@ -437,4 +447,9 @@ enabled = true
 # The function trusts only the row id and re-reads everything with the service
 # key; see supabase/functions/send-email/index.ts.
 [functions.send-email]
+verify_jwt = false
+
+# Called by Supabase Auth's Send Email Hook with a signed payload, not by the
+# app, so there is no user JWT; the function verifies the hook signature.
+[functions.send-auth-email]
 verify_jwt = false

@@ -15,6 +15,8 @@ export interface SyncOutcome {
   /** Set when the server refused this device — the T4 signal. */
   authFailed: boolean
   error: string | null
+  /** The server was a different database, so the local copy was started over. */
+  replicaReset: boolean
 }
 
 export interface SyncOptions {
@@ -126,10 +128,10 @@ async function pushBatch(
     }
 
     if (accepted.length > 0) {
-      await db.transaction(async () => {
-        await removeEntries(db, accepted)
+      await db.transaction(async (tx) => {
+        await removeEntries(tx, accepted)
         const placeholders = acceptedIds.map(() => '?').join(', ')
-        await db.execute(
+        await tx.execute(
           `UPDATE ${spec.name} SET sync_status = 'synced' WHERE id IN (${placeholders})`,
           acceptedIds,
         )
@@ -198,22 +200,84 @@ async function pullTable(
     // this window only opens for a write that arrives mid-cycle.
     const pending = await pendingIds(db, spec.name)
 
-    await db.transaction(async () => {
+    await db.transaction(async (tx) => {
       for (const row of result.rows) {
         const id = String(row['id'] ?? '')
         if (pending.has(id)) continue
         const { values } = encodeRow(spec, row)
-        await db.execute(statement, values)
+        await tx.execute(statement, values)
         outcome.pulled += 1
       }
 
-      if (result.cursor) await writeCursor(db, spec.name, result.cursor, options.now())
+      if (result.cursor) await writeCursor(tx, spec.name, result.cursor, options.now())
     })
 
     cursor = result.cursor
     if (!result.hasMore) return true
   }
 
+  return true
+}
+
+const INSTANCE_KEY = 'server_instance'
+
+/**
+ * Before anything is pushed: is the server still the database this copy was
+ * made from? If it has been replaced (migration 20260926000300), the local
+ * rows, the unsent writes and the cursors all describe a database that no
+ * longer exists. Pushing them would plant rows the new server never had, and
+ * keeping them shows the user records that are not there. So the copy is
+ * cleared and the pull that follows rebuilds it from the server.
+ *
+ * The first cycle after this check shipped has no stored id and simply
+ * records the current one: it cannot tell a stale copy from a good one, and a
+ * good one must never be thrown away on a guess.
+ *
+ * Returns false when the server cannot be reached, which ends the cycle the
+ * same way a failed push would.
+ */
+async function ensureSameServer(
+  db: SqlDatabase,
+  remote: SyncRemote,
+  outcome: SyncOutcome,
+): Promise<boolean> {
+  let current: string | null
+  try {
+    current = await remote.instanceId()
+  } catch (cause) {
+    if (cause instanceof SyncAuthError) {
+      outcome.authFailed = true
+      outcome.error = cause.message
+      return false
+    }
+    if (cause instanceof SyncTransportError) {
+      outcome.error = cause.message
+      return false
+    }
+    throw cause
+  }
+  if (current === null) return true
+
+  const [stored] = await db.select<{ value: string }>(
+    'SELECT value FROM local_meta WHERE key = ?',
+    [INSTANCE_KEY],
+  )
+  if (stored?.value === current) return true
+
+  await db.transaction(async (tx) => {
+    if (stored) {
+      const localOnly = ['outbox', 'outbox_dead', 'sync_state']
+      for (const table of [...TABLES.map((spec) => spec.name), ...localOnly]) {
+        await tx.execute(`DELETE FROM ${table}`)
+      }
+    }
+    await tx.execute(
+      `INSERT INTO local_meta (key, value) VALUES (?, ?)
+       ON CONFLICT (key) DO UPDATE SET value = excluded.value`,
+      [INSTANCE_KEY, current],
+    )
+  })
+  outcome.replicaReset = Boolean(stored)
   return true
 }
 
@@ -240,7 +304,10 @@ export async function runSync(
     dead: 0,
     authFailed: false,
     error: null,
+    replicaReset: false,
   }
+
+  if (!(await ensureSameServer(db, remote, outcome))) return outcome
 
   const pushed = await pushPhase(db, remote, outcome, resolved)
   if (!pushed) return outcome

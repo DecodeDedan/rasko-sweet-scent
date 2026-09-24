@@ -1,4 +1,4 @@
-import type { SqlDatabase } from '../sqlite/types.js'
+import type { SqlDatabase, SqlExecutor } from '../sqlite/types.js'
 
 /**
  * The outbox: an ordered local journal of writes waiting to reach the server
@@ -46,7 +46,7 @@ function toEntry(row: OutboxRow): OutboxEntry {
  * 10 s on 3G" (PRD §7) stops being achievable.
  */
 export async function enqueue(
-  db: SqlDatabase,
+  db: SqlExecutor,
   entityTable: string,
   entityId: string,
   op: OutboxOp,
@@ -103,7 +103,7 @@ export async function hasPending(
   return Number(rows[0]?.n ?? 0) > 0
 }
 
-export async function pendingIds(db: SqlDatabase, entityTable: string): Promise<Set<string>> {
+export async function pendingIds(db: SqlExecutor, entityTable: string): Promise<Set<string>> {
   const rows = await db.select<{ entity_id: string }>(
     'SELECT entity_id FROM outbox WHERE entity_table = ?',
     [entityTable],
@@ -111,14 +111,14 @@ export async function pendingIds(db: SqlDatabase, entityTable: string): Promise<
   return new Set(rows.map((row) => row.entity_id))
 }
 
-export async function removeEntries(db: SqlDatabase, seqs: number[]): Promise<void> {
+export async function removeEntries(db: SqlExecutor, seqs: number[]): Promise<void> {
   if (seqs.length === 0) return
   const placeholders = seqs.map(() => '?').join(',')
   await db.execute(`DELETE FROM outbox WHERE seq IN (${placeholders})`, seqs)
 }
 
 export async function recordFailure(
-  db: SqlDatabase,
+  db: SqlExecutor,
   seqs: number[],
   message: string,
 ): Promise<void> {
@@ -133,7 +133,7 @@ export async function recordFailure(
 
 /** Parks an entry the server will never accept, so it stops blocking the queue. */
 export async function moveToDead(
-  db: SqlDatabase,
+  db: SqlExecutor,
   entry: OutboxEntry,
   error: string,
   now: string = new Date().toISOString(),

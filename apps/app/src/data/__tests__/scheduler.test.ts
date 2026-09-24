@@ -112,6 +112,7 @@ describe('sync triggers', () => {
         return remote.pull(...args)
       },
       push: remote.push,
+      instanceId: remote.instanceId,
     }
 
     const overlapping = new SyncScheduler(db, slow, { onEvent: (e) => events.push(e) })

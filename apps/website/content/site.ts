@@ -29,6 +29,13 @@ import type { PhotoName } from './photos'
 /** A fact awaiting confirmation from the client. Rendered as nothing. */
 export type Fact<T> = T | null
 
+/**
+ * How a variety is cut. Project owner, 2026-09-26: every variety is sold both
+ * ways. Trade meanings, for client sign-off: a standard is one straight stem;
+ * a spray is a branched stem carrying side shoots.
+ */
+export type StemForm = 'standard' | 'spray'
+
 export type Variety = {
   /**
    * What we call it on the page. These two names describe what is visible in
@@ -43,6 +50,13 @@ export type Variety = {
   readonly photo: PhotoName
   /** Describes the plant. Safe to write from the photographs. */
   readonly description: string
+  /** The forms it is cut in (standard, spray, or both). */
+  readonly forms: readonly StemForm[]
+  /**
+   * What the pinned 3D study says while this variety is on screen. Each note
+   * restates the description, so the study makes no claim of its own.
+   */
+  readonly study: readonly { readonly title: string; readonly body: string }[]
   /** Specification rows. A null value drops its row from the table. */
   readonly spec: {
     /** e.g. "50 to 70 cm" */
@@ -77,9 +91,9 @@ export const site = {
    * trade buyer types: Baby Blue, eucalyptus, foliage, Molo, Nakuru, Kenya.
    */
   seo: {
-    title: 'Rasko Sweet Scent | Baby Blue Eucalyptus Foliage, Kenya',
+    title: 'Rasko Sweet Scent | Baby Blue, Gunni, Parvifolia and Globulus Eucalyptus, Kenya',
     description:
-      'Rasko Sweet Scent grows Baby Blue, Gunni, Parvifolia and Globulus eucalyptus in Molo, Nakuru County, and supplies fresh-cut foliage to florists and floral decorators in Kenya.',
+      'Rasko Sweet Scent grows Baby Blue, Gunni, Parvifolia and Globulus eucalyptus in Molo, Nakuru County, cut as standard stems or sprays, and supplies fresh foliage to florists and floral decorators in Kenya.',
     /** What the business knows about, for the structured data. */
     topics: [
       'Eucalyptus',
@@ -108,7 +122,13 @@ export const site = {
     heading: 'What we grow',
     // Four varieties, confirmed by the project owner 2026-09-24 with a named
     // photograph of each. Descriptions state only what those photographs show.
-    intro: 'Four eucalyptus varieties, all grown in open field beds.',
+    intro:
+      'Four eucalyptus varieties, all grown in open field beds, and every one of them cut as a standard stem or a spray.',
+    /** Shown once beside the cards, so each card can simply say "Standard · Spray". */
+    forms: {
+      standard: { name: 'Standard', body: 'One straight stem, with leaf along its length.' },
+      spray: { name: 'Spray', body: 'A branched stem carrying side shoots.' },
+    } satisfies Record<StemForm, { name: string; body: string }>,
     items: [
       {
         label: 'Silver-blue eucalyptus',
@@ -118,6 +138,17 @@ export const site = {
         photo: 'variety-silver',
         description:
           'Round leaves in close opposite pairs, matt silver over blue-green, running the whole length of the stem. It keeps much of its colour and its scent as it dries.',
+        forms: ['standard', 'spray'],
+        study: [
+          {
+            title: 'Round leaves, in pairs',
+            body: 'Close opposite pairs from base to tip, each at a right angle to the one below, which is why a stem looks full from any side.',
+          },
+          {
+            title: 'Silver over blue-green',
+            body: 'A matt, powdery finish over blue-green. It keeps much of its colour and its scent as it dries.',
+          },
+        ],
         spec: {
           stemLength: null,
           bunchSize: null,
@@ -132,6 +163,17 @@ export const site = {
         photo: 'variety-gunni',
         description:
           'Long, narrow green leaves on slender stems, with copper and orange new growth at the tips.',
+        forms: ['standard', 'spray'],
+        study: [
+          {
+            title: 'Long and narrow',
+            body: 'Long, narrow green leaves carried on slender stems.',
+          },
+          {
+            title: 'Copper at the tips',
+            body: 'New growth comes through copper and orange at the tip of each stem.',
+          },
+        ],
         spec: {
           stemLength: null,
           bunchSize: null,
@@ -146,6 +188,17 @@ export const site = {
         photo: 'variety-parvifolia',
         description:
           'Small, pointed blue-green leaves set closely along fine, branching stems. A light, airy filler.',
+        forms: ['standard', 'spray'],
+        study: [
+          {
+            title: 'Small and pointed',
+            body: 'Small, pointed blue-green leaves, set closely along the stem.',
+          },
+          {
+            title: 'Fine and branching',
+            body: 'Fine stems that branch as they grow, which is what makes it a light, airy filler.',
+          },
+        ],
         spec: {
           stemLength: null,
           bunchSize: null,
@@ -160,6 +213,17 @@ export const site = {
         photo: 'variety-globulus',
         description:
           'Broad, rounded green leaves on red stems, the new growth coming through bronze and red.',
+        forms: ['standard', 'spray'],
+        study: [
+          {
+            title: 'Broad and rounded',
+            body: 'Broad, rounded green leaves along the length of the stem.',
+          },
+          {
+            title: 'Red stems, bronze growth',
+            body: 'The stems are red, and new growth comes through bronze and red.',
+          },
+        ],
         spec: {
           stemLength: null,
           bunchSize: null,
@@ -220,33 +284,23 @@ export const site = {
   },
 
   /**
-   * The pinned 3D study of the lead variety. Each note describes the plant
-   * itself, restating what the variety description already says, so the
-   * section makes no claim about the business.
+   * The pinned 3D study: all four varieties in turn, the stem reshaping to
+   * each one's leaf. The notes live on each variety (`study` above).
    */
   study: {
-    eyebrow: 'The variety we are known for',
-    notes: [
-      {
-        title: 'Round leaves, in pairs',
-        body: 'The leaves grow in close opposite pairs, one either side of the stem, from the base to the tip.',
-      },
-      {
-        title: 'Each pair turns a quarter',
-        body: 'Every pair sits at a right angle to the one below it, which is why a stem looks full from any side.',
-      },
-      {
-        title: 'Silver over blue-green',
-        body: 'A matt, powdery finish over blue-green. It keeps much of its colour and its scent as it dries.',
-      },
-    ],
+    eyebrow: 'The four we are known for',
   },
 
   enquiry: {
     heading: 'Send an enquiry',
     body: 'Tell us what you need and we will come back to you on availability and price.',
     /** What a useful first message contains. This is real trade guidance. */
-    checklist: ['How many bunches', 'The date you need them', 'Where they are going'],
+    checklist: [
+      'Which variety, and standard or spray',
+      'How many bunches',
+      'The date you need them',
+      'Where they are going',
+    ],
     /**
      * Pre-filled into the WhatsApp composer so the buyer starts mid-task.
      *

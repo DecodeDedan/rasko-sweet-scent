@@ -46,18 +46,26 @@ export function setupItems(facts: SetupFacts, role: Role): SetupItem[] {
       module: 'settings',
       action: 'Open settings',
     },
-    {
-      id: 'category',
-      label: 'Create a product category',
-      detail: 'Group what you sell, for example by variety. Every product sits in one.',
-      isDone: facts.categoryCount > 0,
-      module: 'products',
-      action: 'Open products',
-    },
+    // The four varieties arrive with the database (migration 20260926000100),
+    // so there is no "create a variety" step; a device that has not synced yet
+    // still shows it, because an empty list really does block adding products.
+    ...(facts.categoryCount > 0
+      ? []
+      : [
+          {
+            id: 'category',
+            label: 'Sync your varieties',
+            detail:
+              'Connect once so Baby Blue, Gunni, Parvifolia and Globulus arrive on this device.',
+            isDone: false,
+            module: 'products' as const,
+            action: 'Open products',
+          },
+        ]),
     {
       id: 'product',
       label: 'Add your first product',
-      detail: 'A stem or bunch you sell, with its price and a low-stock level.',
+      detail: 'A variety as standard or spray, with its own price and low-stock level.',
       isDone: facts.productCount > 0,
       module: 'products',
       action: 'Open products',

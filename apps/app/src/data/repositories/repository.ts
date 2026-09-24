@@ -139,15 +139,15 @@ export class Repository<T extends Record<string, unknown> = Record<string, unkno
       .map((column) => `${column} = excluded.${column}`)
       .join(', ')
 
-    await this.db.transaction(async () => {
-      await this.db.execute(
+    await this.db.transaction(async (tx) => {
+      await tx.execute(
         `INSERT INTO ${this.spec.name} (${columns.join(', ')}, sync_status)
          VALUES (${placeholders}, 'pending')
          ON CONFLICT (id) DO UPDATE SET ${assignments}, sync_status = 'pending'`,
         values,
       )
       // The payload is the server-shaped row: what the push will send verbatim.
-      await enqueue(this.db, this.spec.name, String(row['id']), op, row, this.now())
+      await enqueue(tx, this.spec.name, String(row['id']), op, row, this.now())
     })
 
     this.context.onLocalWrite?.()

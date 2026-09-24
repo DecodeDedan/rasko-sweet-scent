@@ -227,12 +227,16 @@ function footer(company) {
  *   assetBaseUrl: string,
  *   senderName?: string|null,
  *   withSignature?: boolean,
+ *   logoSrc?: string,
  * }} input  heading is plain text (escaped here); bodyHtml is trusted markup.
+ *   logoSrc overrides the hosted logo: the functions pass the cid of the logo
+ *   they attach (logo.js), the app's preview passes a data URI.
  */
 export function renderEmail(input) {
   const company = input.company ?? {}
   const companyName = company.company_name || 'Rasko Sweet Scent'
-  const logo = `${String(input.assetBaseUrl).replace(/\/+$/, '')}/email/rss-logo.png`
+  const logo =
+    input.logoSrc ?? `${String(input.assetBaseUrl).replace(/\/+$/, '')}/email/rss-logo.png`
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

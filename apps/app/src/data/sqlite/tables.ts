@@ -117,6 +117,8 @@ export const TABLES: readonly TableSpec[] = [
       c('sku', 'text'),
       c('name', 'text'),
       c('category_id', 'uuid'),
+      // 'standard' | 'spray' (migration 20260926000100).
+      c('stem_form', 'text'),
       c('unit', 'text'),
       c('cost_price_cents', 'money'),
       c('selling_price_cents', 'money'),

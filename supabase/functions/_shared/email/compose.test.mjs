@@ -73,3 +73,9 @@ test('formats money and dates the PRD way', () => {
   assert.equal(formatKes(1250000), 'KES 12,500.00')
   assert.equal(formatDate('2026-09-25'), '25/09/2026')
 })
+
+test('points the logo at the attached image when sending, not at a hosted URL', () => {
+  const email = composeEmail(template, { ...facts, logoSrc: 'cid:rss-logo@raskosweetscent' })
+  assert.match(email.html, /src="cid:rss-logo@raskosweetscent"/)
+  assert.doesNotMatch(email.html, /example\.test\/email\/rss-logo\.png/)
+})

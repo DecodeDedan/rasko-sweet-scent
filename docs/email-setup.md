@@ -304,3 +304,37 @@ Locally, `supabase/functions/.env` points SMTP at the stack's Mailpit
 (`inbucket:1025`; Deno cannot resolve the underscored container name) and
 `supabase/seeds/local.sql` sets the dispatch URL on every `db reset`. Sent mail
 appears at http://127.0.0.1:54324.
+
+## Delivery and failover (all email, auth included)
+
+Supabase Auth takes a single SMTP server and cannot fail over, so it does not
+send mail in this project. `[auth.hook.send_email]` hands every reset,
+invitation and "password changed" notice to the `send-auth-email` function,
+which verifies the hook signature, renders the branded email
+(`_shared/email/auth.js`) and sends it through `_shared/email/transport.js`.
+Client email (`send-email`) uses the same transport.
+
+The transport tries `EMAIL_PROVIDERS` in order (default `brevo,resend,gmail`)
+and moves to the next the moment one refuses. A provider that fails is
+recorded in `email_provider_health` and skipped outright by every function
+instance until its cooldown ends: an hour after a quota or rate-limit refusal,
+two minutes after anything else. So once Brevo is out of its daily 300, the
+next email goes straight to Resend without waiting on Brevo first. A refused
+recipient address is not failed over, because every provider would refuse it.
+If every healthy provider fails, resting ones are tried before giving up.
+
+Credentials are function secrets. Locally, fill in `supabase/functions/.env`
+(gitignored; the slots are already there), then `supabase stop && supabase start`.
+With no provider filled in, mail goes to Mailpit so development still works.
+Mailpit is never used alongside a real provider.
+
+| Provider | Values                                            | Notes                                                                            |
+| -------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Brevo    | `BREVO_SMTP_USER`, `BREVO_SMTP_KEY`, `BREVO_FROM` | SMTP & API > SMTP. The From address must be a verified sender. 300 a day free.   |
+| Resend   | `RESEND_API_KEY`, `RESEND_FROM`                   | Needs a verified domain to send to anyone but the account holder.                |
+| Gmail    | `GMAIL_USER`, `GMAIL_APP_PASSWORD`                | Last resort. App password needs 2-Step Verification. Sends as the Gmail account. |
+
+Hosted: `supabase functions deploy send-auth-email --no-verify-jwt`, set the
+same variables with `supabase secrets set`, then in Dashboard > Authentication >
+Hooks enable "Send Email", point it at the function and copy the generated
+secret into `supabase secrets set SEND_EMAIL_HOOK_SECRET=...`.

@@ -7,12 +7,13 @@
 // sends only a row it can move from 'queued' to 'sending' in one conditional
 // UPDATE, which is what makes a duplicate or forged call harmless.
 //
-// SMTP: Brevo in production, the local Mailpit in development. Settings are
+// Delivery fails over Brevo -> Resend -> Gmail (_shared/email/transport.js),
+// with the local Mailpit only when none is configured. Credentials are
 // function secrets (docs/email-setup.md); nothing is hardcoded.
 import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2'
-import nodemailer from 'npm:nodemailer@6.9.16'
 
 import { composeEmail } from '../_shared/email/compose.js'
+import { INLINE_LOGO_SRC, deliver, providers } from '../_shared/email/deliver.ts'
 import {
   detailsTable,
   formatDate,
@@ -59,28 +60,6 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { 'Content-Type': 'application/json' },
   })
-}
-
-function smtpConfig() {
-  const host = Deno.env.get('SMTP_HOST')
-  const from = Deno.env.get('EMAIL_FROM')
-  const assetBaseUrl = Deno.env.get('SITE_URL')
-  if (!host || !from || !assetBaseUrl) return null
-  const port = Number(Deno.env.get('SMTP_PORT') ?? '587')
-  const user = Deno.env.get('SMTP_USER')
-  return {
-    transport: {
-      host,
-      port,
-      secure: Deno.env.get('SMTP_SECURE') === 'true' || port === 465,
-      auth: user ? { user, pass: Deno.env.get('SMTP_PASS') ?? '' } : undefined,
-      connectionTimeout: SMTP_TIMEOUT_MS,
-      greetingTimeout: SMTP_TIMEOUT_MS,
-      socketTimeout: SMTP_TIMEOUT_MS,
-    },
-    from,
-    assetBaseUrl,
-  }
 }
 
 async function one(
@@ -274,10 +253,12 @@ Deno.serve(async (request) => {
 
   const url = Deno.env.get('SUPABASE_URL')
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  const smtp = smtpConfig()
+  const assetBaseUrl = Deno.env.get('SITE_URL')
   // Not configured yet: leave the row queued and unclaimed. The sweep retries
   // every minute, so the backlog goes out once the secrets are set.
-  if (!url || !serviceKey || !smtp) return json({ error: 'Email is not configured.' }, 503)
+  if (!url || !serviceKey || !assetBaseUrl || providers().length === 0) {
+    return json({ error: 'Email is not configured.' }, 503)
+  }
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
 
@@ -321,29 +302,38 @@ Deno.serve(async (request) => {
         personalNote: email.personal_note,
         company,
         senderName: sender?.full_name ?? null,
-        assetBaseUrl: smtp.assetBaseUrl,
+        assetBaseUrl,
+        logoSrc: INLINE_LOGO_SRC,
       },
     )
 
-    const info = await nodemailer.createTransport(smtp.transport).sendMail({
-      from: smtp.from,
-      to: email.to_name ? { name: email.to_name, address: email.to_email } : email.to_email,
-      replyTo: company.email ?? Deno.env.get('EMAIL_REPLY_TO') ?? undefined,
-      subject: message.subject,
-      html: message.html,
-      text: message.text,
-    })
+    const sent = await deliver(
+      {
+        to: email.to_name ? { name: email.to_name, address: email.to_email } : email.to_email,
+        subject: message.subject,
+        html: message.html,
+        text: message.text,
+        ...((company.email ?? Deno.env.get('EMAIL_REPLY_TO'))
+          ? { replyTo: company.email ?? Deno.env.get('EMAIL_REPLY_TO') }
+          : {}),
+      },
+      admin,
+    )
 
     await record(admin, email.id, {
       status: 'sent',
       sent_at: new Date().toISOString(),
       last_error: null,
-      provider_id: info.messageId ?? null,
+      // Which provider carried it, then its message id: "resend:<id>".
+      provider_id: `${sent.provider}:${sent.messageId ?? ''}`.slice(0, 300),
     })
     return json({ sent: email.id })
   } catch (cause) {
     const reason = cause instanceof Error ? cause.message : String(cause)
-    const isPermanent = cause instanceof PermanentError || attempt >= MAX_ATTEMPTS
+    const isPermanent =
+      cause instanceof PermanentError ||
+      (cause as { permanent?: boolean })?.permanent === true ||
+      attempt >= MAX_ATTEMPTS
     await record(admin, email.id, {
       // Transient (SMTP down, a timeout): back to the queue for the sweep.
       status: isPermanent ? 'failed' : 'queued',

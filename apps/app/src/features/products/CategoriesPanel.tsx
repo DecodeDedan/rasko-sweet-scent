@@ -18,8 +18,9 @@ interface CategoriesPanelProps {
 type Editing = { mode: 'create' } | { mode: 'rename'; category: Category }
 
 /**
- * FR-6.1: every product belongs to a category, so an empty system needs a way
- * to create the first one. Owner and manager only, like the rest of the
+ * FR-6.1: every product belongs to a variety (a category row; migration
+ * 20260926000100 seeds the four the farm grows). The list stays editable for
+ * a fifth variety or a rename. Owner and manager only, like the rest of the
  * catalogue (PRD §3.1); the categories_write policy enforces it server-side.
  */
 export function CategoriesPanel({
@@ -52,12 +53,12 @@ export function CategoriesPanel({
       else await repo.renameCategory(editing.category.id, name)
       showToast({
         tone: 'success',
-        title: editing.mode === 'create' ? 'Category added' : 'Category renamed',
+        title: editing.mode === 'create' ? 'Variety added' : 'Variety renamed',
       })
       setEditing(null)
       await onChanged()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not save the category.')
+      setError(cause instanceof Error ? cause.message : 'Could not save the variety.')
     } finally {
       setIsSaving(false)
     }
@@ -67,13 +68,13 @@ export function CategoriesPanel({
     setBusyId(category.id)
     try {
       await repo.removeCategory(category.id)
-      showToast({ tone: 'success', title: 'Category removed', description: category.name })
+      showToast({ tone: 'success', title: 'Variety removed', description: category.name })
       await onChanged()
     } catch (cause) {
       showToast({
         tone: 'danger',
-        title: 'Category not removed',
-        description: cause instanceof Error ? cause.message : 'Could not remove the category.',
+        title: 'Variety not removed',
+        description: cause instanceof Error ? cause.message : 'Could not remove the variety.',
       })
     } finally {
       setBusyId(null)
@@ -85,7 +86,7 @@ export function CategoriesPanel({
       {canWrite && categories.length > 0 ? (
         <div className="rsk-row">
           <Button variant="primary" onClick={() => open({ mode: 'create' })}>
-            Add category
+            Add variety
           </Button>
         </div>
       ) : null}
@@ -97,23 +98,23 @@ export function CategoriesPanel({
           empty={
             <EmptyState
               icon={<Tags size={20} aria-hidden="true" />}
-              title="No categories yet"
+              title="No varieties yet"
               description={
                 canWrite
-                  ? 'Every product sits in a category, for example by variety. Add one before adding products.'
-                  : 'A manager or the owner adds categories.'
+                  ? 'Every product belongs to a variety, sold as standard or spray. Add one before adding products.'
+                  : 'A manager or the owner adds varieties.'
               }
               action={
                 canWrite ? (
                   <Button variant="primary" onClick={() => open({ mode: 'create' })}>
-                    Add category
+                    Add variety
                   </Button>
                 ) : null
               }
             />
           }
           columns={[
-            { key: 'name', header: 'Category', render: (c) => c.name },
+            { key: 'name', header: 'Variety', render: (c) => c.name },
             ...(canWrite
               ? [
                   {
@@ -147,7 +148,7 @@ export function CategoriesPanel({
           isOpen
           size="sm"
           onClose={() => setEditing(null)}
-          title={editing.mode === 'create' ? 'Add a category' : 'Rename category'}
+          title={editing.mode === 'create' ? 'Add a variety' : 'Rename variety'}
           footer={
             <>
               <Button onClick={() => setEditing(null)}>Cancel</Button>

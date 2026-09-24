@@ -5,71 +5,62 @@
 //
 //   pnpm emails:auth
 //
-// Supabase fills its own Go-template placeholders ({{ .SiteURL }}, {{ .TokenHash }},
-// {{ .RedirectTo }}, {{ .Email }}) when it sends. They pass through untouched:
-// escaping leaves braces and dots alone, button hrefs are written raw, and the
-// logo resolves against {{ .SiteURL }}, the marketing site that serves
-// /email/rss-logo.png in every environment. The hosted project needs the same
-// files pasted into Dashboard > Authentication > Email Templates
-// (docs/auth-setup.md §2).
+// These files are the fallback. Normally Auth hands every email to the
+// send-auth-email function (Send Email Hook), which uses the same wording from
+// _shared/email/auth.js and sends it through the failover transport. The files
+// matter only if the hook is switched off; then Supabase fills its own Go
+// placeholders ({{ .SiteURL }}, {{ .TokenHash }}, {{ .RedirectTo }},
+// {{ .Email }}), which pass through untouched here.
 //
 // Links carry token_hash, never ?code=: the app uses PKCE, and a PKCE code can
 // only be redeemed by the app, not by the browser the email opens in.
-import { writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-import {
-  button,
-  escapeHtml,
-  paragraphs,
-  renderEmail,
-} from '../supabase/functions/_shared/email/layout.js'
+import { authEmail } from '../supabase/functions/_shared/email/auth.js'
 
 const out = (name) => fileURLToPath(new URL(`../supabase/templates/${name}`, import.meta.url))
 
-// Supabase Auth does not know the company's contact details, so the auth
-// footer carries the name and slogan only, never a stale copy of settings.
-const company = { company_name: 'Rasko Sweet Scent' }
-const assetBaseUrl = '{{ .SiteURL }}'
-const text = (value) => paragraphs(escapeHtml(value))
-
+// Supabase's own placeholders, filled in by Auth when it sends from these files.
+const link = (type) => `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=${type}`
 const TEMPLATES = {
-  'invite.html': {
-    preheader: 'Choose a password to start using the Rasko Sweet Scent business app.',
-    heading: 'Welcome to Rasko Sweet Scent',
-    bodyHtml:
-      text(
-        'You have been given an account on the Rasko Sweet Scent business app, where the team keeps clients, orders, invoices, stock and payroll.',
-      ) +
-      text('Choose your password to finish setting it up. You will sign in with {{ .Email }}.') +
-      button('Choose your password', '{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=invite') +
-      text(
-        'The link works once and expires after one hour. If it has expired, ask the owner to send the invitation again.\n\nIf you were not expecting this email, you can ignore it.',
-      ),
-  },
-  'recovery.html': {
-    preheader: 'A link to set a new password for your Rasko Sweet Scent account.',
-    heading: 'Reset your password',
-    bodyHtml:
-      text('We received a request to reset the password for {{ .Email }}.') +
-      button('Set a new password', '{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery') +
-      text(
-        "The link works once and expires after one hour. To get a new one, choose Forgot your password on the app's sign-in screen.\n\nIf you did not ask for this, ignore this email. Your password has not changed.",
-      ),
-  },
-  'password-changed.html': {
-    preheader: 'The password on your Rasko Sweet Scent account was changed.',
-    heading: 'Your password was changed',
-    bodyHtml: text(
-      'The password for {{ .Email }} on the Rasko Sweet Scent business app has just been changed.\n\nIf that was you, there is nothing to do.\n\nIf it was not, tell the owner straight away so they can deactivate the account, then use Forgot your password on the sign-in screen to take it back.',
-    ),
-  },
+  'invite.html': authEmail('invite', {
+    email: '{{ .Email }}',
+    link: link('invite'),
+    assetBaseUrl: '{{ .SiteURL }}',
+  }),
+  'recovery.html': authEmail('recovery', {
+    email: '{{ .Email }}',
+    link: link('recovery'),
+    assetBaseUrl: '{{ .SiteURL }}',
+  }),
+  'password-changed.html': authEmail('password_changed_notification', {
+    email: '{{ .Email }}',
+    link: '',
+    assetBaseUrl: '{{ .SiteURL }}',
+  }),
 }
 
-for (const [file, template] of Object.entries(TEMPLATES)) {
-  writeFileSync(
-    out(file),
-    renderEmail({ ...template, company, assetBaseUrl, withSignature: false }),
-  )
+for (const [file, email] of Object.entries(TEMPLATES)) {
+  writeFileSync(out(file), email.html)
   process.stdout.write(`wrote supabase/templates/${file}\n`)
 }
+
+// The logo travels inside every email the functions send, as an inline
+// (cid:) attachment. A hosted image fails whenever the site is not public
+// (Gmail fetches images through Google's servers, which cannot reach
+// localhost), and data: URIs are blocked by Gmail. Generated from the same
+// PNG the website serves, so there is one source file.
+const png = readFileSync(
+  fileURLToPath(new URL('../apps/website/public/email/rss-logo.png', import.meta.url)),
+)
+writeFileSync(
+  fileURLToPath(new URL('../supabase/functions/_shared/email/logo.js', import.meta.url)),
+  `// Generated by \`pnpm emails:auth\` from apps/website/public/email/rss-logo.png. Do not edit.
+export const LOGO_CID = 'rss-logo@raskosweetscent'
+export const LOGO_PNG_BASE64 =
+  '${png.toString('base64')}'
+`,
+)
+process.stdout.write('wrote supabase/functions/_shared/email/logo.js\n')
+

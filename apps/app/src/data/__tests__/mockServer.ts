@@ -20,6 +20,7 @@ type Row = Record<string, unknown>
 export class MockServer {
   private readonly tables = new Map<string, Map<string, Row>>()
   private tick = 0
+  private instance = 'server-1'
   private offline = false
   private readonly deactivated = new Set<string>()
   /** Per-year invoice counters, mirroring app.document_counters. */
@@ -125,6 +126,16 @@ export class MockServer {
     this.deactivated.delete(userId)
   }
 
+  /**
+   * The database is replaced, as `supabase db reset` or a switch to another
+   * project would: every table is empty and the instance id changes.
+   */
+  replaceDatabase(): void {
+    this.tables.clear()
+    this.tick += 1
+    this.instance = `server-${this.tick + 1}`
+  }
+
   /** Direct read, for assertions. */
   rows(tableName: string): Row[] {
     return [...this.table(tableName).values()]
@@ -151,6 +162,10 @@ export class MockServer {
     }
 
     return {
+      instanceId: async () => {
+        guard()
+        return this.instance
+      },
       pull: async (tableName, cursor, limit): Promise<PullPage> => {
         guard()
         const column = cursorColumn(tableSpec(tableName))

@@ -34,6 +34,12 @@ export interface PushResult {
 }
 
 export interface SyncRemote {
+  /**
+   * The server database's identity (migration 20260926000300). Changes when the
+   * database is replaced, which is how a device learns its copy is stale.
+   * Null when the server predates the migration: the check is then skipped.
+   */
+  instanceId(): Promise<string | null>
   pull(table: string, cursor: PullCursor | null, limit: number): Promise<PullPage>
   push(
     table: string,

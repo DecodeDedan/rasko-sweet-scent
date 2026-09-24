@@ -21,6 +21,19 @@ export interface SendEmailDialogProps {
   onQueued?: () => void
 }
 
+/**
+ * The subject as it will read: the names known here are filled in, and any
+ * other detail (an invoice number the server assigns on arrival) is shown as
+ * a plain word rather than a raw {{placeholder}}.
+ */
+function previewSubject(subject: string, clientName: string): string {
+  return subject.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, name: string) => {
+    if (name === 'company_name') return 'Rasko Sweet Scent'
+    if (name === 'client_name' && clientName.trim()) return clientName.trim()
+    return name.replace(/_/g, ' ')
+  })
+}
+
 const KIND_ACTION: Record<EmailKind, string> = {
   invoice: 'Email invoice',
   receipt: 'Email receipt',
@@ -146,7 +159,7 @@ export function SendEmailDialog({
         {template ? (
           <div className="email-compose__template">
             <p className="email-compose__eyebrow">Subject</p>
-            <p className="email-compose__subject">{template.subject}</p>
+            <p className="email-compose__subject">{previewSubject(template.subject, toName)}</p>
             <p className="email-compose__hint">
               {isMessage
                 ? 'Your message follows the greeting, inside the branded frame and signature.'

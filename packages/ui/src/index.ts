@@ -33,6 +33,9 @@ export type { ModalProps } from './components/Modal.js'
 export { PageHeader } from './components/PageHeader.js'
 export type { PageHeaderProps } from './components/PageHeader.js'
 
+export { PasswordInput } from './components/PasswordInput.js'
+export type { PasswordInputProps } from './components/PasswordInput.js'
+
 export { Select } from './components/Select.js'
 export type { SelectOption, SelectProps } from './components/Select.js'
 

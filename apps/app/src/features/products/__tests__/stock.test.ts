@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { SqlDatabase } from '../../../data/sqlite/types.js'
+import { suggestName, suggestSku } from '../ProductForm.js'
 import { ProductRuleError, ProductsRepository } from '../productsRepository.js'
 import { pendingCount } from '../../../data/sync/outbox.js'
 import { CATEGORY, MANAGER, OWNER, PRODUCT, SALES, seededDatabase } from './fixture.js'
@@ -278,6 +279,7 @@ describe('stock derived from movements', () => {
         sku: 'rss-ros-001',
         name: 'Duplicate rose',
         category_id: 'ca000000-0000-4000-8000-000000000001',
+        stem_form: 'standard',
         unit: 'stem',
         cost_price_cents: 1,
         selling_price_cents: 2,
@@ -313,7 +315,7 @@ describe('categories (FR-6.1)', () => {
   it('refuses a name already in use, ignoring case', async () => {
     await expect(
       manager.createCategory('cb000000-0000-4000-8000-000000000002', 'fresh FLOWERS'),
-    ).rejects.toThrow(/already a category/i)
+    ).rejects.toThrow(/already a variety/i)
   })
 
   it('refuses to remove a category that products still use', async () => {
@@ -334,19 +336,77 @@ describe('categories (FR-6.1)', () => {
     ).rejects.toBeInstanceOf(ProductRuleError)
   })
 
-  it('refuses a product without a category', async () => {
+  it('refuses a product without a variety', async () => {
     await expect(
       manager.createProduct({
         id: 'ae000000-0000-4000-8000-000000000009',
         sku: 'RSS-BB-001',
         name: 'Baby Blue, 60cm',
         category_id: '',
+        stem_form: 'standard',
         unit: 'stem',
         cost_price_cents: 1,
         selling_price_cents: 2,
         low_stock_threshold: 0,
         is_active: true,
       }),
-    ).rejects.toThrow(/choose a category/i)
+    ).rejects.toThrow(/choose a variety/i)
+  })
+})
+
+describe('standard and spray (migration 20260926000100)', () => {
+  it('suggests a name and SKU from the variety and form', () => {
+    expect(suggestSku('Baby Blue', 'spray')).toBe('BB-SPR')
+    expect(suggestSku('Gunni', 'standard')).toBe('GUN-STD')
+    expect(suggestName('Parvifolia', 'spray')).toBe('Parvifolia spray')
+  })
+
+  it('refuses a product that is neither standard nor spray', async () => {
+    const db = await seededDatabase()
+    const manager = new ProductsRepository(
+      db,
+      { role: 'manager', userId: MANAGER },
+      { userId: MANAGER },
+    )
+    await expect(
+      manager.createProduct({
+        id: 'ae000000-0000-4000-8000-000000000010',
+        sku: 'BB-XXX',
+        name: 'Baby Blue',
+        category_id: CATEGORY,
+        stem_form: null,
+        unit: 'stem',
+        cost_price_cents: 1,
+        selling_price_cents: 2,
+        low_stock_threshold: 0,
+        is_active: true,
+      }),
+    ).rejects.toThrow(/standard or spray/)
+    await db.close()
+  })
+
+  it('filters the catalogue by form', async () => {
+    const db = await seededDatabase()
+    const manager = new ProductsRepository(
+      db,
+      { role: 'manager', userId: MANAGER },
+      { userId: MANAGER },
+    )
+    await manager.createProduct({
+      id: 'ae000000-0000-4000-8000-000000000011',
+      sku: 'BB-SPR',
+      name: 'Baby Blue spray',
+      category_id: CATEGORY,
+      stem_form: 'spray',
+      unit: 'stem',
+      cost_price_cents: 1,
+      selling_price_cents: 2,
+      low_stock_threshold: 0,
+      is_active: true,
+    })
+    const sprays = await manager.list({ stemForm: 'spray' })
+    expect(sprays.map((p) => p.sku)).toEqual(['BB-SPR'])
+    expect(sprays[0]?.stem_form).toBe('spray')
+    await db.close()
   })
 })

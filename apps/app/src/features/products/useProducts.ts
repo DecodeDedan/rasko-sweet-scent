@@ -28,7 +28,7 @@ export function useProductList(query: ProductQuery) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const { search, categoryId, view } = query
+  const { search, categoryId, stemForm, view } = query
 
   const load = useCallback(async () => {
     if (!repo) {
@@ -41,6 +41,7 @@ export function useProductList(query: ProductQuery) {
         await repo.list({
           ...(search ? { search } : {}),
           ...(categoryId ? { categoryId } : {}),
+          ...(stemForm ? { stemForm } : {}),
           ...(view ? { view } : {}),
         }),
       )
@@ -49,7 +50,7 @@ export function useProductList(query: ProductQuery) {
     } finally {
       setIsLoading(false)
     }
-  }, [repo, search, categoryId, view])
+  }, [repo, search, categoryId, stemForm, view])
 
   useSyncedEffect(load)
 

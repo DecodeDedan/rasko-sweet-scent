@@ -222,6 +222,53 @@
   border-color: var(--rasko-danger);
 }
 
+.rsk-password {
+  position: relative;
+  display: block;
+}
+
+/* Room for the toggle, so a long password never runs under the eye. */
+.rsk-password__input {
+  padding-right: 44px;
+}
+
+.rsk-password__toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--rasko-radius-lg);
+  background: transparent;
+  color: var(--rasko-text-secondary);
+  cursor: pointer;
+  translate: 0 -50%;
+}
+
+.rsk-password__toggle:hover:not(:disabled) {
+  background: var(--rasko-green-tint);
+  color: var(--rasko-green-active);
+}
+
+.rsk-password__toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--rasko-focus-ring);
+}
+
+.rsk-password__toggle[aria-pressed='true'] {
+  color: var(--rasko-green);
+}
+
+.rsk-password__toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 textarea.rsk-input {
   height: auto;
   min-height: 80px;

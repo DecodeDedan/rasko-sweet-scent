@@ -50,7 +50,9 @@ export function Farm() {
 
           <PhotoCard className="rw-reveal" photo="rss-plantation">
             <h3 className="rw-card__title">In the field</h3>
-            <p className="rw-card__text">Baby Blue in open field beds of red soil, row after row.</p>
+            <p className="rw-card__text">
+              Baby Blue in open field beds of red soil, row after row.
+            </p>
           </PhotoCard>
 
           <PhotoCard className="rw-reveal" photo="shed-wide">

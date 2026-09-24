@@ -44,7 +44,7 @@ export function openNodeDatabase(path = ':memory:'): SqlDatabase {
 
   let depth = 0
 
-  return {
+  const adapter: SqlDatabase = {
     async execute(sql, params = []) {
       if (params.length === 0) {
         db.exec(sql)
@@ -64,7 +64,7 @@ export function openNodeDatabase(path = ':memory:'): SqlDatabase {
       if (depth > 0) {
         depth += 1
         try {
-          await work()
+          await work(adapter)
         } finally {
           depth -= 1
         }
@@ -74,7 +74,7 @@ export function openNodeDatabase(path = ':memory:'): SqlDatabase {
       depth = 1
       db.exec('BEGIN')
       try {
-        await work()
+        await work(adapter)
         db.exec('COMMIT')
       } catch (cause) {
         db.exec('ROLLBACK')
@@ -88,4 +88,5 @@ export function openNodeDatabase(path = ':memory:'): SqlDatabase {
       db.close()
     },
   }
+  return adapter
 }

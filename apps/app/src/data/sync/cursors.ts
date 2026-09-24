@@ -1,11 +1,11 @@
-import type { SqlDatabase } from '../sqlite/types.js'
+import type { SqlDatabase, SqlExecutor } from '../sqlite/types.js'
 import type { PullCursor } from './remote.js'
 
 /**
  * Per-table pull cursors (architecture.md §6.2). Device-local; never synced.
  */
 
-export async function readCursor(db: SqlDatabase, table: string): Promise<PullCursor | null> {
+export async function readCursor(db: SqlExecutor, table: string): Promise<PullCursor | null> {
   const rows = await db.select<{ cursor_updated_at: string | null; cursor_id: string | null }>(
     'SELECT cursor_updated_at, cursor_id FROM sync_state WHERE table_name = ?',
     [table],
@@ -22,7 +22,7 @@ export async function readCursor(db: SqlDatabase, table: string): Promise<PullCu
  * transaction — so a crash mid-page re-fetches that page rather than losing it.
  */
 export async function writeCursor(
-  db: SqlDatabase,
+  db: SqlExecutor,
   table: string,
   cursor: PullCursor,
   now: string = new Date().toISOString(),

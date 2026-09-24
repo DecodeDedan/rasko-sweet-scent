@@ -34,7 +34,7 @@ const MODULE_COPY: Record<ModuleId, { title: string; body: string }> = {
   },
   products: {
     title: 'Products and stock',
-    body: 'Your stems and bunches. Stock is counted from every movement in and out, so a physical count always reconciles.',
+    body: 'Baby Blue, Gunni, Parvifolia and Globulus, each as standard or spray with its own price and stock. Stock is counted from every movement, so a physical count always reconciles.',
   },
   suppliers: {
     title: 'Suppliers',
@@ -118,7 +118,7 @@ export function tourSteps(input: {
       title: 'You are ready',
       body:
         input.role === 'owner' || input.role === 'manager'
-          ? 'The dashboard has a short setup list: company details, payment details, your first category and product, and your team. Each item takes you straight to it.'
+          ? 'The dashboard has a short setup list: company details, payment details, your first product and client, and your team. Each item takes you straight to it.'
           : 'Start from the dashboard. Anything you add is saved on this device at once and shared with the team on the next sync.',
     },
   ]

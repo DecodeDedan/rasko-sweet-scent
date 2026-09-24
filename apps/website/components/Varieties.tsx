@@ -44,6 +44,14 @@ export function Varieties() {
         <div className="rw-cards__lead rw-cards__lead--full">
           <h2 className="rw-display-2">{site.varieties.heading}</h2>
           <p className="rw-lede">{site.varieties.intro}</p>
+          <dl className="rw-forms-legend">
+            {Object.values(site.varieties.forms).map((form) => (
+              <div className="rw-forms-legend__item" key={form.name}>
+                <dt className="rw-forms-legend__name">{form.name}</dt>
+                <dd className="rw-forms-legend__body">{form.body}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
 
         {site.varieties.items.map((variety) => (
@@ -53,6 +61,14 @@ export function Varieties() {
               <p className="rw-variety__botanical">{variety.botanicalName}</p>
             ) : null}
             <p className="rw-card__text">{variety.description}</p>
+            <p className="rw-variety__forms">
+              <span className="rw-visually-hidden">Cut as </span>
+              {variety.forms.map((form) => (
+                <span className="rw-variety__form" key={form}>
+                  {site.varieties.forms[form].name}
+                </span>
+              ))}
+            </p>
             <Specification spec={variety.spec} />
           </PhotoCard>
         ))}

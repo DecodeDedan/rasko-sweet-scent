@@ -1204,3 +1204,65 @@
   color: var(--rasko-text-secondary);
   font-size: var(--rasko-text-12);
 }
+
+/* ------------------------------------------------- Product: standard or spray */
+
+.product-form__forms {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.product-form__form-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--rasko-space-2);
+  margin-top: var(--rasko-space-1);
+}
+
+.product-form__form {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--rasko-space-3);
+  border: 1px solid var(--rasko-border);
+  border-radius: var(--rasko-radius-lg);
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.product-form__form:hover {
+  border-color: var(--rasko-green-tint-border);
+}
+
+/* Selected: border, tint and weight together, so it is not colour alone. */
+.product-form__form--active {
+  border-color: var(--rasko-green);
+  background: var(--rasko-green-tint);
+}
+
+.product-form__form input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.product-form__form:has(input:focus-visible) {
+  box-shadow: var(--rasko-focus-ring);
+}
+
+.product-form__form-name {
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.product-form__form--active .product-form__form-name {
+  color: var(--rasko-green-active);
+}
+
+.product-form__form-hint {
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-12);
+}

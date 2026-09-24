@@ -28,9 +28,8 @@ import type { EmailTemplate } from './emailRepository.js'
 import { useEmailHistory, useEmailRepository } from './useEmail.js'
 
 // The preview frame inherits the app's CSP, which loads no remote images, so
-// the logo is inlined there. Real emails load it from the website.
+// the logo is a data URI there. Sent emails carry it as an inline attachment.
 const PREVIEW_ASSET_BASE = 'https://preview.invalid'
-const PREVIEW_LOGO = `${PREVIEW_ASSET_BASE}/email/rss-logo.png`
 
 const RECORD_NOTE = `<p style="margin:0 0 20px;padding:14px 16px;border:1px dashed #CFE3CC;border-radius:8px;font-family:Manrope,Arial,sans-serif;font-size:13px;color:#5C5F58;">The record's details, line items, totals and payment instructions are added here when the email is sent.</p>`
 
@@ -197,9 +196,10 @@ function TemplateEditor({
         company: profile ?? { company_name: 'Rasko Sweet Scent' },
         senderName,
         assetBaseUrl: PREVIEW_ASSET_BASE,
+        logoSrc: logoDataUri,
       },
     )
-    return html.replace(PREVIEW_LOGO, logoDataUri)
+    return html
   }, [subject, heading, body, profile, senderName, template.key])
 
   function insertPlaceholder(name: string) {

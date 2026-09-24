@@ -3,8 +3,31 @@
 import { useState } from 'react'
 import { Button, Field, Input, Modal, Select } from '@rasko/ui'
 
-import { PRODUCT_UNITS, PRODUCT_UNIT_LABEL } from './types.js'
-import type { Category, Product, ProductUnit } from './types.js'
+import {
+  PRODUCT_UNITS,
+  PRODUCT_UNIT_LABEL,
+  STEM_FORMS,
+  STEM_FORM_HINT,
+  STEM_FORM_LABEL,
+} from './types.js'
+import type { Category, Product, ProductUnit, StemForm } from './types.js'
+
+/**
+ * "Baby Blue" + spray -> "BB-SPR"; "Gunni" + standard -> "GUN-STD". A suggestion
+ * only: the field stays editable, and uniqueness is checked on save.
+ */
+export function suggestSku(varietyName: string, form: StemForm): string {
+  const words = varietyName.trim().split(/\s+/).filter(Boolean)
+  const stem =
+    words.length > 1
+      ? words.map((word) => word[0]).join('')
+      : (words[0] ?? '').replace(/[^a-z]/gi, '').slice(0, 3)
+  return `${stem.toUpperCase()}-${form === 'spray' ? 'SPR' : 'STD'}`
+}
+
+export function suggestName(varietyName: string, form: StemForm): string {
+  return `${varietyName.trim()} ${form === 'spray' ? 'spray' : 'standard'}`
+}
 
 /** Prices are typed in shillings and stored as integer cents (PRD §7). */
 function toCents(value: string): number {
@@ -16,6 +39,7 @@ export interface ProductFormValues {
   sku: string
   name: string
   category_id: string
+  stem_form: StemForm
   unit: ProductUnit
   cost_price_cents: number
   selling_price_cents: number
@@ -41,6 +65,10 @@ export function ProductForm({
   const [sku, setSku] = useState(product?.sku ?? '')
   const [name, setName] = useState(product?.name ?? '')
   const [categoryId, setCategoryId] = useState(product?.category_id ?? categories[0]?.id ?? '')
+  const [stemForm, setStemForm] = useState<StemForm>(product?.stem_form ?? 'standard')
+  // Name and SKU follow the variety and form until the user types their own.
+  const [isNameTouched, setIsNameTouched] = useState(isEdit)
+  const [isSkuTouched, setIsSkuTouched] = useState(isEdit)
   const [unit, setUnit] = useState<ProductUnit>(product?.unit ?? 'stem')
   const [cost, setCost] = useState(((product?.cost_price_cents ?? 0) / 100).toFixed(2))
   const [price, setPrice] = useState(((product?.selling_price_cents ?? 0) / 100).toFixed(2))
@@ -55,7 +83,7 @@ export function ProductForm({
 
     if (!sku.trim()) return setError('Enter a SKU.')
     if (!name.trim()) return setError('Enter a product name.')
-    if (!categoryId) return setError('Choose a category.')
+    if (!categoryId) return setError('Choose a variety.')
 
     const costCents = toCents(cost)
     const priceCents = toCents(price)
@@ -73,6 +101,7 @@ export function ProductForm({
       sku: sku.trim().toUpperCase(),
       name: name.trim(),
       category_id: categoryId,
+      stem_form: stemForm,
       unit,
       cost_price_cents: costCents,
       selling_price_cents: priceCents,
@@ -85,6 +114,14 @@ export function ProductForm({
   }
 
   if (!isOpen) return null
+
+  const varietyName = categories.find((c) => c.id === categoryId)?.name ?? ''
+  function suggest(nextCategoryId: string, nextForm: StemForm) {
+    const nextVariety = categories.find((c) => c.id === nextCategoryId)?.name ?? ''
+    if (!nextVariety) return
+    if (!isNameTouched) setName(suggestName(nextVariety, nextForm))
+    if (!isSkuTouched) setSku(suggestSku(nextVariety, nextForm))
+  }
 
   return (
     <Modal
@@ -107,19 +144,72 @@ export function ProductForm({
           </p>
         ) : null}
 
-        <Field label="SKU" isRequired hint="A short code, unique to this product.">
-          <Input value={sku} onChange={(e) => setSku(e.target.value)} disabled={isEdit} />
-        </Field>
-
-        <Field label="Name" isRequired>
-          <Input value={name} onChange={(e) => setName(e.target.value)} />
-        </Field>
-
-        <Field label="Category" isRequired>
+        <Field label="Variety" isRequired>
           <Select
             value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
+            onChange={(e) => {
+              setCategoryId(e.target.value)
+              suggest(e.target.value, stemForm)
+            }}
             options={categories.map((c) => ({ value: c.id, label: c.name }))}
+          />
+        </Field>
+
+        <fieldset className="product-form__forms">
+          <legend className="rsk-field__label">
+            Form<span className="rsk-field__required">*</span>
+          </legend>
+          <div className="product-form__form-options">
+            {STEM_FORMS.map((form) => (
+              <label
+                key={form}
+                className={
+                  form === stemForm
+                    ? 'product-form__form product-form__form--active'
+                    : 'product-form__form'
+                }
+              >
+                <input
+                  type="radio"
+                  name="stem-form"
+                  value={form}
+                  checked={form === stemForm}
+                  onChange={() => {
+                    setStemForm(form)
+                    suggest(categoryId, form)
+                  }}
+                />
+                <span className="product-form__form-name">{STEM_FORM_LABEL[form]}</span>
+                <span className="product-form__form-hint">{STEM_FORM_HINT[form]}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <Field
+          label="Name"
+          isRequired
+          {...(varietyName
+            ? { hint: 'Add a grade or length if you sell more than one, e.g. 60 cm.' }
+            : {})}
+        >
+          <Input
+            value={name}
+            onChange={(e) => {
+              setIsNameTouched(true)
+              setName(e.target.value)
+            }}
+          />
+        </Field>
+
+        <Field label="SKU" isRequired hint="A short code, unique to this product.">
+          <Input
+            value={sku}
+            onChange={(e) => {
+              setIsSkuTouched(true)
+              setSku(e.target.value)
+            }}
+            disabled={isEdit}
           />
         </Field>
 

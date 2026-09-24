@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Button, Field, Input, Modal } from '@rasko/ui'
+import { Button, Field, Input, Modal, PasswordInput } from '@rasko/ui'
 
 import { BrandMark } from '../../shell/BrandMark.js'
 import { AuthLayout } from './AuthLayout.js'
@@ -68,7 +68,7 @@ export function LoginScreen() {
           <BrandMark height={44} className="auth-brand__mark" />
           <div>
             <h1 className="auth-title">Sign in</h1>
-            <p className="auth-subtitle">Rasko Sweet Scent business management</p>
+            <p className="auth-subtitle">RSS Management System</p>
           </div>
         </div>
 
@@ -91,8 +91,7 @@ export function LoginScreen() {
         </Field>
 
         <Field label="Password">
-          <Input
-            type="password"
+          <PasswordInput
             autoComplete="current-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}

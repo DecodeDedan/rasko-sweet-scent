@@ -25,6 +25,8 @@ export interface EmailFacts {
   company: EmailCompany
   senderName?: string | null
   assetBaseUrl: string
+  /** Overrides the hosted logo URL, e.g. a data URI for an in-app preview. */
+  logoSrc?: string
 }
 
 export function composeEmail(

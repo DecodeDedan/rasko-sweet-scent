@@ -444,3 +444,62 @@ describe('T6 — 200 orders and payments sync idempotently', () => {
     await phone.close()
   })
 })
+
+// ------------------------------------------------ the server is replaced
+
+describe('a device whose server database was replaced starts its copy over', () => {
+  it('drops rows and unsent writes that belong to the old database', async () => {
+    const desktop = await createDevice(server, OWNER)
+    const kept = id('c0000001')
+    await desktop
+      .repo('clients')
+      .insert({ id: kept, name: 'Old client', client_type: 'individual' })
+    await desktop.sync()
+
+    // An edit that never reached the old server.
+    server.setOffline(true)
+    await desktop.repo('clients').update(kept, { notes: 'never sent' })
+    server.setOffline(false)
+
+    // The old database is gone: `supabase db reset`, or a switch of project.
+    server.replaceDatabase()
+    const outcome = await desktop.sync()
+
+    expect(outcome.replicaReset).toBe(true)
+    expect(await desktop.repo('clients').findById(kept)).toBeNull()
+    expect(await desktop.pending()).toBe(0)
+    // Nothing from the old database was pushed into the new one.
+    expect(server.count('clients')).toBe(0)
+    await desktop.close()
+  })
+
+  it('keeps everything while the server is the same database', async () => {
+    const desktop = await createDevice(server, OWNER)
+    const kept = id('c0000002')
+    await desktop
+      .repo('clients')
+      .insert({ id: kept, name: 'Current client', client_type: 'individual' })
+    await desktop.sync()
+    const outcome = await desktop.sync()
+
+    expect(outcome.replicaReset).toBe(false)
+    expect(await desktop.repo('clients').findById(kept)).not.toBeNull()
+    await desktop.close()
+  })
+
+  it('changes nothing while offline, so no signal is never mistaken for a new server', async () => {
+    const desktop = await createDevice(server, OWNER)
+    await desktop.sync()
+    const kept = id('c0000003')
+    await desktop
+      .repo('clients')
+      .insert({ id: kept, name: 'Offline client', client_type: 'individual' })
+
+    server.setOffline(true)
+    const outcome = await desktop.sync()
+
+    expect(outcome.replicaReset).toBe(false)
+    expect(await desktop.pending()).toBe(1)
+    await desktop.close()
+  })
+})

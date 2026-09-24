@@ -1,5 +1,23 @@
 export type ProductUnit = 'stem' | 'bundle' | 'piece'
 
+/**
+ * Every variety is sold as a standard stem or as a spray (migration
+ * 20260926000100). They are separate products: priced and counted apart.
+ */
+export type StemForm = 'standard' | 'spray'
+
+export const STEM_FORMS: readonly StemForm[] = ['standard', 'spray']
+
+export const STEM_FORM_LABEL: Record<StemForm, string> = {
+  standard: 'Standard',
+  spray: 'Spray',
+}
+
+export const STEM_FORM_HINT: Record<StemForm, string> = {
+  standard: 'One straight stem, leaf along its length.',
+  spray: 'A branched stem carrying side shoots.',
+}
+
 export const PRODUCT_UNITS: readonly ProductUnit[] = ['stem', 'bundle', 'piece']
 
 export const PRODUCT_UNIT_LABEL: Record<ProductUnit, string> = {
@@ -52,6 +70,8 @@ export interface Product {
   sku: string
   name: string
   category_id: string
+  /** Null only on a product created before forms existed. */
+  stem_form: StemForm | null
   unit: ProductUnit
   cost_price_cents: number
   selling_price_cents: number
@@ -103,6 +123,7 @@ export interface WastageRow {
 export type ProductView = 'catalogue' | 'low_stock' | 'movements' | 'wastage' | 'valuation'
 
 export interface ProductQuery {
+  stemForm?: StemForm | 'all'
   search?: string
   categoryId?: string | 'all'
   view?: ProductView

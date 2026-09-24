@@ -1042,7 +1042,9 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
   display: flex;
   align-items: center;
   min-height: 100svh;
-  overflow: hidden;
+  /* clip, not hidden: hidden would make this a scroll container and break the
+   * sticky stem on a phone. */
+  overflow: clip;
   background-color: var(--rasko-green-active);
   color: var(--rasko-surface);
 }
@@ -1063,12 +1065,35 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
 }
 
 .rw-study__eyebrow {
-  margin: 0 0 var(--rasko-space-3);
+  margin: 0 0 var(--rasko-space-4);
+  font-family: var(--rasko-font-body);
   font-size: var(--rasko-text-13);
   font-weight: var(--rasko-weight-medium);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--rasko-green-tint-border);
+}
+
+.rw-study__panels {
+  display: grid;
+  gap: var(--rasko-space-7);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Added by script once the timeline exists: the panels share one cell and
+ * GSAP hands them off. Without it they are a plain stacked list. */
+.rw-study__panels.is-staged > li {
+  grid-area: 1 / 1;
+}
+
+.rw-study__count {
+  margin: 0 0 var(--rasko-space-2);
+  font-size: var(--rasko-text-13);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .rw-study__name {
@@ -1084,24 +1109,35 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
   color: var(--rasko-green-tint-border);
 }
 
+.rw-study__forms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rasko-space-2);
+  margin: var(--rasko-space-4) 0 0;
+}
+
+.rw-study__form {
+  padding: 4px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-semibold);
+  letter-spacing: 0.02em;
+  color: var(--rasko-surface);
+}
+
 .rw-study__notes {
   display: grid;
-  gap: var(--rasko-space-5);
-  margin: var(--rasko-space-6) 0 0;
+  gap: var(--rasko-space-4);
+  margin: var(--rasko-space-5) 0 0;
   padding: 0;
   list-style: none;
 }
 
-/* Added by script once the timeline exists: the notes share one cell and
- * GSAP hands them off. Without it they are a plain stacked list. */
-.rw-study__notes.is-staged > li {
-  grid-area: 1 / 1;
-}
-
-.rw-study__note h3 {
-  margin: 0 0 var(--rasko-space-2);
+.rw-study__note h4 {
+  margin: 0 0 var(--rasko-space-1);
   font-family: var(--rasko-font-heading);
-  font-size: var(--rasko-text-24);
+  font-size: var(--rasko-text-20);
   font-weight: var(--rasko-weight-semibold);
   color: var(--rasko-surface);
 }
@@ -1114,23 +1150,62 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
   color: var(--rasko-green-tint-border);
 }
 
+/* One bar for the whole walk, with a tick where each variety begins. */
 .rw-study__meter {
+  position: relative;
   height: 2px;
   margin-top: var(--rasko-space-6);
   max-width: 26rem;
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-.rw-study__meter span {
+.rw-study__meter-fill {
   display: block;
   height: 100%;
   background-color: var(--rasko-surface);
   transform-origin: left center;
 }
 
+.rw-study__meter-tick {
+  position: absolute;
+  top: -3px;
+  width: 1px;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.45);
+}
+
 .rw-study__canvas {
   width: 100%;
   height: 44svh;
+}
+
+/* Phone: no pin (StemStudy PIN_FROM). The stem sits above the list and stays
+ * stuck under the header while the four varieties scroll past it. */
+@media (max-width: 55.99rem) {
+  .rw-study__inner {
+    align-items: start;
+  }
+
+  /* The text scrolls under the stem, never over the leaves: type is never set
+   * on an image (docs/brand.md), so the stem carries its own green ground. */
+  .rw-study__canvas {
+    position: sticky;
+    top: 4.25rem;
+    z-index: 1;
+    order: -1;
+    height: 32svh;
+    background-color: var(--rasko-green-active);
+  }
+
+  .rw-study__text {
+    position: relative;
+    z-index: 0;
+  }
+
+  /* The meter tracks the pinned walk; a scrolling list has no use for it. */
+  .rw-study__meter {
+    display: none;
+  }
 }
 
 /* Wide: the canvas fills the whole section behind the text column, so the
@@ -1340,4 +1415,66 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
   border-radius: var(--rasko-radius-md);
   color: var(--rasko-danger);
   font-size: var(--rasko-text-14);
+}
+
+/* Read by screen readers, not drawn. */
+.rw-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Standard and spray, on the variety cards
+ * ------------------------------------------------------------------ */
+
+.rw-forms-legend {
+  display: grid;
+  gap: var(--rasko-space-3);
+  margin: var(--rasko-space-5) 0 0;
+  padding: 0;
+}
+
+@media (min-width: 40rem) {
+  .rw-forms-legend {
+    grid-template-columns: repeat(2, minmax(0, 20rem));
+  }
+}
+
+.rw-forms-legend__item {
+  margin: 0;
+}
+
+.rw-forms-legend__name {
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-20);
+  font-weight: var(--rasko-weight-semibold);
+}
+
+.rw-forms-legend__body {
+  margin: 2px 0 0;
+  color: var(--rasko-text-secondary);
+}
+
+.rw-variety__forms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rasko-space-2);
+  margin: var(--rasko-space-3) 0 0;
+}
+
+.rw-variety__form {
+  padding: 2px 10px;
+  border: 1px solid var(--rasko-green-tint-border);
+  border-radius: 999px;
+  background: var(--rasko-green-tint);
+  color: var(--rasko-green-active);
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-semibold);
 }

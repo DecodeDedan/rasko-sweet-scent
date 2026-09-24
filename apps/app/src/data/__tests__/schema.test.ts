@@ -44,4 +44,31 @@ describe('local schema', () => {
   it('is idempotent, so a relaunch re-runs it safely', async () => {
     await expect(migrateLocalSchema(db)).resolves.toBeUndefined()
   })
+
+  it('widens a table an older build created, and re-pulls it so old rows fill in', async () => {
+    const old = openNodeDatabase()
+    // A device from before migration 20260926000100: products without stem_form,
+    // and a pull cursor already past every product row.
+    await old.execute(
+      `CREATE TABLE products (id TEXT PRIMARY KEY, sku TEXT, name TEXT, sync_status TEXT NOT NULL DEFAULT 'synced')`,
+    )
+    await old.execute(`INSERT INTO products (id, sku, name) VALUES ('p1', 'BB-1', 'Baby Blue')`)
+    await old.execute(
+      `CREATE TABLE sync_state (table_name TEXT PRIMARY KEY, cursor_updated_at TEXT, cursor_id TEXT, last_pulled_at TEXT)`,
+    )
+    await old.execute(
+      `INSERT INTO sync_state (table_name, cursor_updated_at) VALUES ('products', '2026-09-20T00:00:00Z'), ('clients', '2026-09-20T00:00:00Z')`,
+    )
+
+    await migrateLocalSchema(old)
+
+    const columns = await old.select<{ name: string }>(
+      `SELECT name FROM pragma_table_info('products')`,
+    )
+    expect(columns.map((c) => c.name)).toContain('stem_form')
+    expect(await old.select(`SELECT id FROM products`)).toHaveLength(1)
+    const cursors = await old.select<{ table_name: string }>(`SELECT table_name FROM sync_state`)
+    expect(cursors.map((c) => c.table_name)).toEqual(['clients'])
+    await old.close()
+  })
 })

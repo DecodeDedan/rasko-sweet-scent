@@ -36,9 +36,11 @@ const empty: SetupFacts = {
 
 describe('setup list', () => {
   it('derives every item from the records, nothing stored', () => {
-    const items = setupItems({ ...empty, categoryCount: 1, productCount: 3 }, 'owner')
+    const items = setupItems({ ...empty, categoryCount: 4, productCount: 3 }, 'owner')
     const done = items.filter((item) => item.isDone).map((item) => item.id)
-    expect(done).toEqual(['category', 'product'])
+    expect(done).toEqual(['product'])
+    // Varieties are seeded, so there is no step to create one once they are here.
+    expect(items.map((item) => item.id)).not.toContain('category')
   })
 
   it('asks only the owner to invite the team', () => {

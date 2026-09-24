@@ -69,6 +69,8 @@ function toStock(row: Record<string, unknown>): ProductStock {
   return {
     ...(row as unknown as Product),
     unit: String(row['unit'] ?? 'piece') as ProductStock['unit'],
+    stem_form:
+      row['stem_form'] === 'standard' || row['stem_form'] === 'spray' ? row['stem_form'] : null,
     cost_price_cents: cost,
     selling_price_cents: Number(row['selling_price_cents'] ?? 0),
     low_stock_threshold: threshold,
@@ -139,9 +141,13 @@ export class ProductsRepository {
       where += ' AND p.category_id = ?'
       params.push(query.categoryId)
     }
+    if (query.stemForm && query.stemForm !== 'all') {
+      where += ' AND p.stem_form = ?'
+      params.push(query.stemForm)
+    }
 
     const rows = await this.db.select<Record<string, unknown>>(
-      `${STOCK_SELECT}${where} ORDER BY p.name COLLATE NOCASE`,
+      `${STOCK_SELECT}${where} ORDER BY cat.position, cat.name, p.stem_form, p.name COLLATE NOCASE`,
       params,
     )
     const stock = rows.map(toStock)
@@ -248,7 +254,10 @@ export class ProductsRepository {
     this.requireWriteAccess()
     if (!values.sku.trim()) throw new ProductRuleError('Enter a SKU.')
     if (!values.name.trim()) throw new ProductRuleError('Enter a product name.')
-    if (!values.category_id) throw new ProductRuleError('Choose a category.')
+    if (!values.category_id) throw new ProductRuleError('Choose a variety.')
+    if (values.stem_form !== 'standard' && values.stem_form !== 'spray') {
+      throw new ProductRuleError('Choose standard or spray.')
+    }
 
     const clash = await this.db.select<{ n: number }>(
       'SELECT COUNT(*) AS n FROM products WHERE UPPER(sku) = UPPER(?) AND deleted_at IS NULL',
@@ -311,7 +320,7 @@ export class ProductsRepository {
     const count = Number(inUse[0]?.n ?? 0)
     if (count > 0) {
       throw new ProductRuleError(
-        `${count} product${count === 1 ? '' : 's'} still use this category. Move them to another category first.`,
+        `${count} product${count === 1 ? '' : 's'} still use this variety. Move them to another variety first.`,
       )
     }
     await this.categoryRows.softDelete(id)
@@ -319,7 +328,7 @@ export class ProductsRepository {
 
   private async validCategoryName(name: string, exceptId?: string): Promise<string> {
     const trimmed = name.trim()
-    if (!trimmed) throw new ProductRuleError('Enter a category name.')
+    if (!trimmed) throw new ProductRuleError('Enter a variety name.')
     // Mirrors categories_name_key (unique on lower(name) among live rows).
     const clash = await this.db.select<{ n: number }>(
       `SELECT COUNT(*) AS n FROM categories
@@ -327,7 +336,7 @@ export class ProductsRepository {
       [trimmed, exceptId ?? ''],
     )
     if (Number(clash[0]?.n ?? 0) > 0) {
-      throw new ProductRuleError(`There is already a category called ${trimmed}.`)
+      throw new ProductRuleError(`There is already a variety called ${trimmed}.`)
     }
     return trimmed
   }

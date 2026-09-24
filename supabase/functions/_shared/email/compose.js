@@ -13,6 +13,7 @@ import { fillPlaceholders, fillPlain, paragraphs, renderEmail } from './layout.j
  *   company: import('./layout.js').Company,
  *   senderName?: string|null,
  *   assetBaseUrl: string,
+ *   logoSrc?: string,
  * }} facts
  * @returns {{ subject: string, html: string, text: string }}
  */
@@ -35,6 +36,7 @@ export function composeEmail(template, facts) {
     company: facts.company,
     assetBaseUrl: facts.assetBaseUrl,
     senderName: facts.senderName,
+    ...(facts.logoSrc ? { logoSrc: facts.logoSrc } : {}),
   })
 
   const companyName = facts.company.company_name || 'Rasko Sweet Scent'

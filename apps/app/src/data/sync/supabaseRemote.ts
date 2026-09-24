@@ -26,6 +26,14 @@ function classify(error: { code?: string; message: string }): Error {
 
 export function createSupabaseRemote(client: SupabaseClient): SyncRemote {
   return {
+    async instanceId(): Promise<string | null> {
+      const { data, error } = await client.rpc('server_instance_id')
+      // PGRST202: no such function, a server from before the migration.
+      if (error?.code === 'PGRST202') return null
+      if (error) throw classify(error)
+      return typeof data === 'string' ? data : null
+    },
+
     async pull(table, cursor, limit): Promise<PullPage> {
       const spec = tableSpec(table)
       const column = cursorColumn(spec)

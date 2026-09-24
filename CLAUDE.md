@@ -163,10 +163,21 @@ build` and **fails the build** while the WhatsApp number is missing. That is
   with three in the main bundle. The buyers are Kenyan trade customers on phones; keep
   it lazy, and keep the placeholder the same size as the canvas or the GSAP pin
   measures the wrong height.
-- **The Baby Blue section is pinned.** One ScrollTrigger in `StemStudy.tsx` pins it,
-  scrubs the notes and writes its progress into a ref that `StemCanvas.tsx` reads each
-  frame. three.js never listens to scroll itself; one progress source keeps the text
-  and the 3D in step.
+- **The variety study walks all four varieties.** On desktop one ScrollTrigger in
+  `StemStudy.tsx` pins the section and hands the four panels off, writing progress
+  into a ref that `StemCanvas.tsx` reads each frame; the stem reshapes between the
+  varieties' leaf parameters (`LEAF_FORMS`, same order as `content/site.ts`) in the
+  same scroll window as the text. Below 56rem there is no pin: the list scrolls and
+  the stem is CSS-sticky above it, on its own green ground so type never crosses it.
+  three.js never listens to scroll itself.
+- **Every variety is sold as standard or spray** (owner, 2026-09-26). Website:
+  `forms` on each variety in `content/site.ts`. App: a variety is a `categories`
+  row (the four are seeded by migration `20260926000100`) and the form is
+  `products.stem_form`, so "Baby Blue spray" and "Baby Blue standard" are separate
+  products with their own price and stock.
+- **Adding a column to `tables.ts` really is the whole change.** `migrateLocalSchema`
+  widens old device tables with `ALTER TABLE ADD COLUMN` and clears that table's
+  pull cursor so existing rows re-pull and fill in.
 - **Licensed reference photography lives in `apps/website/reference/`, apart from the
   farm's own originals.** A manifest entry carrying a `credit` object is resolved from
   that directory instead; the credit then flows into `content/photos.ts` and the
@@ -294,11 +305,20 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
   retried push can never reset `sent` to `queued` and send twice. The preview in
   Settings imports the same `compose.js` the function runs. Setup:
   `docs/email-setup.md`.
+- **Supabase Auth does not send mail here.** The Send Email Hook hands every auth
+  email to `send-auth-email`, which uses the same failover transport as client
+  email (`_shared/email/transport.js`: Brevo, Resend, Gmail; health shared in
+  `email_provider_health`). Local mail goes to Mailpit only when no provider has
+  credentials. `supabase/templates/` is the fallback for a disabled hook.
 - **Every email, Auth included, comes from `_shared/email/layout.js`.** Edit the
   frame there, then run `pnpm emails:auth`; never hand-edit `supabase/templates/`.
-- **The Rust crate is `rasko-sweet-scent`** (lib `rasko_sweet_scent_lib`). A crate
-  name cannot contain spaces; the display name is `productName` in
-  `tauri.conf.json`.
+- **The software is "RSS Management System".** `productName`, `mainBinaryName` (the
+  installed executable), the window title and `index.html` all say so. The Rust crate is
+  `rss-management-system` (lib `rss_management_system_lib`) because a crate name cannot
+  contain spaces, which is also why `tauri dev` on macOS shows that lowercase name in the
+  menu bar: an unbundled dev binary has no app bundle to carry the display name.
+- **App icons come from `pnpm --filter @rasko/app icon`**: the monogram reversed to white
+  on a deep-green rounded tile (`scripts/logo-square.mjs`, then `tauri icon`).
 - **The first-run tour anchors on `data-tour`** attributes (sidebar and bottom
   nav items, `sync`, `help`). Renaming one without updating `onboarding/tour.ts`
   silently turns that stop into a centred dialog.
