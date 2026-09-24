@@ -194,7 +194,7 @@ export const site = {
       },
       {
         title: 'Hold',
-        body: 'Bunches are kept in the packing shed until the day they are dispatched.',
+        body: 'Bunches are kept in the packing shed until the time they are dispatched.',
         photo: 'shed-rows',
       },
     ],
