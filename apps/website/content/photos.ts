@@ -31,7 +31,7 @@ export type Photo = {
 export const photos = {
   'field-silver-sky': {
     name: 'field-silver-sky',
-    alt: 'A silver-blue eucalyptus growing in an open field bed, its branches reaching across a bright sky.',
+    alt: "A silver-blue eucalyptus growing in an open field bed, its branches reaching across a bright sky.",
     credit: null,
     widths: [640, 960, 1200],
     width: 1200,
@@ -39,39 +39,55 @@ export const photos = {
   },
   'variety-silver': {
     name: 'variety-silver',
-    alt: 'Dense silver-blue eucalyptus foliage, the round leaves set in opposite pairs along every stem.',
+    alt: "A Baby Blue eucalyptus in a field bed, its stems covered from base to tip in round silver-blue leaves.",
     credit: null,
     widths: [640, 960, 1200],
     width: 1200,
     height: 1600,
   },
-  'variety-pink': {
-    name: 'variety-pink',
-    alt: 'A eucalyptus bush carrying pink and bronze new growth at the tips of its green leaves.',
+  'variety-gunni': {
+    name: 'variety-gunni',
+    alt: "A Gunni eucalyptus in a field bed, long narrow green leaves with copper new growth at the tips.",
     credit: null,
     widths: [640, 960, 1200],
     width: 1200,
     height: 1600,
   },
-  'field-silver-row': {
-    name: 'field-silver-row',
-    alt: 'A young eucalyptus plant in a field bed of red soil, with further rows running away behind it.',
+  'variety-parvifolia': {
+    name: 'variety-parvifolia',
+    alt: "Parvifolia eucalyptus, small pointed blue-green leaves set closely along fine branching stems.",
     credit: null,
     widths: [640, 960, 1200],
     width: 1200,
     height: 1600,
+  },
+  'variety-globulus': {
+    name: 'variety-globulus',
+    alt: "A Globulus eucalyptus bush, broad rounded green leaves on red stems with bronze new growth.",
+    credit: null,
+    widths: [640, 960, 1200],
+    width: 1200,
+    height: 1600,
+  },
+  'rss-plantation': {
+    name: 'rss-plantation',
+    alt: "Rows of young Baby Blue eucalyptus in red-soil field beds on the Rasko Sweet Scent plantation, with cypress trees behind.",
+    credit: null,
+    widths: [640, 960],
+    width: 960,
+    height: 1280,
   },
   'cut-stems': {
     name: 'cut-stems',
-    alt: 'Freshly cut eucalyptus stems laid against a timber wall, cut ends turned to face the same way.',
+    alt: "Freshly cut eucalyptus stems laid against a timber wall, cut ends turned to face the same way.",
     credit: null,
     widths: [640, 960, 1200],
     width: 1200,
     height: 1600,
   },
-  sorting: {
+  'sorting': {
     name: 'sorting',
-    alt: 'Cut eucalyptus being sorted into bunches on a bench, with the stem ends gathered and aligned.',
+    alt: "Cut eucalyptus being sorted into bunches on a bench, with the stem ends gathered and aligned.",
     credit: null,
     widths: [640, 960, 1200],
     width: 1200,
@@ -79,7 +95,7 @@ export const photos = {
   },
   'bunch-tied': {
     name: 'bunch-tied',
-    alt: 'A tied bunch of eucalyptus resting on card, its stems trimmed level across the base.',
+    alt: "A tied bunch of eucalyptus resting on card, its stems trimmed level across the base.",
     credit: null,
     widths: [640, 960, 1200],
     width: 1200,
@@ -87,7 +103,7 @@ export const photos = {
   },
   'shed-rows': {
     name: 'shed-rows',
-    alt: 'Cut eucalyptus held in quantity inside the packing shed, banked in rows against a timber wall.',
+    alt: "Cut eucalyptus held in quantity inside the packing shed, banked in rows against a timber wall.",
     credit: null,
     widths: [640, 960, 1200],
     width: 1200,
@@ -95,19 +111,11 @@ export const photos = {
   },
   'shed-wide': {
     name: 'shed-wide',
-    alt: 'The packing shed seen wide, filled with cut eucalyptus waiting to be graded and tied.',
+    alt: "The packing shed seen wide, filled with cut eucalyptus waiting to be graded and tied.",
     credit: null,
     widths: [640, 960, 1280],
     width: 1600,
     height: 1200,
-  },
-  'stem-single': {
-    name: 'stem-single',
-    alt: 'One eucalyptus stem laid out flat, showing the full length and the regular pairing of its leaves.',
-    credit: null,
-    widths: [640, 960, 1200],
-    width: 1200,
-    height: 1600,
   },
 } as const satisfies Record<string, Photo>
 

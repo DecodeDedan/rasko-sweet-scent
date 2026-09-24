@@ -358,6 +358,18 @@ header sits on Rasko Green, and the header carries no WhatsApp button. Every
 photograph below the hero is a `PhotoCard`, one column of a four-column grid
 at a 3:4 ratio, so all cards render at one size. Needs client sign-off.
 
+**10. Four varieties, 20px cards, map shown directly.** Project owner,
+2026-09-24, superseding the "Baby Blue only" part of 8. The site lists Baby
+Blue, Gunni, Parvifolia and Globulus, one card each from the client's named
+photographs; the separate one-stem card is gone to keep the row of four even.
+Botanical names follow the trade names (E. pulverulenta, gunnii, parvifolia,
+globulus) and need client confirmation. Website cards use a 20px radius (the
+app keeps its 8px token). The Google map now loads with the page instead of on
+click, and the privacy notice says so. It is pinned at -0.3542512, 35.6862408,
+the location the owner shared on Google Maps (a live-location share, so the
+coordinate is stored, not the link). The "In the field" card in the farm
+section shows the client's plantation photograph. Needs client sign-off.
+
 **9. Stacked RSS monogram and slogan.** Project owner, 2026-09-24. The logo is
 now the client's recreation of the original printed monogram
 (`docs/brand/logo.svg`, #134B21), replacing the overlapping-letter mark. The

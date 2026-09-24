@@ -41,6 +41,9 @@
   --rw-container: 78rem;
   --rw-measure: 34rem;
   --rw-gutter: clamp(1.25rem, 0.8rem + 1.8vw, 3rem);
+  /* The website's card shape, shared by every card and the hero photograph
+   * (project owner, 2026-09-24). The app keeps its own 8px token. */
+  --rw-card-radius: 20px;
   --rw-section-y: clamp(5rem, 3rem + 7.5vw, 11rem);
 
   /* --- Motion --------------------------------------------------------
@@ -593,6 +596,10 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
   margin-top: clamp(3rem, 2rem + 4vw, 5.5rem);
 }
 
+.rw-hero__plate .rw-plate {
+  border-radius: var(--rw-card-radius);
+}
+
 /* ------------------------------------------------------------------ *
  * Section headings
  * ------------------------------------------------------------------ */
@@ -647,6 +654,10 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
     grid-column: span 2;
     padding-right: var(--rasko-space-5);
   }
+
+  .rw-cards__lead--full {
+    grid-column: 1 / -1;
+  }
 }
 
 .rw-cards__lead .rw-lede {
@@ -664,7 +675,7 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  border-radius: var(--rasko-radius-lg);
+  border-radius: var(--rw-card-radius);
   background: var(--rasko-surface);
   color: var(--rasko-text);
 }
@@ -706,6 +717,7 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
  * the styling is carrying information rather than adding emphasis.
  */
 .rw-variety__botanical {
+  margin: var(--rasko-space-1) 0 0;
   font-family: var(--rasko-font-heading);
   font-style: italic;
   font-size: var(--rasko-text-16);
@@ -1200,9 +1212,8 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
 /* ------------------------------------------------------------------ *
  * Where we grow (components/FarmMap.tsx)
  *
- * A white card above the footer. The map side is a tinted stand-in until
- * the visitor asks for the Google frame, so the card has the same size
- * before and after and nothing below it moves.
+ * A white card above the footer. The frame keeps a fixed size and a tinted
+ * ground while Google loads, so nothing below it moves.
  * ------------------------------------------------------------------ */
 
 .rw-map__card {
@@ -1251,11 +1262,7 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
 }
 
 .rw-map__open {
-  display: inline-flex;
-  align-items: center;
   gap: var(--rasko-space-2);
-  font-weight: var(--rasko-weight-medium);
-  color: var(--rasko-green);
 }
 
 .rw-map__note {
@@ -1276,29 +1283,6 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
     aspect-ratio: auto;
     min-height: 26rem;
   }
-}
-
-.rw-map__placeholder {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--rasko-space-3);
-  width: 100%;
-  border: 0;
-  background: transparent;
-  font-family: var(--rasko-font-heading);
-  font-size: var(--rasko-text-20);
-  font-weight: var(--rasko-weight-semibold);
-  color: var(--rasko-green-active);
-  cursor: pointer;
-}
-
-.rw-map__placeholder:focus-visible {
-  outline: 2px solid var(--rasko-green);
-  outline-offset: -4px;
 }
 
 .rw-map__status {

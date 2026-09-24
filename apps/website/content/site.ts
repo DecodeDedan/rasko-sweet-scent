@@ -79,12 +79,15 @@ export const site = {
   seo: {
     title: 'Rasko Sweet Scent | Baby Blue Eucalyptus Foliage, Kenya',
     description:
-      'Rasko Sweet Scent grows Baby Blue eucalyptus in Molo, Nakuru County, and supplies fresh-cut eucalyptus foliage to florists and floral decorators in Kenya.',
+      'Rasko Sweet Scent grows Baby Blue, Gunni, Parvifolia and Globulus eucalyptus in Molo, Nakuru County, and supplies fresh-cut foliage to florists and floral decorators in Kenya.',
     /** What the business knows about, for the structured data. */
     topics: [
       'Eucalyptus',
       'Baby Blue eucalyptus',
       'Eucalyptus pulverulenta',
+      'Eucalyptus gunnii',
+      'Eucalyptus parvifolia',
+      'Eucalyptus globulus',
       'Cut foliage',
       'Floral greenery',
     ],
@@ -103,20 +106,60 @@ export const site = {
 
   varieties: {
     heading: 'What we grow',
-    // Baby Blue only, confirmed by the project owner 2026-09-23. The pink-tipped
-    // variety is off the site until the farm decides to offer it again.
-    intro: 'Baby Blue eucalyptus, grown in open field beds.',
+    // Four varieties, confirmed by the project owner 2026-09-24 with a named
+    // photograph of each. Descriptions state only what those photographs show.
+    intro: 'Four eucalyptus varieties, all grown in open field beds.',
     items: [
       {
         label: 'Silver-blue eucalyptus',
-        // Confirmed by the project owner, 2026-09-23: Baby Blue is the
-        // specialty of the farm. Recorded in docs/PROGRESS.md for client
-        // sign-off alongside the other website decisions.
+        // Baby Blue is the specialty of the farm (project owner, 2026-09-23).
         tradeName: 'Baby Blue',
         botanicalName: 'Eucalyptus pulverulenta',
         photo: 'variety-silver',
         description:
-          'Round leaves in close opposite pairs, matt silver over blue-green, running the whole length of the stem. Eucalyptus of this kind keeps much of its colour and its scent as it dries.',
+          'Round leaves in close opposite pairs, matt silver over blue-green, running the whole length of the stem. It keeps much of its colour and its scent as it dries.',
+        spec: {
+          stemLength: null,
+          bunchSize: null,
+          vaseLife: null,
+          availability: null,
+        },
+      },
+      {
+        label: 'Long-leaf eucalyptus',
+        tradeName: 'Gunni',
+        botanicalName: 'Eucalyptus gunnii',
+        photo: 'variety-gunni',
+        description:
+          'Long, narrow green leaves on slender stems, with copper and orange new growth at the tips.',
+        spec: {
+          stemLength: null,
+          bunchSize: null,
+          vaseLife: null,
+          availability: null,
+        },
+      },
+      {
+        label: 'Small-leaf eucalyptus',
+        tradeName: 'Parvifolia',
+        botanicalName: 'Eucalyptus parvifolia',
+        photo: 'variety-parvifolia',
+        description:
+          'Small, pointed blue-green leaves set closely along fine, branching stems. A light, airy filler.',
+        spec: {
+          stemLength: null,
+          bunchSize: null,
+          vaseLife: null,
+          availability: null,
+        },
+      },
+      {
+        label: 'Broad-leaf eucalyptus',
+        tradeName: 'Globulus',
+        botanicalName: 'Eucalyptus globulus',
+        photo: 'variety-globulus',
+        description:
+          'Broad, rounded green leaves on red stems, the new growth coming through bronze and red.',
         spec: {
           stemLength: null,
           bunchSize: null,
@@ -199,17 +242,6 @@ export const site = {
     ],
   },
 
-  /**
-   * A single stem, shown as a card beside the variety. Its caption describes
-   * what is in the frame and a property of the plant: no quantity, no claim
-   * about the business.
-   */
-  specimen: {
-    photo: 'stem-single',
-    caption:
-      'One stem, laid out as it comes off the plant. The leaves run in opposite pairs the whole length of it.',
-  },
-
   enquiry: {
     heading: 'Send an enquiry',
     body: 'Tell us what you need and we will come back to you on availability and price.',
@@ -250,11 +282,12 @@ export const site = {
     /** County, for the map card's address line. */
     county: 'Nakuru County',
     /**
-     * What the map card searches Google Maps for. An area, not a pin on the
-     * farm gate: the owner pointed to "the areas of Molo, Nakuru", and a
-     * precise location is a fact nobody has confirmed.
+     * The farm's pin, as latitude,longitude. Taken from the location the
+     * project owner shared on Google Maps, 2026-09-24. A coordinate rather
+     * than the shared link: that link is a person's live location and
+     * expires, while the pin does not move.
      */
-    mapQuery: 'Molo, Nakuru County, Kenya',
+    mapQuery: '-0.3542512,35.6862408',
   },
 
   map: {

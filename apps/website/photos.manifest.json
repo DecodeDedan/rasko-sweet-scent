@@ -10,18 +10,28 @@
     },
     {
       "name": "variety-silver",
-      "file": "WhatsApp Image 2026-09-11 at 23.40.19 (1).jpeg",
-      "alt": "Dense silver-blue eucalyptus foliage, the round leaves set in opposite pairs along every stem."
+      "file": "Baby blue.jpeg",
+      "alt": "A Baby Blue eucalyptus in a field bed, its stems covered from base to tip in round silver-blue leaves."
     },
     {
-      "name": "variety-pink",
-      "file": "WhatsApp Image 2026-09-11 at 23.40.25 (3).jpeg",
-      "alt": "A eucalyptus bush carrying pink and bronze new growth at the tips of its green leaves."
+      "name": "variety-gunni",
+      "file": "Gunni.jpeg",
+      "alt": "A Gunni eucalyptus in a field bed, long narrow green leaves with copper new growth at the tips."
     },
     {
-      "name": "field-silver-row",
-      "file": "WhatsApp Image 2026-09-11 at 23.40.21.jpeg",
-      "alt": "A young eucalyptus plant in a field bed of red soil, with further rows running away behind it."
+      "name": "variety-parvifolia",
+      "file": "Parvifolia.jpeg",
+      "alt": "Parvifolia eucalyptus, small pointed blue-green leaves set closely along fine branching stems."
+    },
+    {
+      "name": "variety-globulus",
+      "file": "Globulus.jpeg",
+      "alt": "A Globulus eucalyptus bush, broad rounded green leaves on red stems with bronze new growth."
+    },
+    {
+      "name": "rss-plantation",
+      "file": "rss-plantation.jpeg",
+      "alt": "Rows of young Baby Blue eucalyptus in red-soil field beds on the Rasko Sweet Scent plantation, with cypress trees behind."
     },
     {
       "name": "cut-stems",
@@ -47,11 +57,6 @@
       "name": "shed-wide",
       "file": "WhatsApp Image 2026-09-11 at 23.40.24 (2).jpeg",
       "alt": "The packing shed seen wide, filled with cut eucalyptus waiting to be graded and tied."
-    },
-    {
-      "name": "stem-single",
-      "file": "WhatsApp Image 2026-09-11 at 23.40.24.jpeg",
-      "alt": "One eucalyptus stem laid out flat, showing the full length and the regular pairing of its leaves."
     }
   ],
   "referenceSource": "./reference"
