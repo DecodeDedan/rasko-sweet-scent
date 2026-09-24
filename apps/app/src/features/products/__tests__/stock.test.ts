@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { SqlDatabase } from '../../../data/sqlite/types.js'
 import { ProductRuleError, ProductsRepository } from '../productsRepository.js'
-import { MANAGER, OWNER, PRODUCT, SALES, seededDatabase } from './fixture.js'
+import { pendingCount } from '../../../data/sync/outbox.js'
+import { CATEGORY, MANAGER, OWNER, PRODUCT, SALES, seededDatabase } from './fixture.js'
 
 describe('stock derived from movements', () => {
   let db: SqlDatabase
@@ -284,5 +285,68 @@ describe('stock derived from movements', () => {
         is_active: true,
       }),
     ).rejects.toThrow(/already in use/i)
+  })
+})
+
+describe('categories (FR-6.1)', () => {
+  let db: SqlDatabase
+  let manager: ProductsRepository
+
+  beforeEach(async () => {
+    db = await seededDatabase()
+    manager = new ProductsRepository(db, { role: 'manager', userId: MANAGER }, { userId: MANAGER })
+  })
+
+  afterEach(async () => {
+    await db.close()
+  })
+
+  it('creates a category locally and queues it for sync', async () => {
+    const before = await pendingCount(db)
+    await manager.createCategory('cb000000-0000-4000-8000-000000000001', '  Baby Blue  ')
+
+    const names = (await manager.categories()).map((c) => c.name)
+    expect(names).toContain('Baby Blue')
+    expect(await pendingCount(db)).toBe(before + 1)
+  })
+
+  it('refuses a name already in use, ignoring case', async () => {
+    await expect(
+      manager.createCategory('cb000000-0000-4000-8000-000000000002', 'fresh FLOWERS'),
+    ).rejects.toThrow(/already a category/i)
+  })
+
+  it('refuses to remove a category that products still use', async () => {
+    await expect(manager.removeCategory(CATEGORY)).rejects.toThrow(/4 products still use/)
+  })
+
+  it('removes an unused category', async () => {
+    const id = 'cb000000-0000-4000-8000-000000000003'
+    await manager.createCategory(id, 'Gunni')
+    await manager.removeCategory(id)
+    expect((await manager.categories()).map((c) => c.id)).not.toContain(id)
+  })
+
+  it('refuses category changes for sales (PRD §3.1: view only)', async () => {
+    const sales = new ProductsRepository(db, { role: 'sales', userId: SALES }, { userId: SALES })
+    await expect(
+      sales.createCategory('cb000000-0000-4000-8000-000000000004', 'Gunni'),
+    ).rejects.toBeInstanceOf(ProductRuleError)
+  })
+
+  it('refuses a product without a category', async () => {
+    await expect(
+      manager.createProduct({
+        id: 'ae000000-0000-4000-8000-000000000009',
+        sku: 'RSS-BB-001',
+        name: 'Baby Blue, 60cm',
+        category_id: '',
+        unit: 'stem',
+        cost_price_cents: 1,
+        selling_price_cents: 2,
+        low_stock_threshold: 0,
+        is_active: true,
+      }),
+    ).rejects.toThrow(/choose a category/i)
   })
 })

@@ -11,7 +11,7 @@ import {
 } from '../statutory.js'
 import type { RatesSnapshot } from '../statutory.js'
 
-/** The figures seeded into `statutory_rates` by supabase/seed.sql. */
+/** Fixed test figures, independent of the live rates in migration 20260924000200. */
 const RATES: RatesSnapshot = {
   paye: {
     personal_relief_cents: 240_000,

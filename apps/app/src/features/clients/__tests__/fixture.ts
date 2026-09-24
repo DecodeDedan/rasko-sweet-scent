@@ -3,7 +3,7 @@ import { migrateLocalSchema } from '../../../data/sqlite/schema.js'
 import type { SqlDatabase } from '../../../data/sqlite/types.js'
 
 /**
- * The subset of `supabase/seed.sql` that the balance arithmetic depends on,
+ * The subset of `supabase/demo/demo-data.sql` that the balance arithmetic depends on,
  * inserted straight into the local mirror as though it had been pulled.
  *
  * Ids and amounts are copied from the seed so the figures in balances.test.ts

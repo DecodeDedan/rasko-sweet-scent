@@ -21,7 +21,7 @@ Deno.serve(async (request) => {
 
   const context = await requireOwner(request)
   if (context instanceof Response) return context
-  const { admin, ownerId } = context
+  const { admin, ownerId, isSuperAdmin } = context
 
   let body: { userId?: string; isActive?: boolean }
   try {
@@ -39,6 +39,17 @@ Deno.serve(async (request) => {
   // in without a database administrator.
   if (userId === ownerId && !isActive) {
     return json({ error: 'You cannot deactivate your own account.' }, 400)
+  }
+
+  const { data: target, error: targetError } = await admin
+    .from('profiles')
+    .select('is_super_admin')
+    .eq('id', userId)
+    .maybeSingle()
+  if (targetError) return json({ error: 'Could not read that account.' }, 500)
+  if (!target) return json({ error: 'That account no longer exists.' }, 404)
+  if (target.is_super_admin && !isSuperAdmin) {
+    return json({ error: 'Only the super admin can change the super admin account.' }, 403)
   }
 
   const { error: profileError } = await admin

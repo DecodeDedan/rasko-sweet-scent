@@ -15,9 +15,9 @@ forbidden actions"), and re-run §12 after any migration that touches policies.
 ## 0. Applying the schema
 
 ```bash
-supabase init                 # creates supabase/config.toml; keep the existing seed.sql
 supabase start                # local stack (Docker)
-supabase db reset             # apply all migrations, then run seed.sql
+supabase db reset             # apply all migrations (no demo data)
+docker exec -i supabase_db_rasko-sweetscent psql -U postgres < supabase/demo/demo-data.sql
 ```
 
 Against a hosted project:
@@ -25,7 +25,7 @@ Against a hosted project:
 ```bash
 supabase link --project-ref <PROJECT_REF>
 supabase db push                                  # migrations only
-psql "$DATABASE_URL" -f supabase/seed.sql         # staging only, never production
+psql "$DATABASE_URL" -f supabase/demo/demo-data.sql   # staging only, never production
 ```
 
 `supabase db reset` is destructive — it drops and rebuilds the local database. Never
@@ -65,7 +65,7 @@ To test the public website surface, use `set local role anon` and set no claims.
 
 ### 1.3 Seeded users
 
-`supabase/seed.sql` creates these with fixed ids so the checks are copy-pasteable.
+`supabase/demo/demo-data.sql` creates these with fixed ids so the checks are copy-pasteable.
 
 | Role       | UUID                                   | Name             |
 | ---------- | -------------------------------------- | ---------------- |

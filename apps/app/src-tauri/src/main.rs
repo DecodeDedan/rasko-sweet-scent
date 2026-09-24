@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    rasko_app_lib::run()
+    rasko_sweet_scent_lib::run()
 }

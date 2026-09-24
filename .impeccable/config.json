@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "arial",
+        "createdAt": "2026-09-24T14:34:51.952Z",
+        "reason": "Claude: email-client fallback after the brand's Manrope; mail clients cannot load bundled fonts (layout.js header comment)"
+      }
+    ]
+  }
+}

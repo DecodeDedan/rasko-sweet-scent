@@ -78,7 +78,12 @@ built. Modules are built one per session against `docs/prd.md` and checked off i
 - `supabase/migrations` — 14 versioned migrations implementing the whole schema:
   25 tables, 61 RLS policies, check constraints, indexes, `updated_at` triggers,
   append-only guards, gap-free document numbering and the audit triggers.
-- `supabase/seed.sql` — invented Kenyan demo data for local and staging.
+- `supabase/demo/demo-data.sql` — invented demo data for the policy checks only. It is
+  **not** loaded by `db reset` (the local database starts empty and real). Reference rows
+  (company settings, tax, statutory rates) come from migration `20260924000200`.
+- **Super admin** — an owner with `profiles.is_super_admin` (migration `20260924000100`),
+  created once per project with `pnpm admin:create`. Protected from other owners; only it
+  grants the owner role. `auth/userAdmin.ts` mirrors the trigger for the Users screen.
 - `docs/policy-tests.md` — every policy with a manual dashboard check.
 
 - `apps/app/src/auth` — FR-1.1 to FR-1.6: PKCE sign-in, offline identity cache,
@@ -182,9 +187,13 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
   `envDir` to the root and widens `envPrefix` to `['VITE_', 'SUPABASE_', 'APP_']`, so the
   variables in `.env.example` work under their documented names. Adding a variable that
   does not carry one of those prefixes will silently not reach the bundle.
-- **The updater plugin is a dependency but is deliberately not registered** — it refuses to
-  initialise without a minisign public key, and no keypair exists yet. `apps/app/src-tauri/src/lib.rs`
-  documents the four steps to switch it on at release-signing time.
+- **The updater is registered** against the minisign key in `tauri.conf.json` (private key in
+  `~/.tauri/rasko.key`, never committed) and polls
+  `github.com/DecodeDedan/rasko-sweet-scent` releases. The repo must stay public for
+  installed copies to download updates without credentials.
+- **Invitation and reset emails link with `token_hash`, not `?code=`.** The app uses PKCE,
+  and a PKCE code can only be redeemed by the app. The website's `/reset-password` page
+  verifies the hash (`supabase/templates/`, docs/auth-setup.md §2).
 - **Fonts are vendored in `packages/ui/fonts/`** with their OFL licences. Never replace them
   with `next/font/google` or a CDN link; the app must work fully offline.
 - **`docs/brand/logo.svg` is the stacked RSS monogram** (the client's recreation, supplied
@@ -279,6 +288,20 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
   `app.receive_purchase_into_stock` owns them, idempotently.
 - **The dashboard stores nothing.** Every figure is an aggregate computed on read;
   a cached total is a second source of truth that drifts on the next sync.
+- **Client email is a synced row, not a network call.** `features/email` inserts
+  `outbound_emails`; the server sends it (`send-email`, `pg_net`, `pg_cron`
+  sweep) and the status syncs back. The table pushes with `pushInsertOnly` so a
+  retried push can never reset `sent` to `queued` and send twice. The preview in
+  Settings imports the same `compose.js` the function runs. Setup:
+  `docs/email-setup.md`.
+- **Every email, Auth included, comes from `_shared/email/layout.js`.** Edit the
+  frame there, then run `pnpm emails:auth`; never hand-edit `supabase/templates/`.
+- **The Rust crate is `rasko-sweet-scent`** (lib `rasko_sweet_scent_lib`). A crate
+  name cannot contain spaces; the display name is `productName` in
+  `tauri.conf.json`.
+- **The first-run tour anchors on `data-tour`** attributes (sidebar and bottom
+  nav items, `sync`, `help`). Renaming one without updating `onboarding/tour.ts`
+  silently turns that stop into a centred dialog.
 - **The website build fails on purpose while the WhatsApp number is missing.**
   That is `scripts/check-content.mjs`, not a broken build.
 

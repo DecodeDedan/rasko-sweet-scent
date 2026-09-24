@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button, Field, Input } from '@rasko/ui'
 
 import { useAuth } from '../../auth/AuthProvider.js'
+import { AuthLayout } from './AuthLayout.js'
 
 /** Matches the Supabase project default. Kept in one place so the rule stated
  *  to the user and the rule enforced are the same value. */
@@ -42,7 +43,7 @@ export function ForcePasswordChangeScreen() {
   }
 
   return (
-    <div className="auth-screen">
+    <AuthLayout>
       <form className="auth-card" onSubmit={handleSubmit} noValidate>
         <div>
           <h1 className="auth-title">Choose your password</h1>
@@ -86,6 +87,6 @@ export function ForcePasswordChangeScreen() {
           Sign out instead
         </button>
       </form>
-    </div>
+    </AuthLayout>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { useIdentity } from '../../auth/AuthProvider.js'
 import { useSync } from '../../data/sync/SyncProvider.js'
@@ -56,20 +56,17 @@ export function useProductList(query: ProductQuery) {
   return { products, isLoading, error, reload: load }
 }
 
-export function useCategories(): Category[] {
+export function useCategories(): { categories: Category[]; reload: () => Promise<void> } {
   const repo = useProductsRepository()
   const [categories, setCategories] = useState<Category[]>([])
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!repo) return
-    let cancelled = false
-    void repo.categories().then((rows) => {
-      if (!cancelled) setCategories(rows)
-    })
-    return () => {
-      cancelled = true
-    }
+    setCategories(await repo.categories())
   }, [repo])
 
-  return categories
+  // Re-read after a sync too: another device may have added one.
+  useSyncedEffect(load)
+
+  return { categories, reload: load }
 }

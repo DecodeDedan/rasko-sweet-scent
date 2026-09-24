@@ -17,6 +17,9 @@ export function json(body: unknown, status = 200): Response {
 export interface OwnerContext {
   admin: SupabaseClient
   ownerId: string
+  /** Migration 20260924000100. This client bypasses the profile trigger, so
+   *  functions repeat its super-admin checks themselves. */
+  isSuperAdmin: boolean
 }
 
 /**
@@ -52,7 +55,7 @@ export async function requireOwner(request: Request): Promise<OwnerContext | Res
 
   const { data: profile, error: profileError } = await admin
     .from('profiles')
-    .select('role, is_active')
+    .select('role, is_active, is_super_admin')
     .eq('id', userData.user.id)
     .maybeSingle()
 
@@ -64,5 +67,5 @@ export async function requireOwner(request: Request): Promise<OwnerContext | Res
     return json({ error: 'Only the owner can manage users.' }, 403)
   }
 
-  return { admin, ownerId: userData.user.id }
+  return { admin, ownerId: userData.user.id, isSuperAdmin: profile.is_super_admin === true }
 }

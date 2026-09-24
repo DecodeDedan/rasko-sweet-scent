@@ -11,25 +11,44 @@
   align-items: center;
   justify-content: center;
   gap: var(--rasko-space-2);
-  height: 36px;
+  height: 38px;
   padding: 0 var(--rasko-space-4);
   border: 1px solid transparent;
-  border-radius: var(--rasko-radius-md);
+  border-radius: var(--rasko-radius-lg);
   background: transparent;
   font-family: var(--rasko-font-body);
   font-size: var(--rasko-text-14);
-  font-weight: var(--rasko-weight-medium);
+  font-weight: var(--rasko-weight-semibold);
+  letter-spacing: 0.005em;
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
   transition:
     background-color 120ms ease,
     border-color 120ms ease,
-    color 120ms ease;
+    color 120ms ease,
+    transform 120ms ease;
+}
+
+/* A press you can feel: the button settles by a pixel. Transform only. */
+.rsk-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.rsk-btn:focus-visible,
+.rsk-icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--rasko-focus-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rsk-btn:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 .rsk-btn--sm {
-  height: 30px;
+  height: 32px;
   padding: 0 var(--rasko-space-3);
   font-size: var(--rasko-text-13);
 }
@@ -63,8 +82,9 @@
   color: var(--rasko-text);
 }
 .rsk-btn--secondary:hover:not(:disabled) {
-  background: var(--rasko-surface-subtle);
-  border-color: var(--rasko-disabled);
+  background: var(--rasko-green-tint);
+  border-color: var(--rasko-green-tint-border);
+  color: var(--rasko-green-active);
 }
 
 .rsk-btn--ghost {
@@ -89,18 +109,18 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   border: 0;
-  border-radius: var(--rasko-radius-md);
+  border-radius: var(--rasko-radius-lg);
   background: transparent;
   color: var(--rasko-text-secondary);
   cursor: pointer;
 }
 .rsk-icon-btn:hover {
-  background: var(--rasko-surface-subtle);
-  color: var(--rasko-text);
+  background: var(--rasko-green-tint);
+  color: var(--rasko-green-active);
 }
 .rsk-icon-btn--sm {
   width: 24px;
@@ -138,7 +158,7 @@
 
 .rsk-field__label {
   font-size: var(--rasko-text-13);
-  font-weight: var(--rasko-weight-medium);
+  font-weight: var(--rasko-weight-semibold);
   color: var(--rasko-text);
 }
 
@@ -160,13 +180,16 @@
 .rsk-input,
 .rsk-select__control {
   width: 100%;
-  height: 36px;
+  height: 40px;
   padding: 0 var(--rasko-space-3);
   border: 1px solid var(--rasko-border);
-  border-radius: var(--rasko-radius-md);
+  border-radius: var(--rasko-radius-lg);
   background: var(--rasko-surface);
   color: var(--rasko-text);
   font-size: var(--rasko-text-14);
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .rsk-input::placeholder {
@@ -178,10 +201,13 @@
   border-color: var(--rasko-disabled);
 }
 
+/* The focus halo is the tint, so a focused field reads as Rasko Green
+ * without a second colour and without relying on the 1px border alone. */
 .rsk-input:focus,
 .rsk-select__control:focus {
   outline: none;
   border-color: var(--rasko-green);
+  box-shadow: 0 0 0 3px var(--rasko-green-tint);
 }
 
 .rsk-input:disabled,
@@ -229,13 +255,24 @@ textarea.rsk-input {
 .rsk-chip {
   display: inline-flex;
   align-items: center;
-  height: 22px;
+  gap: 6px;
+  height: 24px;
   padding: 0 var(--rasko-space-2);
   border: 1px solid transparent;
-  border-radius: var(--rasko-radius-sm);
+  border-radius: var(--rasko-radius-lg);
   font-size: var(--rasko-text-12);
-  font-weight: var(--rasko-weight-medium);
+  font-weight: var(--rasko-weight-semibold);
   white-space: nowrap;
+}
+
+/* A dot in the chip's own colour. The word still carries the meaning. */
+.rsk-chip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .rsk-chip--neutral {
@@ -288,7 +325,8 @@ textarea.rsk-input {
 }
 
 .rsk-card__title {
-  font-size: var(--rasko-text-14);
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-16);
   font-weight: var(--rasko-weight-semibold);
 }
 
@@ -335,10 +373,14 @@ textarea.rsk-input {
 }
 
 .rsk-table th {
-  padding: var(--rasko-space-2) var(--rasko-space-3);
+  padding: 10px var(--rasko-space-3);
   border-bottom: 1px solid var(--rasko-border);
+  background: var(--rasko-surface-subtle);
   color: var(--rasko-text-secondary);
-  font-weight: var(--rasko-weight-medium);
+  font-size: var(--rasko-text-12);
+  font-weight: var(--rasko-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   text-align: left;
   white-space: nowrap;
 }
@@ -348,14 +390,22 @@ textarea.rsk-input {
 }
 
 .rsk-table td {
-  padding: var(--rasko-space-3);
+  padding: 13px var(--rasko-space-3);
   border-bottom: 1px solid var(--rasko-border);
   color: var(--rasko-text);
   vertical-align: middle;
 }
 
-.rsk-table tbody tr:nth-child(even) {
+.rsk-table tbody tr {
+  transition: background-color 120ms ease;
+}
+
+.rsk-table tbody tr:hover {
   background: var(--rasko-surface-subtle);
+}
+
+.rsk-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .rsk-table__row--selectable {
@@ -381,9 +431,9 @@ textarea.rsk-input {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  margin-bottom: var(--rasko-space-1);
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--rasko-space-2);
   border: 1px solid var(--rasko-green-tint-border);
   border-radius: var(--rasko-radius-lg);
   background: var(--rasko-green-tint);
@@ -391,7 +441,8 @@ textarea.rsk-input {
 }
 
 .rsk-empty__title {
-  font-size: var(--rasko-text-16);
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-20);
   font-weight: var(--rasko-weight-semibold);
 }
 
@@ -409,11 +460,11 @@ textarea.rsk-input {
 
 .rsk-page-header {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
   gap: var(--rasko-space-4);
   flex-wrap: wrap;
-  padding-bottom: var(--rasko-space-4);
+  padding-bottom: var(--rasko-space-5);
 }
 
 .rsk-page-header__title-row {
@@ -423,15 +474,24 @@ textarea.rsk-input {
 }
 
 .rsk-page-header__title {
+  font-family: var(--rasko-font-heading);
   font-size: var(--rasko-text-24);
   font-weight: var(--rasko-weight-semibold);
+  letter-spacing: -0.01em;
+  line-height: var(--rasko-leading-tight);
+}
+
+@media (min-width: 768px) {
+  .rsk-page-header__title {
+    font-size: var(--rasko-text-32);
+  }
 }
 
 .rsk-page-header__description {
-  margin-top: var(--rasko-space-1);
+  margin-top: var(--rasko-space-2);
   max-width: 68ch;
   color: var(--rasko-text-secondary);
-  font-size: var(--rasko-text-13);
+  font-size: var(--rasko-text-14);
 }
 
 .rsk-page-header__actions {
@@ -470,7 +530,8 @@ textarea.rsk-input {
 
 .rsk-tabs__tab--active {
   border-bottom-color: var(--rasko-green);
-  color: var(--rasko-green);
+  color: var(--rasko-green-active);
+  font-weight: var(--rasko-weight-semibold);
 }
 
 .rsk-tabs__badge {
@@ -510,6 +571,8 @@ textarea.rsk-input {
   width: min(800px, calc(100vw - 2 * var(--rasko-space-4)));
 }
 
+/* Elevation is functional here: it is what separates a dialog from the page
+ * beneath it. Only overlays carry a shadow; nothing on the page does. */
 .rsk-modal__panel,
 .rsk-drawer__panel {
   display: flex;
@@ -518,6 +581,56 @@ textarea.rsk-input {
   border-radius: var(--rasko-radius-lg);
   background: var(--rasko-surface);
   border: 1px solid var(--rasko-border);
+  box-shadow: 0 24px 48px -16px rgb(17 17 17 / 22%);
+}
+
+/* Entrances run in CSS on the native [open] state: no script decides whether
+ * a dialog is visible, and without animation support it simply appears. */
+.rsk-modal[open] .rsk-modal__panel {
+  animation: rsk-dialog-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rsk-drawer--end[open] .rsk-drawer__panel {
+  animation: rsk-drawer-in 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rsk-drawer--bottom[open] .rsk-drawer__panel {
+  animation: rsk-sheet-in 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rsk-modal[open]::backdrop,
+.rsk-drawer[open]::backdrop {
+  animation: rsk-fade-in 200ms ease-out;
+}
+
+@keyframes rsk-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+}
+@keyframes rsk-drawer-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0.4;
+  }
+}
+@keyframes rsk-sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0.4;
+  }
+}
+@keyframes rsk-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rsk-modal[open] .rsk-modal__panel,
+  .rsk-drawer[open] .rsk-drawer__panel,
+  .rsk-modal[open]::backdrop,
+  .rsk-drawer[open]::backdrop {
+    animation: none;
+  }
 }
 
 .rsk-modal__header,
@@ -526,14 +639,16 @@ textarea.rsk-input {
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--rasko-space-3);
-  padding: var(--rasko-space-4);
+  padding: var(--rasko-space-5) var(--rasko-space-5) var(--rasko-space-4);
   border-bottom: 1px solid var(--rasko-border);
 }
 
 .rsk-modal__title,
 .rsk-drawer__title {
-  font-size: var(--rasko-text-16);
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-20);
   font-weight: var(--rasko-weight-semibold);
+  line-height: var(--rasko-leading-tight);
 }
 
 .rsk-modal__description,
@@ -545,7 +660,7 @@ textarea.rsk-input {
 
 .rsk-modal__body,
 .rsk-drawer__body {
-  padding: var(--rasko-space-4);
+  padding: var(--rasko-space-5);
   overflow-y: auto;
 }
 
@@ -562,7 +677,7 @@ textarea.rsk-input {
 
 /* Right edge on desktop. `margin: auto` is how a native dialog is positioned. */
 .rsk-drawer--end {
-  width: min(480px, 100vw);
+  width: min(520px, 100vw);
   height: 100%;
   max-height: 100%;
   margin: 0 0 0 auto;
@@ -608,9 +723,17 @@ textarea.rsk-input {
   padding: var(--rasko-space-3);
   border: 1px solid var(--rasko-border);
   border-left-width: 3px;
-  border-radius: var(--rasko-radius-md);
+  border-radius: var(--rasko-radius-lg);
   background: var(--rasko-surface);
+  box-shadow: 0 12px 28px -12px rgb(17 17 17 / 22%);
   pointer-events: auto;
+  animation: rsk-dialog-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rsk-toast {
+    animation: none;
+  }
 }
 
 .rsk-toast--neutral {
@@ -657,6 +780,52 @@ textarea.rsk-input {
   font-size: var(--rasko-text-12);
 }
 
+/* ----------------------------------------------------------------- Tooltip */
+
+.rsk-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.rsk-tooltip__bubble {
+  position: absolute;
+  z-index: 60;
+  width: max-content;
+  max-width: 240px;
+  padding: 6px 10px;
+  border-radius: var(--rasko-radius-lg);
+  /* Deep green, not black: black is for text and icons only (docs/brand.md). */
+  background: var(--rasko-green-active);
+  color: var(--rasko-on-green);
+  font-size: var(--rasko-text-12);
+  font-weight: var(--rasko-weight-medium);
+  line-height: 1.4;
+  pointer-events: none;
+  animation: rsk-fade-in 120ms ease-out;
+}
+
+.rsk-tooltip__bubble--top {
+  bottom: calc(100% + 8px);
+  left: 50%;
+  translate: -50% 0;
+}
+.rsk-tooltip__bubble--bottom {
+  top: calc(100% + 8px);
+  left: 50%;
+  translate: -50% 0;
+}
+.rsk-tooltip__bubble--right {
+  top: 50%;
+  left: calc(100% + 8px);
+  translate: 0 -50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rsk-tooltip__bubble {
+    animation: none;
+  }
+}
+
 /* --------------------------------------------------------------- Utilities */
 
 .rsk-stack {
@@ -686,9 +855,11 @@ textarea.rsk-input {
 }
 
 .rsk-metric__value {
-  margin: var(--rasko-space-1) 0 0;
+  margin: var(--rasko-space-2) 0 0;
   font-size: var(--rasko-text-24);
-  font-weight: var(--rasko-weight-semibold);
+  font-weight: var(--rasko-weight-bold);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
   color: var(--rasko-text);
 }
 

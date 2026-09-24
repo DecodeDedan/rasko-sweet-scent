@@ -20,6 +20,7 @@ export function makeProfile(overrides: Partial<ProfileRecord> = {}): ProfileReco
     role: 'owner',
     isActive: true,
     mustChangePassword: false,
+    isSuperAdmin: false,
     ...overrides,
   }
 }

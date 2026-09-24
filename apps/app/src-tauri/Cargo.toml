@@ -1,5 +1,5 @@
 [package]
-name = "rasko-app"
+name = "rasko-sweet-scent"
 version = "0.1.0"
 description = "Rasko Sweet Scent business management system"
 authors = ["Rasko Sweet Scent"]
@@ -8,7 +8,7 @@ rust-version = "1.77.2"
 
 [lib]
 # The mobile targets link the app as a library; the desktop binary calls into it.
-name = "rasko_app_lib"
+name = "rasko_sweet_scent_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

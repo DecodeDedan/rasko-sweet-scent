@@ -38,6 +38,7 @@ export class OrderRuleError extends Error {
 const SUMMARY_SELECT = `
   SELECT o.*,
          COALESCE(c.name, CASE WHEN o.is_walk_in = 1 THEN 'Walk-in' ELSE 'Unknown client' END) AS client_name,
+         c.email AS client_email,
          COALESCE(li.item_count, 0) AS item_count
   FROM orders o
   LEFT JOIN clients c ON c.id = o.client_id
@@ -58,6 +59,7 @@ function toSummary(row: Record<string, unknown>): OrderSummary {
     discount_cents: Number(row['discount_cents'] ?? 0),
     total_cents: Number(row['total_cents'] ?? 0),
     clientName: String(row['client_name'] ?? 'Unknown client'),
+    clientEmail: row['client_email'] ? String(row['client_email']) : null,
     itemCount: Number(row['item_count'] ?? 0),
   }
 }

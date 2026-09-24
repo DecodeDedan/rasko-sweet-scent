@@ -84,7 +84,9 @@ async function pushBatch(
 
     let result
     try {
-      result = await remote.push(spec.name, rows, { appendOnly: spec.appendOnly === true })
+      result = await remote.push(spec.name, rows, {
+        appendOnly: spec.appendOnly === true || spec.pushInsertOnly === true,
+      })
     } catch (cause) {
       if (cause instanceof SyncAuthError) {
         outcome.authFailed = true

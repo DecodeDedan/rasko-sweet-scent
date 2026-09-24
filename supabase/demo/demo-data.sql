@@ -10,7 +10,11 @@
 -- Money is integer cents (PRD §7): 6000 = KES 60.00.
 -- Phone numbers satisfy the +254 CHECK constraint on every table.
 --
--- Idempotent: re-running does nothing. `supabase db reset` runs it automatically.
+-- NOT loaded automatically: `supabase db reset` gives an empty, real database
+-- (config.toml [db.seed] is off). Load it by hand for docs/policy-tests.md:
+--     docker exec -i supabase_db_rasko-sweetscent psql -U postgres < supabase/demo/demo-data.sql
+-- Statutory rates, tax config and the settings row come from migrations.
+-- Idempotent: re-running does nothing.
 --
 -- Fixed UUIDs are deliberate — docs/policy-tests.md refers to these exact ids.
 -- ============================================================================
@@ -75,20 +79,13 @@ on conflict (id) do nothing;
 
 -- ------------------------------------------------------------------ settings
 
-insert into public.company_settings (
-  id, company_name, address, phone, email, kra_pin,
-  is_vat_registered, stock_deduction_point, update_cost_on_receipt
-) values (
-  '00000000-0000-0000-0000-000000000001',
-  'Rasko Sweet Scent',
-  'Kenyatta Avenue, Nakuru, Kenya',
-  '+254712004500',
-  'hello@raskosweetscent.example',
-  'A000000001X',            -- invented; the real KRA PIN is PRD §12 open question 6
-  false,                    -- OPEN: VAT registration unconfirmed (PRD §12.3)
-  'delivered',              -- FR-6.6: recommended default, client to confirm (PRD §12.4)
-  false                     -- OPEN: cost-on-receipt behaviour unconfirmed (FR-7.3)
-) on conflict (id) do nothing;
+-- The row itself comes from migration 20260924000200; the demo fills it in.
+update public.company_settings set
+  address   = 'Kenyatta Avenue, Nakuru, Kenya',
+  phone     = '+254712004500',
+  email     = 'hello@raskosweetscent.example',
+  kra_pin   = 'A000000001X'   -- invented; the real KRA PIN is PRD §12 open question 6
+where id = '00000000-0000-0000-0000-000000000001';
 
 insert into public.categories (id, name, slug, is_vatable, position) values
   ('ca000000-0000-4000-8000-000000000001', 'Fresh flowers',            'fresh_flowers', true, 1),
@@ -96,26 +93,6 @@ insert into public.categories (id, name, slug, is_vatable, position) values
   ('ca000000-0000-4000-8000-000000000003', 'Vases',                    'vases',         true, 3),
   ('ca000000-0000-4000-8000-000000000004', 'Accessories',              'accessories',   true, 4),
   ('ca000000-0000-4000-8000-000000000005', 'Other',                    'other',         true, 5)
-on conflict (id) do nothing;
-
--- Rates are illustrative placeholders, NOT legal advice. The client's
--- accountant verifies the first live payroll (PRD §9).
-insert into public.statutory_rates (id, kind, effective_from, config) values
-  ('5a000000-0000-4000-8000-000000000001', 'paye', date '2026-01-01',
-   '{"personal_relief_cents": 240000,
-     "bands": [{"upto_cents": 2880000, "rate_bp": 1000},
-               {"upto_cents": 3880000, "rate_bp": 2500},
-               {"upto_cents": null,    "rate_bp": 3000}]}'::jsonb),
-  ('5a000000-0000-4000-8000-000000000002', 'nssf', date '2026-01-01',
-   '{"tier_1_cap_cents": 800000, "tier_2_cap_cents": 7200000, "rate_bp": 600}'::jsonb),
-  ('5a000000-0000-4000-8000-000000000003', 'shif', date '2026-01-01',
-   '{"rate_bp": 275, "minimum_cents": 30000}'::jsonb),
-  ('5a000000-0000-4000-8000-000000000004', 'housing_levy', date '2026-01-01',
-   '{"rate_bp": 150, "cap_cents": null}'::jsonb)
-on conflict (id) do nothing;
-
-insert into public.tax_config (id, is_vat_enabled, vat_rate_bp, effective_from) values
-  ('7a000000-0000-4000-8000-000000000001', false, 1600, date '2026-01-01')
 on conflict (id) do nothing;
 
 -- ------------------------------------------------------------------- clients

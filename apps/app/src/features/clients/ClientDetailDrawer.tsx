@@ -1,9 +1,12 @@
 'use client'
 
-import { Pencil, Trash2 } from 'lucide-react'
+import { Mail, Pencil, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button, Drawer, StatusChip, Table, formatDate, formatKes, formatPhone } from '@rasko/ui'
 
+import { EmailActivity } from '../email/EmailActivity.js'
+import { SendEmailDialog } from '../email/SendEmailDialog.js'
+import { useEmailHistory } from '../email/useEmail.js'
 import { CLIENT_TYPE_LABEL } from './types.js'
 import type { ClientDetail } from './types.js'
 import type { ClientsRepository } from './clientsRepository.js'
@@ -25,6 +28,8 @@ export function ClientDetailDrawer({
   canDelete: boolean
 }) {
   const [detail, setDetail] = useState<ClientDetail | null>(null)
+  const [isEmailing, setIsEmailing] = useState(false)
+  const { emails, reload: reloadEmails } = useEmailHistory(clientId ? `client:${clientId}` : null)
 
   useEffect(() => {
     if (!clientId) {
@@ -76,6 +81,12 @@ export function ClientDetailDrawer({
                 Delete
               </Button>
             )}
+            <Button
+              leadingIcon={<Mail size={14} aria-hidden="true" />}
+              onClick={() => setIsEmailing(true)}
+            >
+              Email
+            </Button>
             <Button
               variant="primary"
               leadingIcon={<Pencil size={14} aria-hidden="true" />}
@@ -212,8 +223,23 @@ export function ClientDetailDrawer({
               ]}
             />
           </section>
+
+          <EmailActivity emails={emails} />
         </div>
       )}
+
+      {isEmailing && client ? (
+        <SendEmailDialog
+          kind="message"
+          contextLabel={client.name}
+          related={null}
+          clientId={client.id}
+          defaultToEmail={client.email ?? null}
+          defaultToName={client.name}
+          onClose={() => setIsEmailing(false)}
+          onQueued={() => void reloadEmails()}
+        />
+      ) : null}
     </Drawer>
   )
 }

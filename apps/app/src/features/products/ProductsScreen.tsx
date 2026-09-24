@@ -21,6 +21,7 @@ import {
 
 import { ScopeBadge } from '../../screens/common.js'
 import type { ScreenProps } from '../../screens/common.js'
+import { CategoriesPanel } from './CategoriesPanel.js'
 import { ProductForm } from './ProductForm.js'
 import type { ProductFormValues } from './ProductForm.js'
 import { StockCountSheet } from './StockCountSheet.js'
@@ -36,7 +37,7 @@ function newId(): string {
   )
 }
 
-type View = 'catalogue' | 'low_stock' | 'movements' | 'wastage' | 'valuation'
+type View = 'catalogue' | 'low_stock' | 'movements' | 'wastage' | 'valuation' | 'categories'
 
 const TABS: ReadonlyArray<{ id: View; label: string }> = [
   { id: 'catalogue', label: 'Catalogue' },
@@ -44,6 +45,7 @@ const TABS: ReadonlyArray<{ id: View; label: string }> = [
   { id: 'movements', label: 'Movements' },
   { id: 'wastage', label: 'Wastage' },
   { id: 'valuation', label: 'Valuation' },
+  { id: 'categories', label: 'Categories' },
 ]
 
 /** FR-6.7: negative first, then low, then fine. */
@@ -55,7 +57,7 @@ function stockChip(product: ProductStock) {
 
 export function ProductsScreen({ role, scope }: ScreenProps) {
   const repo = useProductsRepository()
-  const categories = useCategories()
+  const { categories, reload: reloadCategories } = useCategories()
   const { showToast } = useToast()
 
   const [view, setView] = useState<View>('catalogue')
@@ -186,13 +188,21 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
       description={
         search
           ? 'Search by name or SKU.'
-          : 'Add the flowers, arrangements and accessories you sell. Stock is built up from recorded movements.'
+          : categories.length === 0
+            ? 'Every product belongs to a category. Add your first category, then the stems and bunches you sell.'
+            : 'Add the stems and bunches you sell. Stock is built up from recorded movements.'
       }
       action={
         canWrite && !search ? (
-          <Button variant="primary" onClick={() => setIsCreating(true)}>
-            Add product
-          </Button>
+          categories.length === 0 ? (
+            <Button variant="primary" onClick={() => setView('categories')}>
+              Add a category
+            </Button>
+          ) : (
+            <Button variant="primary" onClick={() => setIsCreating(true)}>
+              Add product
+            </Button>
+          )
         ) : null
       }
     />
@@ -216,6 +226,7 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
               <Button
                 variant="primary"
                 leadingIcon={<Plus size={15} aria-hidden="true" />}
+                disabled={categories.length === 0}
                 onClick={() => setIsCreating(true)}
               >
                 Add product
@@ -427,7 +438,20 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
             </>
           ) : null}
 
-          {isLoading ? (
+          {view === 'categories' ? (
+            <CategoriesPanel
+              repo={repo}
+              categories={categories}
+              canWrite={canWrite}
+              newId={newId}
+              onChanged={async () => {
+                await reloadCategories()
+                await reload()
+              }}
+            />
+          ) : null}
+
+          {isLoading && view !== 'categories' ? (
             <Card>
               <p style={{ color: 'var(--rasko-text-secondary)' }}>Loading.</p>
             </Card>

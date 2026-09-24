@@ -29,6 +29,9 @@ importers:
       '@tauri-apps/plugin-sql':
         specifier: ^2.2.0
         version: 2.4.1
+      framer-motion:
+        specifier: ^13.4.2
+        version: 13.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       lucide-react:
         specifier: ^0.469.0
         version: 0.469.0(react@18.3.1)
@@ -87,6 +90,9 @@ importers:
       '@rasko/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@supabase/supabase-js':
+        specifier: ^2.47.10
+        version: 2.112.4
       framer-motion:
         specifier: ^13.4.2
         version: 13.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

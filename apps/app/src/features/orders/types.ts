@@ -46,6 +46,8 @@ export interface OrderItem {
 /** A row in the orders list: the order plus the client's name. */
 export interface OrderSummary extends Order {
   clientName: string
+  /** For the order confirmation email; null for a walk-in or no address on file. */
+  clientEmail: string | null
   itemCount: number
 }
 

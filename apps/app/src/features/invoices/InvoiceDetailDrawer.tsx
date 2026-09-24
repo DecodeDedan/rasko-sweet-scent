@@ -1,6 +1,6 @@
 'use client'
 
-import { Ban, Printer, Receipt, Send } from 'lucide-react'
+import { Ban, BellRing, Mail, Printer, Receipt, Send } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import {
   Button,
@@ -16,6 +16,10 @@ import {
 } from '@rasko/ui'
 
 import type { Role } from '../../auth/session.js'
+import { EmailActivity } from '../email/EmailActivity.js'
+import { SendEmailDialog } from '../email/SendEmailDialog.js'
+import type { SendEmailDialogProps } from '../email/SendEmailDialog.js'
+import { useEmailHistory } from '../email/useEmail.js'
 import { statusTone } from './status.js'
 import { INVOICE_STATUS_LABEL, PAYMENT_METHOD_LABEL } from './types.js'
 import type { InvoiceDetail, PaymentRecord } from './types.js'
@@ -49,6 +53,13 @@ export function InvoiceDetailDrawer({
   const [reversalReason, setReversalReason] = useState('')
   const [voiding, setVoiding] = useState(false)
   const [voidReason, setVoidReason] = useState('')
+  const [emailing, setEmailing] = useState<Pick<
+    SendEmailDialogProps,
+    'kind' | 'contextLabel' | 'related'
+  > | null>(null)
+  const { emails, reload: reloadEmails } = useEmailHistory(
+    invoiceId ? `invoices:${invoiceId}` : null,
+  )
 
   const isStaff = role === 'owner' || role === 'manager'
 
@@ -107,6 +118,35 @@ export function InvoiceDetailDrawer({
             >
               Invoice
             </Button>
+            {/* A draft has no number yet (FR-5.1), so it cannot be sent. */}
+            {invoice.status === 'issued' ? (
+              <Button
+                leadingIcon={<Mail size={14} aria-hidden="true" />}
+                onClick={() =>
+                  setEmailing({
+                    kind: 'invoice',
+                    contextLabel: `Invoice ${invoice.invoice_number ?? ''} for ${invoice.clientName}`,
+                    related: { table: 'invoices', id: invoice.id },
+                  })
+                }
+              >
+                Email
+              </Button>
+            ) : null}
+            {invoice.derivedStatus === 'overdue' ? (
+              <Button
+                leadingIcon={<BellRing size={14} aria-hidden="true" />}
+                onClick={() =>
+                  setEmailing({
+                    kind: 'payment_reminder',
+                    contextLabel: `Invoice ${invoice.invoice_number ?? ''}, ${invoice.daysOverdue} days overdue`,
+                    related: { table: 'invoices', id: invoice.id },
+                  })
+                }
+              >
+                Remind
+              </Button>
+            ) : null}
             {invoice.status === 'draft' ? (
               <Button
                 variant="primary"
@@ -226,6 +266,19 @@ export function InvoiceDetailDrawer({
                       <Button size="sm" onClick={() => onPrintReceipt(detail, p)}>
                         Receipt
                       </Button>
+                      <Button
+                        size="sm"
+                        aria-label={`Email the receipt for ${formatKes(p.amount_cents)}`}
+                        onClick={() =>
+                          setEmailing({
+                            kind: 'receipt',
+                            contextLabel: `Receipt for ${formatKes(p.amount_cents)} on ${invoice.invoice_number ?? 'this invoice'}`,
+                            related: { table: 'payments', id: p.id },
+                          })
+                        }
+                      >
+                        Email
+                      </Button>
                       {/* FR-5.5: corrections are reversals, and manager/owner only. */}
                       {isStaff && p.reversedCents < p.amount_cents ? (
                         <Button size="sm" variant="danger" onClick={() => setReversing(p)}>
@@ -238,6 +291,8 @@ export function InvoiceDetailDrawer({
               ]}
             />
           </section>
+
+          <EmailActivity emails={emails} />
 
           {reversing ? (
             <section className="rsk-stack">
@@ -315,6 +370,16 @@ export function InvoiceDetailDrawer({
           ) : null}
         </div>
       )}
+      {emailing && detail && invoice ? (
+        <SendEmailDialog
+          {...emailing}
+          clientId={invoice.client_id ?? null}
+          defaultToEmail={detail.clientEmail ?? null}
+          defaultToName={invoice.clientName ?? null}
+          onClose={() => setEmailing(null)}
+          onQueued={() => void reloadEmails()}
+        />
+      ) : null}
     </Drawer>
   )
 }

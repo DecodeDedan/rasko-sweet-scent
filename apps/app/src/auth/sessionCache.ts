@@ -74,6 +74,7 @@ export function readCachedIdentity(now: number = Date.now()): Identity | null {
       email: parsed.email,
       role: parsed.role,
       mustChangePassword: parsed.mustChangePassword === true,
+      isSuperAdmin: parsed.isSuperAdmin === true,
     }
   } catch {
     // Corrupt payload. Treat as absent rather than crashing the boot.

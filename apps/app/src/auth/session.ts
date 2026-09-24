@@ -31,6 +31,8 @@ export interface ProfileRecord {
   role: Role
   isActive: boolean
   mustChangePassword: boolean
+  /** A protected owner (migration 20260924000100). Grants no extra data access. */
+  isSuperAdmin: boolean
 }
 
 /** The signed-in user, as the shell consumes it. */
@@ -40,6 +42,7 @@ export interface Identity {
   email: string
   role: Role
   mustChangePassword: boolean
+  isSuperAdmin: boolean
 }
 
 export function identityFromProfile(profile: ProfileRecord): Identity {
@@ -49,5 +52,6 @@ export function identityFromProfile(profile: ProfileRecord): Identity {
     email: profile.email,
     role: profile.role,
     mustChangePassword: profile.mustChangePassword,
+    isSuperAdmin: profile.isSuperAdmin,
   }
 }

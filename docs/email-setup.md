@@ -263,3 +263,44 @@ Verified 5 September 2026.
 - [Gmail dropping POP3 fetching](https://www.theregister.com/2026/01/05/gmail_dropping_pop3/)
 - [Brevo free SMTP relay](https://www.brevo.com/free-smtp-server/)
 - [Zoho Mail free plan IMAP access](https://aiemaily.com/blog/zoho-mail-free-plan-imap-access)
+
+## Client email from the app (migration 20260925000100)
+
+Invoices, receipts, order confirmations, payment reminders and general messages
+are sent from the app. Composing one inserts a queued `outbound_emails` row
+locally; sync carries it up; an insert trigger calls the `send-email` function
+through `pg_net`; the function renders the branded email and sends it over SMTP;
+its status syncs back. A once-a-minute `pg_cron` sweep retries anything still
+queued. Wording is edited in Settings > Emails; the brand frame lives in
+`supabase/functions/_shared/email/layout.js`.
+
+Hosted project, once:
+
+```bash
+supabase functions deploy send-email --no-verify-jwt
+supabase secrets set \
+  SMTP_HOST=smtp-relay.brevo.com SMTP_PORT=587 \
+  SMTP_USER=<brevo login> SMTP_PASS=<brevo SMTP key> \
+  EMAIL_FROM="Rasko Sweet Scent <hello@your-domain>" \
+  SITE_URL=https://your-domain
+```
+
+Then, in the SQL editor, tell the database where the function lives:
+
+```sql
+update app.email_dispatch
+   set function_url = 'https://<project-ref>.supabase.co/functions/v1/send-email';
+```
+
+Until that row is set, emails queue and nothing is lost; the sweep sends the
+backlog once it is. `SITE_URL` must serve `/email/rss-logo.png` (the website's
+`public/email/`), because mail clients block SVG and need a hosted image.
+
+The Supabase Auth emails (invite, reset, password changed) use the same frame.
+Regenerate them with `pnpm emails:auth` and paste `supabase/templates/*.html`
+into Dashboard > Authentication > Email Templates.
+
+Locally, `supabase/functions/.env` points SMTP at the stack's Mailpit
+(`inbucket:1025`; Deno cannot resolve the underscored container name) and
+`supabase/seeds/local.sql` sets the dispatch URL on every `db reset`. Sent mail
+appears at http://127.0.0.1:54324.

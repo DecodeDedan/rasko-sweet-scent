@@ -7,7 +7,8 @@ import { site } from '../../content/site'
  *
  * Everything below is true of this website as built, and was checked against
  * the code rather than adapted from a template. The site is a static export
- * with no analytics script, no cookie and no form. Its one third-party frame,
+ * with no analytics script, no cookie and no public form. The staff-only
+ * /reset-password page is described below. Its one third-party frame,
  * the Google map (components/FarmMap.tsx), loads with the page, and this
  * page says so. Change either and change both. Saying so
  * plainly is more useful to a reader, and more defensible, than a page of
@@ -41,7 +42,7 @@ export default function PrivacyPage() {
         <h2>What this website collects</h2>
         <p>
           Nothing. This site is a set of static pages. It runs no analytics, sets no cookies, and
-          has no form to fill in. We do not know who visits it.
+          has no form for visitors to fill in. We do not know who visits it.
         </p>
         <p>
           The map showing where the farm is comes from Google and loads with the page. When it
@@ -61,6 +62,14 @@ export default function PrivacyPage() {
           Our hosting provider keeps ordinary server records, such as the address a request came
           from, for the short period needed to serve pages and defend against abuse. We do not read
           them to identify anyone.
+        </p>
+
+        <h2>Staff password page</h2>
+        <p>
+          One page on this site is for our staff only: the page an invitation or password-reset
+          email links to. The password typed there goes straight from your browser to Supabase, the
+          service that runs our business app's accounts, and nowhere else. The page stores nothing
+          in your browser and signs out as soon as the password is saved.
         </p>
 
         <h2>When you message us</h2>

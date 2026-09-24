@@ -18,6 +18,7 @@ import { useIdentity } from '../../auth/AuthProvider.js'
 import { useSync } from '../../data/sync/SyncProvider.js'
 import { useSyncedEffect } from '../../data/sync/useSyncedEffect.js'
 import { ScopeBadge } from '../../screens/common.js'
+import { SetupChecklist } from '../../onboarding/SetupChecklist.js'
 import type { ScreenProps } from '../../screens/common.js'
 import { DashboardRepository, toCsv } from './dashboardRepository.js'
 import type {
@@ -170,6 +171,8 @@ export function DashboardScreen({ role, scope }: ScreenProps) {
           </>
         }
       />
+
+      <SetupChecklist role={role} />
 
       {error ? (
         <p className="auth-error" role="alert">

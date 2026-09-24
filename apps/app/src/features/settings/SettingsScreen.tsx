@@ -20,15 +20,17 @@ import {
 
 import { ScopeBadge } from '../../screens/common.js'
 import type { ScreenProps } from '../../screens/common.js'
+import { EmailTemplatesPanel } from '../email/EmailTemplatesPanel.js'
 import { canEditCompanyProfile, canEditSettings } from './settingsRepository.js'
 import { useSettingsData } from './useSettings.js'
 
 const APP_VERSION = '0.1.0'
 
-type View = 'company' | 'tax' | 'statutory' | 'system'
+type View = 'company' | 'emails' | 'tax' | 'statutory' | 'system'
 
 const TABS: ReadonlyArray<{ id: View; label: string }> = [
   { id: 'company', label: 'Company' },
+  { id: 'emails', label: 'Emails' },
   { id: 'tax', label: 'Tax' },
   { id: 'statutory', label: 'Statutory rates' },
   { id: 'system', label: 'System' },
@@ -277,6 +279,12 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
             ) : null}
           </div>
         </Card>
+      </TabPanel>
+
+      <TabPanel id="emails" activeId={view}>
+        {view === 'emails' ? (
+          <EmailTemplatesPanel profile={profile} canEdit={canEditProfile} />
+        ) : null}
       </TabPanel>
 
       <TabPanel id="tax" activeId={view}>

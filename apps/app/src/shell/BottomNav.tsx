@@ -36,6 +36,7 @@ export function BottomNav({ modules, activeId, onSelect }: BottomNavProps) {
           return (
             <button
               key={module.id}
+              data-tour={`nav-${module.id}`}
               type="button"
               className={cx(
                 'shell__bottom-item',
@@ -75,6 +76,7 @@ export function BottomNav({ modules, activeId, onSelect }: BottomNavProps) {
             return (
               <button
                 key={module.id}
+                data-tour={`nav-${module.id}`}
                 type="button"
                 className={cx(
                   'shell__nav-item',

@@ -39,11 +39,17 @@ export type { SelectOption, SelectProps } from './components/Select.js'
 export { StatusChip } from './components/StatusChip.js'
 export type { StatusChipProps, StatusTone } from './components/StatusChip.js'
 
+export { Textarea } from './components/Textarea.js'
+export type { TextareaProps } from './components/Textarea.js'
+
 export { Table } from './components/Table.js'
 export type { TableColumn, TableProps } from './components/Table.js'
 
 export { TabPanel, Tabs } from './components/Tabs.js'
 export type { TabItem, TabPanelProps, TabsProps } from './components/Tabs.js'
+
+export { Tooltip } from './components/Tooltip.js'
+export type { TooltipProps } from './components/Tooltip.js'
 
 export { ToastProvider, useToast } from './components/Toast.js'
 export type { ToastInput, ToastTone } from './components/Toast.js'

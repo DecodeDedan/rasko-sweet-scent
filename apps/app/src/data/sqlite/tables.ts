@@ -46,6 +46,13 @@ export interface TableSpec {
   cursor?: string
   /** `pull` for server-generated data; `push` for device-owned bookkeeping. */
   direction?: SyncDirection
+  /**
+   * The device only ever inserts these rows and the server then changes them
+   * (outbound_emails: queued -> sent). Pushes use ignoreDuplicates like an
+   * append-only table, so a retried push can never overwrite what the server
+   * wrote, while pulls still overwrite local copies with the server's.
+   */
+  pushInsertOnly?: boolean
 }
 
 const c = (name: string, kind: ColumnKind): ColumnSpec => ({ name, kind })
@@ -404,6 +411,41 @@ export const TABLES: readonly TableSpec[] = [
       c('effective_from', 'date'),
       c('effective_to', 'date'),
       c('config', 'json'),
+      ...MUTABLE_BASE,
+    ],
+  },
+  {
+    // Client email wording (migration 20260925000100). Edited in Settings by
+    // the owner or a manager; mirrored so it can be edited offline.
+    name: 'email_templates',
+    columns: [
+      c('id', 'uuid'),
+      c('key', 'text'),
+      c('label', 'text'),
+      c('subject', 'text'),
+      c('heading', 'text'),
+      c('body', 'text'),
+      ...MUTABLE_BASE,
+    ],
+  },
+  {
+    // An email is a queued row: composed offline, sent by the server once it
+    // arrives, its delivery status synced back (migration 20260925000100).
+    name: 'outbound_emails',
+    pushInsertOnly: true,
+    columns: [
+      c('id', 'uuid'),
+      c('template_key', 'text'),
+      c('to_email', 'text'),
+      c('to_name', 'text'),
+      c('client_id', 'uuid'),
+      c('related_table', 'text'),
+      c('related_id', 'uuid'),
+      c('personal_note', 'text'),
+      c('status', 'text'),
+      c('attempts', 'int'),
+      c('last_error', 'text'),
+      c('sent_at', 'ts'),
       ...MUTABLE_BASE,
     ],
   },

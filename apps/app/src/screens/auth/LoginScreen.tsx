@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { Button, Field, Input, Modal } from '@rasko/ui'
 
+import { BrandMark } from '../../shell/BrandMark.js'
+import { AuthLayout } from './AuthLayout.js'
+
 import { useAuth } from '../../auth/AuthProvider.js'
 
 /**
@@ -58,15 +61,14 @@ export function LoginScreen() {
   const message = formError ?? bootError
 
   return (
-    <div className="auth-screen">
+    <AuthLayout>
       <form className="auth-card" onSubmit={handleSubmit} noValidate>
         <div className="auth-brand">
-          <span className="shell__brand-mark" aria-hidden="true">
-            RSS
-          </span>
+          {/* The panel carries the brand on desktop; on a phone it is hidden, so the form does. */}
+          <BrandMark height={44} className="auth-brand__mark" />
           <div>
-            <h1 className="auth-title">Rasko Sweet Scent</h1>
-            <p className="auth-subtitle">Business management</p>
+            <h1 className="auth-title">Sign in</h1>
+            <p className="auth-subtitle">Rasko Sweet Scent business management</p>
           </div>
         </div>
 
@@ -171,6 +173,6 @@ export function LoginScreen() {
           )}
         </Modal>
       ) : null}
-    </div>
+    </AuthLayout>
   )
 }

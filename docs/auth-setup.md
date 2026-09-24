@@ -8,13 +8,13 @@ the repository — which is the point: none of it can be committed by accident.
 
 ## 1. Auth settings (Dashboard → Authentication → Providers)
 
-| Setting                    | Value          | Why                                                                                    |
-| -------------------------- | -------------- | -------------------------------------------------------------------------------------- |
-| Email provider             | Enabled        | FR-1.1                                                                                 |
-| Confirm email              | **On**         | An invited user must prove they own the address before signing in                      |
-| Allow new users to sign up | **Off**        | Fewer than 10 named accounts, created by invitation only (PRD §3)                      |
-| Minimum password length    | 8              | Matches `MIN_PASSWORD_LENGTH` in `ForcePasswordChangeScreen.tsx`; change both together |
-| JWT expiry                 | 3600 (default) | See §5 on what this means for revocation                                               |
+| Setting                    | Value          | Why                                                                                                                                 |
+| -------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Email provider             | Enabled        | FR-1.1                                                                                                                              |
+| Confirm email              | **On**         | An invited user must prove they own the address before signing in                                                                   |
+| Allow new users to sign up | **Off**        | Fewer than 10 named accounts, created by invitation only (PRD §3)                                                                   |
+| Minimum password length    | 8              | Matches `MIN_PASSWORD_LENGTH` in `ForcePasswordChangeScreen.tsx` and the website's `SetPasswordForm.tsx`; change all three together |
+| JWT expiry                 | 3600 (default) | See §5 on what this means for revocation                                                                                            |
 
 Sign-ups are off deliberately. With them on, anyone holding the anon key —
 which ships inside the app and is therefore public — could create an account.
@@ -48,9 +48,17 @@ they work, but they will land in spam and they do not satisfy FR-1.5.
 
 ### Email templates
 
-Dashboard → Authentication → Email Templates. Rewrite **Invite user** and **Reset
-password** in the brand voice: plain professional Kenyan English, no emoji, no
-exclamation marks (`docs/brand.md`).
+Dashboard → Authentication → Email Templates. Paste `supabase/templates/invite.html`
+into **Invite user** and `supabase/templates/recovery.html` into **Reset password**,
+with the subjects from `supabase/config.toml`. The local stack already uses them.
+
+**The link format is not cosmetic.** Supabase's default templates link to
+`{{ .ConfirmationURL }}`, which for a PKCE request ends in `?code=`. The app
+requests resets with PKCE, and a `?code=` can only be redeemed by the client
+holding the matching code verifier: the app, not the browser the email opens in.
+The templates link to `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=...`
+instead, which the website verifies with `verifyOtp` on any device. Revert to the
+default templates and every reset link fails.
 
 Set the redirect on both to the same URL as `APP_PASSWORD_RESET_URL`, and add that
 URL to Authentication → URL Configuration → Redirect URLs, or Supabase will refuse
@@ -64,12 +72,18 @@ has nowhere to send the user. The flow is:
 1. User taps **Forgot your password** in the app; the app calls
    `resetPasswordForEmail` with `redirectTo = APP_PASSWORD_RESET_URL`.
 2. The email lands; the link opens a page on the marketing site.
-3. That page completes the reset with the recovery token from the URL.
+3. `apps/website/app/reset-password` verifies the token hash, takes the new
+   password, and signs out again. Its session is held in memory only.
 4. The user returns to the app and signs in with the new password.
 
-**Step 3's page is not built yet.** It belongs with the website module. Until it
-exists, the request and the email work, but the link has nowhere to land — so a
-reset must be done from the Supabase dashboard in the meantime.
+Invitations use the same page with `type=invite`. There the page also clears
+`must_change_password`, because the invited user has just chosen their own
+password, which is what FR-1.6 asks for. If that update fails, the app asks for
+a password once more on first sign-in, so nothing is lost.
+
+The site reads `SUPABASE_URL` and `SUPABASE_ANON_KEY` from the root `.env` at
+build time and refuses to build without them. Build it against the same
+project the app uses, or its links verify against the wrong one.
 
 ## 4. Edge functions
 
@@ -109,11 +123,31 @@ screens, because nothing can reach it. The moment it reconnects, the profile fet
 fails, the cached identity is discarded and the user is signed out. That is T4, and
 `apps/app/src/auth/__tests__/offlineLaunch.test.tsx` covers it.
 
-## 6. Seeded demo accounts
+## 6. The first account: the super admin
 
-`supabase/seed.sql` creates four fully-formed, signable-in accounts with fixed UUIDs, so
-`docs/policy-tests.md` can impersonate them in SQL **and** the app can actually be used
-after `supabase db reset`.
+A fresh project has no users, and every later account is invited by an owner, so
+the first one is created with the service role key, once per project:
+
+```bash
+# local
+SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r .SERVICE_ROLE_KEY) pnpm admin:create
+# hosted: the key from Dashboard > Project Settings > API keys, for this command only
+SUPABASE_SERVICE_ROLE_KEY=<key> pnpm admin:create
+```
+
+It asks for a name, email and password (echo off) and creates an **owner** with
+`is_super_admin` (migration `20260924000100`). The flag adds protection, not
+access: nobody else can deactivate the super admin or change their role, only
+the super admin can grant or remove the owner role, and no signed-in caller can
+set the flag at all. The profile trigger enforces it; `invite-user` and
+`set-user-active` repeat the checks because the service key bypasses the trigger;
+`auth/userAdmin.ts` mirrors them in the Users screen.
+
+## 7. Demo accounts (policy checks only)
+
+`supabase db reset` no longer loads demo data: the local database starts empty and
+real. `supabase/demo/demo-data.sql` still creates four signable-in accounts with
+fixed UUIDs for `docs/policy-tests.md`; load it by hand into a throwaway database.
 
 | Role       | Email                                | Password          |
 | ---------- | ------------------------------------ | ----------------- |
@@ -152,13 +186,13 @@ APP_ENV=development
 Invitation and reset emails are captured by Mailpit at <http://127.0.0.1:54324> rather
 than being delivered, so the FR-1.5 and FR-1.6 flows can be exercised without SMTP.
 
-## 7. Checklist before go-live
+## 8. Checklist before go-live
 
 - [ ] Sign-ups disabled
 - [ ] Custom SMTP configured and a test invitation received from the company domain
 - [ ] Invite and reset templates rewritten in the brand voice
 - [ ] Redirect URL allowlisted, and the website reset page live (§3)
 - [ ] Both edge functions deployed; `APP_PASSWORD_RESET_URL` secret set
-- [ ] Owner account created and confirmed; seeded demo accounts removed from production
+- [ ] Super admin created with `pnpm admin:create`; demo data never loaded into production
 - [ ] Deactivation verified end to end on a real second device (T4)
 - [ ] Each role verified against `docs/policy-tests.md`

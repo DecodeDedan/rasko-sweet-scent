@@ -1302,3 +1302,42 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
   height: 100%;
   border: 0;
 }
+
+/* ------------------------------------------------------------------ *
+ * Set-password page (/reset-password): one white card on the green page.
+ * ------------------------------------------------------------------ */
+
+.rw-auth {
+  max-width: 28rem;
+  height: auto;
+  margin-inline: auto;
+}
+
+.rw-auth__body,
+.rw-auth__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rasko-space-4);
+}
+
+.rw-auth__body {
+  padding: var(--rasko-space-6);
+}
+
+.rw-auth__title {
+  font-size: var(--rasko-text-24);
+}
+
+.rw-auth__text {
+  margin: 0;
+  color: var(--rasko-text-secondary);
+}
+
+.rw-auth__error {
+  margin: 0;
+  padding: var(--rasko-space-2) var(--rasko-space-3);
+  border: 1px solid var(--rasko-danger);
+  border-radius: var(--rasko-radius-md);
+  color: var(--rasko-danger);
+  font-size: var(--rasko-text-14);
+}

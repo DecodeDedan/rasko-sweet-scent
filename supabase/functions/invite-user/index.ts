@@ -14,7 +14,7 @@ Deno.serve(async (request) => {
 
   const context = await requireOwner(request)
   if (context instanceof Response) return context
-  const { admin } = context
+  const { admin, isSuperAdmin } = context
 
   let body: { email?: string; fullName?: string; role?: string }
   try {
@@ -30,6 +30,9 @@ Deno.serve(async (request) => {
   if (!email || !email.includes('@')) return json({ error: 'Enter a valid email address.' }, 400)
   if (!fullName) return json({ error: "Enter the person's full name." }, 400)
   if (!ROLES.includes(role)) return json({ error: 'Choose a valid role.' }, 400)
+  if (role === 'owner' && !isSuperAdmin) {
+    return json({ error: 'Only the super admin can invite an owner.' }, 403)
+  }
 
   // The invitation email itself is delivered by the project's custom SMTP
   // sender (FR-1.5, docs/auth-setup.md), not Supabase's default sender.

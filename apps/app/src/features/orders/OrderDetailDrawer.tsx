@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText, Printer, Trash2 } from 'lucide-react'
+import { FileText, Mail, Printer, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import {
   Button,
@@ -13,6 +13,9 @@ import {
 } from '@rasko/ui'
 
 import type { Role } from '../../auth/session.js'
+import { EmailActivity } from '../email/EmailActivity.js'
+import { SendEmailDialog } from '../email/SendEmailDialog.js'
+import { useEmailHistory } from '../email/useEmail.js'
 import {
   ORDER_STATUS_LABEL,
   allowedTransitions,
@@ -62,6 +65,8 @@ export function OrderDetailDrawer({
   const [error, setError] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState('')
   const [isCancelling, setIsCancelling] = useState(false)
+  const [isEmailing, setIsEmailing] = useState(false)
+  const { emails, reload: reloadEmails } = useEmailHistory(orderId ? `orders:${orderId}` : null)
 
   const load = useCallback(async () => {
     if (!orderId) {
@@ -120,6 +125,15 @@ export function OrderDetailDrawer({
             >
               Summary
             </Button>
+            {/* Confirmed onwards: a draft is still being agreed with the client. */}
+            {!order.is_walk_in && order.status !== 'draft' && order.status !== 'cancelled' ? (
+              <Button
+                leadingIcon={<Mail size={14} aria-hidden="true" />}
+                onClick={() => setIsEmailing(true)}
+              >
+                Email
+              </Button>
+            ) : null}
             {canDelete(role) && order.status !== 'closed' ? (
               <Button
                 variant="danger"
@@ -267,8 +281,22 @@ export function OrderDetailDrawer({
               ]}
             />
           </section>
+
+          <EmailActivity emails={emails} />
         </div>
       )}
+      {isEmailing && order ? (
+        <SendEmailDialog
+          kind="order_confirmation"
+          contextLabel={`Order ${order.order_number ?? ''} for ${order.clientName}`}
+          related={{ table: 'orders', id: order.id }}
+          clientId={order.client_id ?? null}
+          defaultToEmail={order.clientEmail}
+          defaultToName={order.clientName}
+          onClose={() => setIsEmailing(false)}
+          onQueued={() => void reloadEmails()}
+        />
+      ) : null}
     </Drawer>
   )
 }

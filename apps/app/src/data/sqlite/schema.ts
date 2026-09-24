@@ -3,7 +3,7 @@ import type { ColumnKind, TableSpec } from './tables.js'
 import type { SqlDatabase } from './types.js'
 
 /** Local schema version. Bump when the generated DDL changes. */
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 const SQLITE_TYPE: Record<ColumnKind, string> = {
   uuid: 'TEXT',

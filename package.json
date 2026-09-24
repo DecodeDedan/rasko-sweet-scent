@@ -14,6 +14,8 @@
     "app:android:init": "pnpm --filter @rasko/app android:init",
     "app:android:dev": "pnpm --filter @rasko/app android:dev",
     "app:android:build": "pnpm --filter @rasko/app android:build",
+    "admin:create": "node scripts/create-super-admin.mjs",
+    "emails:auth": "node scripts/build-auth-emails.mjs",
     "web:dev": "pnpm --filter @rasko/website dev",
     "web:build": "pnpm --filter @rasko/website build",
     "typecheck": "pnpm -r --parallel typecheck",

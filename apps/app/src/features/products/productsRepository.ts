@@ -25,6 +25,19 @@ import type {
  * avoid. Every query below therefore aggregates.
  */
 
+/**
+ * categories.slug is unique among live rows. It is derived from the name, with
+ * the row id appended so two names that reduce to the same slug ("Gunni" and
+ * "gunni.") cannot collide, and a name with no latin letters still gets one.
+ */
+function categorySlug(name: string, id: string): string {
+  const base = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+  return `${base || 'category'}_${id.slice(0, 8)}`
+}
+
 export class ProductRuleError extends Error {
   constructor(message: string) {
     super(message)
@@ -88,6 +101,7 @@ export interface NewMovementInput {
 export class ProductsRepository {
   private readonly products: Repository<Record<string, unknown>>
   private readonly movements: Repository<Record<string, unknown>>
+  private readonly categoryRows: Repository<Record<string, unknown>>
 
   constructor(
     private readonly db: SqlDatabase,
@@ -96,6 +110,7 @@ export class ProductsRepository {
   ) {
     this.products = new Repository(db, 'products', context)
     this.movements = new Repository(db, 'stock_movements', context)
+    this.categoryRows = new Repository(db, 'categories', context)
   }
 
   /** PRD §3.1: accountant and sales have View only on products and inventory. */
@@ -233,6 +248,7 @@ export class ProductsRepository {
     this.requireWriteAccess()
     if (!values.sku.trim()) throw new ProductRuleError('Enter a SKU.')
     if (!values.name.trim()) throw new ProductRuleError('Enter a product name.')
+    if (!values.category_id) throw new ProductRuleError('Choose a category.')
 
     const clash = await this.db.select<{ n: number }>(
       'SELECT COUNT(*) AS n FROM products WHERE UPPER(sku) = UPPER(?) AND deleted_at IS NULL',
@@ -258,6 +274,62 @@ export class ProductsRepository {
   async softDeleteProduct(id: string): Promise<void> {
     this.requireWriteAccess()
     await this.products.softDelete(id)
+  }
+
+  // ----------------------------------------------- FR-6.1 categories
+
+  async createCategory(id: string, name: string): Promise<void> {
+    this.requireWriteAccess()
+    const trimmed = await this.validCategoryName(name)
+    const last = await this.db.select<{ p: number | null }>(
+      'SELECT MAX(position) AS p FROM categories WHERE deleted_at IS NULL',
+    )
+    await this.categoryRows.insert({
+      id,
+      name: trimmed,
+      slug: categorySlug(trimmed, id),
+      // VAT applies by category (tax_config.applies_to_category_ids); whether
+      // a category is VAT-able only matters once VAT is switched on (PRD §12.3).
+      is_vatable: true,
+      position: Number(last[0]?.p ?? 0) + 1,
+    })
+  }
+
+  async renameCategory(id: string, name: string): Promise<void> {
+    this.requireWriteAccess()
+    const trimmed = await this.validCategoryName(name, id)
+    await this.categoryRows.update(id, { name: trimmed, slug: categorySlug(trimmed, id) })
+  }
+
+  /** Refused while a product still uses it: products.category_id is NOT NULL. */
+  async removeCategory(id: string): Promise<void> {
+    this.requireWriteAccess()
+    const inUse = await this.db.select<{ n: number }>(
+      'SELECT COUNT(*) AS n FROM products WHERE category_id = ? AND deleted_at IS NULL',
+      [id],
+    )
+    const count = Number(inUse[0]?.n ?? 0)
+    if (count > 0) {
+      throw new ProductRuleError(
+        `${count} product${count === 1 ? '' : 's'} still use this category. Move them to another category first.`,
+      )
+    }
+    await this.categoryRows.softDelete(id)
+  }
+
+  private async validCategoryName(name: string, exceptId?: string): Promise<string> {
+    const trimmed = name.trim()
+    if (!trimmed) throw new ProductRuleError('Enter a category name.')
+    // Mirrors categories_name_key (unique on lower(name) among live rows).
+    const clash = await this.db.select<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM categories
+        WHERE LOWER(name) = LOWER(?) AND deleted_at IS NULL AND id <> ?`,
+      [trimmed, exceptId ?? ''],
+    )
+    if (Number(clash[0]?.n ?? 0) > 0) {
+      throw new ProductRuleError(`There is already a category called ${trimmed}.`)
+    }
+    return trimmed
   }
 
   // -------------------------------------------------- FR-6.2 / FR-6.5 ledger

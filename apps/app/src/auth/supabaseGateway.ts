@@ -49,10 +49,31 @@ function toProfile(row: Record<string, unknown>): ProfileRecord | null {
     role,
     isActive: row['is_active'] === true,
     mustChangePassword: row['must_change_password'] === true,
+    isSuperAdmin: row['is_super_admin'] === true,
   }
 }
 
-const PROFILE_COLUMNS = 'id, full_name, email, phone, role, is_active, must_change_password'
+/**
+ * supabase-js reports any non-2xx from an edge function as "Edge Function
+ * returned a non-2xx status code" and keeps the response on `context`. The
+ * functions answer with `{ error }` in plain words, and that is what the owner
+ * needs to read ("That email already has an account."), so unwrap it.
+ */
+async function functionErrorMessage(error: Error & { context?: unknown }): Promise<string> {
+  if (error.context instanceof Response) {
+    try {
+      const body = (await error.context.json()) as { error?: unknown }
+      if (typeof body.error === 'string' && body.error) return body.error
+    } catch {
+      // Not JSON: a gateway or network failure. The generic line below fits.
+    }
+    return 'The server could not complete that. Check your connection and try again.'
+  }
+  return error.message
+}
+
+const PROFILE_COLUMNS =
+  'id, full_name, email, phone, role, is_active, must_change_password, is_super_admin'
 
 /**
  * Supabase surfaces "wrong password" and "no such user" as the same message on
@@ -167,7 +188,7 @@ export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient
       const { error } = await client.functions.invoke('set-user-active', {
         body: { userId, isActive },
       })
-      return error ? { error: error.message } : {}
+      return error ? { error: await functionErrorMessage(error) } : {}
     },
 
     async inviteUser(email, fullName, role): Promise<GatewayResult> {
@@ -177,7 +198,7 @@ export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient
       const { error } = await client.functions.invoke('invite-user', {
         body: { email: email.trim(), fullName: fullName.trim(), role },
       })
-      return error ? { error: error.message } : {}
+      return error ? { error: await functionErrorMessage(error) } : {}
     },
   }
 }

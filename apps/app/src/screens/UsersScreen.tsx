@@ -18,8 +18,9 @@ import {
 
 import { useAuth } from '../auth/AuthProvider.js'
 import { NoAccess } from '../auth/guards.js'
-import { ROLES, ROLE_LABEL } from '../auth/session.js'
+import { ROLE_LABEL } from '../auth/session.js'
 import type { ProfileRecord, Role } from '../auth/session.js'
+import { assignableRoles, rowControls } from '../auth/userAdmin.js'
 import type { ScreenProps } from './common.js'
 
 /**
@@ -62,7 +63,15 @@ export function UsersScreen({ role }: ScreenProps) {
   }, [load, role])
 
   // Belt and braces: navigation already hides this screen for non-owners.
-  if (role !== 'owner') return <NoAccess moduleLabel="user management" />
+  if (role !== 'owner' || !identity) return <NoAccess moduleLabel="user management" />
+
+  const viewer = { userId: identity.userId, isSuperAdmin: identity.isSuperAdmin }
+  const offeredRoles = assignableRoles(viewer)
+  const roleOptions = (current: Role) =>
+    (offeredRoles.includes(current) ? offeredRoles : [current, ...offeredRoles]).map((r) => ({
+      value: r,
+      label: ROLE_LABEL[r],
+    }))
 
   async function handleRoleChange(profile: ProfileRecord, nextRole: Role) {
     if (nextRole === profile.role) return
@@ -178,7 +187,18 @@ export function UsersScreen({ role }: ScreenProps) {
             />
           }
           columns={[
-            { key: 'name', header: 'Name', render: (p) => p.fullName },
+            {
+              key: 'name',
+              header: 'Name',
+              render: (p) =>
+                p.isSuperAdmin ? (
+                  <span className="rsk-row">
+                    {p.fullName} <StatusChip tone="success">Super admin</StatusChip>
+                  </span>
+                ) : (
+                  p.fullName
+                ),
+            },
             { key: 'email', header: 'Email', render: (p) => p.email },
             {
               key: 'role',
@@ -188,9 +208,9 @@ export function UsersScreen({ role }: ScreenProps) {
                 <Select
                   aria-label={`Role for ${p.fullName}`}
                   value={p.role}
-                  disabled={busyId === p.id || !p.isActive}
+                  disabled={busyId === p.id || !rowControls(viewer, p).canChangeRole}
                   onChange={(event) => void handleRoleChange(p, event.target.value as Role)}
-                  options={ROLES.map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
+                  options={roleOptions(p.role)}
                 />
               ),
             },
@@ -208,9 +228,10 @@ export function UsersScreen({ role }: ScreenProps) {
               key: 'actions',
               header: '',
               render: (p) =>
-                // The owner cannot lock themselves out of their own system.
-                p.id === identity?.userId ? (
+                p.id === identity.userId ? (
                   <span style={{ color: 'var(--rasko-text-secondary)' }}>You</span>
+                ) : !rowControls(viewer, p).canToggleActive ? (
+                  <span style={{ color: 'var(--rasko-text-secondary)' }}>Protected</span>
                 ) : p.isActive ? (
                   <Button
                     size="sm"
@@ -271,7 +292,7 @@ export function UsersScreen({ role }: ScreenProps) {
               <Select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as Role)}
-                options={ROLES.map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
+                options={offeredRoles.map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
               />
             </Field>
           </div>
