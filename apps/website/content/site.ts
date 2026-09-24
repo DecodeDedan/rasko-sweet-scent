@@ -358,7 +358,7 @@ export const site = {
     whatsapp: '254724349141' as Fact<string>,
     /** Optional. How the same number is written for a human to read. */
     phoneDisplay: '+254 724 349 141' as Fact<string>,
-    email: null as Fact<string>,
+    email: 'info@raskosweetscent.com' as Fact<string>,
     /** e.g. 'Monday to Saturday, 8am to 5pm' */
     hours: null as Fact<string>,
   },
