@@ -63,4 +63,3 @@ export const LOGO_PNG_BASE64 =
 `,
 )
 process.stdout.write('wrote supabase/functions/_shared/email/logo.js\n')
-

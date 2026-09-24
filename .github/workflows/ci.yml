@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -77,12 +77,18 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
       # Fails on purpose while content/site.ts has no confirmed WhatsApp number
-      # — the page's only call to action. See CLAUDE.md.
+      # — the page's only call to action. See CLAUDE.md. next.config.mjs also
+      # refuses to build without the Supabase URL and public key that
+      # /reset-password needs; both are public values, kept as secrets so CI
+      # and the release build read them from one place.
       - name: Build static site
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: pnpm --filter @rasko/website build
