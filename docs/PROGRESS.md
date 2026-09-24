@@ -366,3 +366,10 @@ draws itself on load (GSAP DrawSVG) while the slogan scramble-reveals word
 by word and replays every few seconds (ScrambleText, owner's choice) over leaves falling in three.js. App icons are not yet
 regenerated from the new logo: run `pnpm --filter @rasko/app icon`.
 
+**10. Farm location and map card.** Project owner, 2026-09-24. The farm's area
+is Molo, Nakuru County (`content/site.ts`, now shown in the footer). A card
+above the footer maps "Molo, Nakuru County, Kenya", an area rather than a
+pin, since no exact location has been given. The Google frame is created only
+when a visitor presses Show map, so the site still contacts no third party
+by default; the privacy notice was revised in the same change to say so.
+

@@ -218,8 +218,24 @@ export const site = {
   location: {
     town: 'Nakuru',
     country: 'Kenya',
-    /** Street or area, once confirmed. Shown in the footer under the town. */
-    area: null as Fact<string>,
+    /**
+     * Street or area. Shown in the footer under the town. Molo confirmed by
+     * the project owner, 2026-09-24.
+     */
+    area: 'Molo' as Fact<string>,
+    /** County, for the map card's address line. */
+    county: 'Nakuru County',
+    /**
+     * What the map card searches Google Maps for. An area, not a pin on the
+     * farm gate: the owner pointed to "the areas of Molo, Nakuru", and a
+     * precise location is a fact nobody has confirmed.
+     */
+    mapQuery: 'Molo, Nakuru County, Kenya',
+  },
+
+  map: {
+    heading: 'Where we grow',
+    body: 'The farm is in the Molo area of Nakuru County, in the Kenyan highlands.',
   },
 
   contact: {

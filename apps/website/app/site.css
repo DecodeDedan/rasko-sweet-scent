@@ -118,6 +118,18 @@ main .rw-button:not([aria-disabled='true']):hover {
   color: var(--rasko-green-active);
 }
 
+/* Inside a white card the page's white button would vanish in turn, so it
+ * goes back to Rasko Green there. */
+main .rw-card .rw-button:not([aria-disabled='true']) {
+  background: var(--rasko-green);
+  color: var(--rasko-on-green);
+}
+
+main .rw-card .rw-button:not([aria-disabled='true']):hover {
+  background: var(--rasko-green-hover);
+  color: var(--rasko-on-green);
+}
+
 .rw-measure {
   max-width: var(--rw-measure);
 }
@@ -1169,3 +1181,126 @@ main .rw-button:not([aria-disabled='true']):hover {
     transition: none;
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * Where we grow (components/FarmMap.tsx)
+ *
+ * A white card above the footer. The map side is a tinted stand-in until
+ * the visitor asks for the Google frame, so the card has the same size
+ * before and after and nothing below it moves.
+ * ------------------------------------------------------------------ */
+
+.rw-map__card {
+  display: grid;
+  height: auto;
+}
+
+@media (min-width: 56rem) {
+  .rw-map__card {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  }
+}
+
+.rw-map__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rasko-space-4);
+  padding: clamp(1.5rem, 1rem + 2vw, 3rem);
+}
+
+.rw-map__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rasko-space-2);
+  margin: 0;
+  font-size: var(--rasko-text-13);
+  font-weight: var(--rasko-weight-medium);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rasko-green);
+}
+
+.rw-map__body {
+  max-width: 26rem;
+  margin: 0;
+  line-height: 1.6;
+  color: var(--rasko-text-secondary);
+}
+
+.rw-map__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rasko-space-4) var(--rasko-space-5);
+  margin-top: var(--rasko-space-2);
+}
+
+.rw-map__open {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rasko-space-2);
+  font-weight: var(--rasko-weight-medium);
+  color: var(--rasko-green);
+}
+
+.rw-map__note {
+  margin: auto 0 0;
+  font-size: var(--rasko-text-12);
+  color: var(--rasko-text-secondary);
+}
+
+.rw-map__frame {
+  position: relative;
+  min-height: 20rem;
+  aspect-ratio: 16 / 10;
+  background: var(--rasko-green-tint);
+}
+
+@media (min-width: 56rem) {
+  .rw-map__frame {
+    aspect-ratio: auto;
+    min-height: 26rem;
+  }
+}
+
+.rw-map__placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rasko-space-3);
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-20);
+  font-weight: var(--rasko-weight-semibold);
+  color: var(--rasko-green-active);
+  cursor: pointer;
+}
+
+.rw-map__placeholder:focus-visible {
+  outline: 2px solid var(--rasko-green);
+  outline-offset: -4px;
+}
+
+.rw-map__status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-size: var(--rasko-text-14);
+  color: var(--rasko-green-active);
+}
+
+.rw-map__iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+

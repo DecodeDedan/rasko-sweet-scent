@@ -7,8 +7,9 @@ import { site } from '../../content/site'
  *
  * Everything below is true of this website as built, and was checked against
  * the code rather than adapted from a template. The site is a static export
- * with no analytics script, no cookie, no embedded third-party frame and no
- * form, so there is genuinely nothing to disclose about collection. Saying so
+ * with no analytics script, no cookie and no form. Its one third-party frame,
+ * the Google map (components/FarmMap.tsx), is created only when a visitor
+ * presses "Show map", and this page says so. Change either and change both. Saying so
  * plainly is more useful to a reader, and more defensible, than a page of
  * boilerplate describing practices that do not happen here.
  *
@@ -38,8 +39,22 @@ export default function PrivacyPage() {
 
         <h2>What this website collects</h2>
         <p>
-          Nothing. This site is a set of static pages. It runs no analytics, sets no cookies, embeds
-          nothing from another company, and has no form to fill in. We do not know who visits it.
+          Nothing. This site is a set of static pages. It runs no analytics, sets no cookies, and has
+          no form to fill in. We do not know who visits it.
+        </p>
+        <p>
+          The map showing where the farm is comes from Google. It is not loaded until you press
+          Show map, so nothing is sent to Google unless you choose it. Once it is shown, Google
+          handles that map under{' '}
+          <a
+            className="rw-link"
+            href="https://policies.google.com/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            its own privacy policy
+          </a>
+          .
         </p>
         <p>
           Our hosting provider keeps ordinary server records, such as the address a request came
