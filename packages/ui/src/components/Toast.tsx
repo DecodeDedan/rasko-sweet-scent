@@ -17,6 +17,8 @@ export interface ToastInput {
   duration?: number | null
   /** One follow-up, such as installing an update. Dismisses the toast when chosen. */
   action?: { label: string; onClick: () => void }
+  /** False keeps it on screen until its action is taken, such as a pending update. */
+  isDismissible?: boolean
 }
 
 interface ToastRecord extends ToastInput {
@@ -112,14 +114,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   </Button>
                 ) : null}
               </div>
-              <button
-                type="button"
-                className="rsk-icon-btn rsk-icon-btn--sm"
-                onClick={() => dismissToast(toast.id)}
-                aria-label="Dismiss"
-              >
-                <X size={14} aria-hidden="true" />
-              </button>
+              {toast.isDismissible === false ? null : (
+                <button
+                  type="button"
+                  className="rsk-icon-btn rsk-icon-btn--sm"
+                  onClick={() => dismissToast(toast.id)}
+                  aria-label="Dismiss"
+                >
+                  <X size={14} aria-hidden="true" />
+                </button>
+              )}
             </div>
           )
         })}

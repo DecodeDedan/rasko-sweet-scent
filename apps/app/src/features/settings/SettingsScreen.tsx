@@ -19,6 +19,7 @@ import {
 } from '@rasko/ui'
 
 import { ScopeBadge } from '../../screens/common.js'
+import { requestUpdateCheck } from '../../shell/useAppUpdate.js'
 import type { ScreenProps } from '../../screens/common.js'
 import { EmailTemplatesPanel } from '../email/EmailTemplatesPanel.js'
 import { canEditCompanyProfile, canEditSettings } from './settingsRepository.js'
@@ -438,7 +439,15 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
               <Input value={String(status?.deviceRows ?? 0)} disabled readOnly />
             </Field>
 
-            <p>{`This is version ${__APP_VERSION__}. New versions are offered here automatically.`}</p>
+            <Field
+              label="Version"
+              hint="New versions are checked for every 15 minutes and offered as soon as they are found."
+            >
+              <div className="rsk-row">
+                <Input value={__APP_VERSION__} disabled readOnly />
+                <Button onClick={requestUpdateCheck}>Check for updates</Button>
+              </div>
+            </Field>
           </div>
         </Card>
       </TabPanel>

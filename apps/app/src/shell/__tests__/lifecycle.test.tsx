@@ -1,10 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react'
-import { ToastProvider } from '@rasko/ui'
+import { act, render, screen, waitFor } from '@testing-library/react'
+import { ToastProvider, useToast } from '@rasko/ui'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { AuthProvider, useAuth } from '../../auth/AuthProvider.js'
 import { createFakeGateway, makeProfile } from '../../test/fakeGateway.js'
-import { useAppUpdate } from '../useAppUpdate.js'
+import { requestUpdateCheck, useAppUpdate } from '../useAppUpdate.js'
 
 function UpdateProbe() {
   useAppUpdate()
@@ -41,6 +41,49 @@ describe('after an update', () => {
     )
     expect(screen.queryByText(/Updated to version/)).toBeNull()
     expect(localStorage.getItem('rasko.version.seen')).toBe(__APP_VERSION__)
+  })
+})
+
+describe('checking for updates on request', () => {
+  it('answers even outside the installed app, instead of doing nothing', async () => {
+    render(
+      <ToastProvider>
+        <UpdateProbe />
+      </ToastProvider>,
+    )
+    act(() => requestUpdateCheck())
+    expect(await screen.findByText(/checked by the installed app/)).toBeTruthy()
+  })
+})
+
+function PinnedToast() {
+  const { showToast } = useToast()
+  return (
+    <button
+      onClick={() =>
+        showToast({
+          title: 'Version 9.9.9 is available',
+          duration: null,
+          isDismissible: false,
+          action: { label: 'Install update', onClick: () => {} },
+        })
+      }
+    >
+      Offer
+    </button>
+  )
+}
+
+describe('the update offer', () => {
+  it('cannot be closed, only acted on', async () => {
+    render(
+      <ToastProvider>
+        <PinnedToast />
+      </ToastProvider>,
+    )
+    act(() => screen.getByRole('button', { name: 'Offer' }).click())
+    expect(await screen.findByRole('button', { name: 'Install update' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull()
   })
 })
 
