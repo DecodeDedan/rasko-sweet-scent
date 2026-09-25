@@ -827,6 +827,10 @@ textarea.rsk-input {
   font-size: var(--rasko-text-12);
 }
 
+.rsk-toast__action {
+  margin-top: var(--rasko-space-2);
+}
+
 /* ----------------------------------------------------------------- Tooltip */
 
 .rsk-tooltip {

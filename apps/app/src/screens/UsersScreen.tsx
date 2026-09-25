@@ -1,6 +1,6 @@
 'use client'
 
-import { Mail, Plus, UserX, Users } from 'lucide-react'
+import { Mail, Plus, Trash2, UserX, Users } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import {
   Button,
@@ -18,12 +18,19 @@ import { useAuth } from '../auth/AuthProvider.js'
 import { NoAccess } from '../auth/guards.js'
 import { ROLE_LABEL } from '../auth/session.js'
 import type { ProfileRecord, Role } from '../auth/session.js'
-import { assignableRoles, canAssignCompanyEmail, rowControls } from '../auth/userAdmin.js'
+import {
+  assignableRoles,
+  canAssignCompanyEmail,
+  canDeleteAccount,
+  rowControls,
+} from '../auth/userAdmin.js'
 import type { ScreenProps } from './common.js'
 import { AssignCompanyEmailDialog, InviteUserDialog } from './users/CompanyEmailDialogs.js'
+import { DeleteUserDialog } from './users/DeleteUserDialog.js'
 
 /**
- * FR-1.4: owner-only user management — invite, set role, deactivate.
+ * FR-1.4: owner-only user management — invite, set role, offboard, and (super
+ * admin only) delete.
  *
  * Every mutation here is refused server-side for a non-owner (the
  * profiles_update_owner policy plus the profiles_guard_privileges trigger), and
@@ -43,6 +50,7 @@ export function UsersScreen({ role }: ScreenProps) {
   const [assignTarget, setAssignTarget] = useState<ProfileRecord | null>(null)
 
   const [confirmTarget, setConfirmTarget] = useState<ProfileRecord | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ProfileRecord | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -97,17 +105,17 @@ export function UsersScreen({ role }: ScreenProps) {
     if (result.error) {
       showToast({
         tone: 'danger',
-        title: isActive ? 'Not reactivated' : 'Not deactivated',
+        title: isActive ? 'Not reactivated' : 'Not offboarded',
         description: result.error,
       })
       return
     }
     showToast({
       tone: 'success',
-      title: isActive ? 'User reactivated' : 'User deactivated',
+      title: isActive ? 'User reactivated' : 'User offboarded',
       description: isActive
         ? `${profile.fullName} can sign in again.`
-        : `${profile.fullName} loses access the next time their device reaches the server.`,
+        : `${profile.fullName} is signed out everywhere and their company mail has stopped.`,
     })
     await load()
   }
@@ -248,16 +256,29 @@ export function UsersScreen({ role }: ScreenProps) {
                     disabled={busyId === p.id}
                     onClick={() => setConfirmTarget(p)}
                   >
-                    Deactivate
+                    Offboard
                   </Button>
                 ) : (
-                  <Button
-                    size="sm"
-                    disabled={busyId === p.id}
-                    onClick={() => void handleSetActive(p, true)}
-                  >
-                    Reactivate
-                  </Button>
+                  <span className="rsk-row">
+                    <Button
+                      size="sm"
+                      disabled={busyId === p.id}
+                      onClick={() => void handleSetActive(p, true)}
+                    >
+                      Reactivate
+                    </Button>
+                    {canDeleteAccount(viewer, p) ? (
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        leadingIcon={<Trash2 size={14} aria-hidden="true" />}
+                        disabled={busyId === p.id}
+                        onClick={() => setDeleteTarget(p)}
+                      >
+                        Delete
+                      </Button>
+                    ) : null}
+                  </span>
                 ),
             },
           ]}
@@ -290,7 +311,7 @@ export function UsersScreen({ role }: ScreenProps) {
         <Modal
           isOpen={confirmTarget !== null}
           onClose={() => setConfirmTarget(null)}
-          title="Deactivate this user"
+          title="Offboard this user"
           size="sm"
           footer={
             <>
@@ -300,17 +321,36 @@ export function UsersScreen({ role }: ScreenProps) {
                 isLoading={busyId === confirmTarget?.id}
                 onClick={() => confirmTarget && void handleSetActive(confirmTarget, false)}
               >
-                Deactivate
+                Offboard
               </Button>
             </>
           }
         >
-          <p>
-            {confirmTarget?.fullName} will lose access as soon as their device reaches the server.
-            Their history stays intact and they disappear from pickers. You can reactivate them at
-            any time.
-          </p>
+          <ul className="rsk-stack">
+            <li>{confirmTarget?.fullName} is signed out on every device and cannot sign in.</li>
+            <li>Their company email stops receiving mail.</li>
+            <li>Their device clears its copy of the business data the next time it connects.</li>
+            <li>Their history stays intact. You can reactivate them at any time.</li>
+          </ul>
         </Modal>
+      ) : null}
+
+      {deleteTarget ? (
+        <DeleteUserDialog
+          gateway={gateway}
+          target={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={() => {
+            const name = deleteTarget.fullName
+            setDeleteTarget(null)
+            showToast({
+              tone: 'success',
+              title: 'Account deleted',
+              description: `${name} can no longer sign in. Their name stays on their records.`,
+            })
+            void load()
+          }}
+        />
       ) : null}
     </div>
   )

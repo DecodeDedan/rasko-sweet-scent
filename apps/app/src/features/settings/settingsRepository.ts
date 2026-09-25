@@ -373,12 +373,17 @@ export class SettingsRepository {
    */
   async systemStatus(): Promise<{
     lastSyncedAt: string | null
+    /** The newest verified backup this device has heard of (backup_runs). */
+    lastBackupAt: string | null
     pendingWrites: number
     failedWrites: number
     deviceRows: number
   }> {
     const cursor = await this.db.select<{ last: string | null }>(
       'SELECT MAX(last_pulled_at) AS last FROM sync_state',
+    )
+    const backup = await this.db.select<{ last: string | null }>(
+      'SELECT MAX(created_at) AS last FROM backup_runs',
     )
     const pending = await this.db.select<{ n: number }>('SELECT COUNT(*) AS n FROM outbox')
     const failed = await this.db.select<{ n: number }>('SELECT COUNT(*) AS n FROM outbox_dead')
@@ -389,6 +394,7 @@ export class SettingsRepository {
 
     return {
       lastSyncedAt: cursor[0]?.last ?? null,
+      lastBackupAt: backup[0]?.last ?? null,
       pendingWrites: Number(pending[0]?.n ?? 0),
       failedWrites: Number(failed[0]?.n ?? 0),
       deviceRows: Number(rows[0]?.n ?? 0),

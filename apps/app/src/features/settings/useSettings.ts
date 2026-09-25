@@ -23,6 +23,7 @@ export function useSettingsRepository(): SettingsRepository | null {
 
 export interface SystemStatus {
   lastSyncedAt: string | null
+  lastBackupAt: string | null
   pendingWrites: number
   failedWrites: number
   deviceRows: number

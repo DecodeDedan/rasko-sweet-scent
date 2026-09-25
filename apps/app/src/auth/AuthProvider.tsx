@@ -17,6 +17,11 @@ export interface AuthState {
   isOffline: boolean
   /** Why the last sign-in or restore failed, ready to display. */
   error: string | null
+  /**
+   * The server says this account no longer has access (offboarded or
+   * deleted). The device should forget its copy of the business data.
+   */
+  accessRevoked?: boolean
 }
 
 export interface AuthContextValue extends AuthState {
@@ -121,6 +126,7 @@ export function AuthProvider({ gateway, children }: AuthProviderProps) {
             identity: null,
             isOffline: false,
             error: DEACTIVATED_MESSAGE,
+            accessRevoked: true,
           })
           return
         }

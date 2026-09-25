@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { wipeReplica } from '../sync/engine.js'
 import { deadCount } from '../sync/outbox.js'
 import { createDevice, id, restartDevice } from './harness.js'
 import { MockServer } from './mockServer.js'
@@ -500,6 +501,29 @@ describe('a device whose server database was replaced starts its copy over', () 
 
     expect(outcome.replicaReset).toBe(false)
     expect(await desktop.pending()).toBe(1)
+    await desktop.close()
+  })
+})
+
+describe('an offboarded or deleted account (wipeReplica)', () => {
+  it('leaves nothing of the business on the device, sent or unsent', async () => {
+    const server = new MockServer()
+    const desktop = await createDevice(server, OWNER)
+    await desktop
+      .repo('clients')
+      .insert({ id: id('c0000010'), name: 'Synced client', client_type: 'individual' })
+    await desktop.sync()
+    await desktop
+      .repo('clients')
+      .insert({ id: id('c0000011'), name: 'Unsent client', client_type: 'individual' })
+
+    await wipeReplica(desktop.db)
+
+    expect(await desktop.repo('clients').findById(id('c0000010'))).toBeNull()
+    expect(await desktop.repo('clients').findById(id('c0000011'))).toBeNull()
+    expect(await desktop.pending()).toBe(0)
+    const [cursors] = await desktop.db.select<{ n: number }>('SELECT count(*) AS n FROM sync_state')
+    expect(Number(cursors?.n)).toBe(0)
     await desktop.close()
   })
 })

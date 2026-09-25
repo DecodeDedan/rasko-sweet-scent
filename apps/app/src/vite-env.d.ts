@@ -15,6 +15,9 @@ interface ImportMetaEnv {
   readonly APP_STAFF_EMAIL_DOMAIN?: string
 }
 
+/** package.json version, injected by vite.config.ts. */
+declare const __APP_VERSION__: string
+
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }

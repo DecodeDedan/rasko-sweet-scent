@@ -228,5 +228,20 @@ describe('system status (FR-9.5)', () => {
     expect(status.lastSyncedAt).toBe(NOW)
     expect(status.pendingWrites).toBe(0)
     expect(status.failedWrites).toBe(0)
+    expect(status.lastBackupAt).toBeNull()
+  })
+
+  it('reports the newest verified backup (FR-9.5)', async () => {
+    for (const [day, at] of [
+      ['2026-09-23', '2026-09-23T01:34:00.000Z'],
+      ['2026-09-24', '2026-09-24T01:33:00.000Z'],
+    ]) {
+      await db.execute(
+        'INSERT INTO backup_runs (id, created_at, file_name, size_bytes) VALUES (?, ?, ?, ?)',
+        [crypto.randomUUID(), at, `rasko-${day}.dump`, 250000],
+      )
+    }
+    const status = await repoFor(db).systemStatus()
+    expect(status.lastBackupAt).toBe('2026-09-24T01:33:00.000Z')
   })
 })

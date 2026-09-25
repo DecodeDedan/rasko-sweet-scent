@@ -39,6 +39,16 @@ export function canAssignCompanyEmail(
   return !target.isSuperAdmin || viewer.isSuperAdmin
 }
 
+/**
+ * Mirrors delete-user: the super admin alone, for someone already offboarded,
+ * never themselves and never the super admin account.
+ */
+export function canDeleteAccount(viewer: Viewer, target: ProfileRecord): boolean {
+  return (
+    viewer.isSuperAdmin && !target.isActive && !target.isSuperAdmin && target.id !== viewer.userId
+  )
+}
+
 export function rowControls(viewer: Viewer, target: ProfileRecord): RowControls {
   // Nobody locks themselves out, and an owner cannot step down from owner:
   // leaving the role is removing it, which only a super admin may do, and the

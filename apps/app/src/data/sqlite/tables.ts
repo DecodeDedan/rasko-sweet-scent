@@ -477,6 +477,19 @@ export const TABLES: readonly TableSpec[] = [
     ],
   },
   {
+    // FR-9.5: one row per verified nightly backup, written by backup.yml.
+    // Owners only (RLS); every other role pulls nothing.
+    name: 'backup_runs',
+    appendOnly: true,
+    direction: 'pull',
+    columns: [
+      c('id', 'uuid'),
+      c('created_at', 'ts'),
+      c('file_name', 'text'),
+      c('size_bytes', 'int'),
+    ],
+  },
+  {
     // Written by database triggers when a change reaches the server, never by a
     // client (architecture.md §7.2), so the device only ever reads it.
     name: 'audit_log',

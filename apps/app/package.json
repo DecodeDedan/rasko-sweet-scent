@@ -1,6 +1,6 @@
 {
   "name": "@rasko/app",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Rasko Sweet Scent — offline-first business management app (Windows + Android).",
   "type": "module",
@@ -24,7 +24,9 @@
     "@rasko/ui": "workspace:*",
     "@supabase/supabase-js": "^2.47.10",
     "@tauri-apps/api": "^2.2.0",
+    "@tauri-apps/plugin-process": "^2",
     "@tauri-apps/plugin-sql": "^2.2.0",
+    "@tauri-apps/plugin-updater": "^2",
     "framer-motion": "^13.4.2",
     "lucide-react": "^0.469.0",
     "react": "^18.3.1",

@@ -421,3 +421,17 @@ inbox, sending uses Gmail's "Send mail as" (guided at `/company-email/`), and
 some recipients may see "via gmail.com". Deactivating an account pauses its
 forwarding. Not yet run against Cloudflare, which needs the API token in
 `docs/company-email.md`.
+
+**15. Offboarding, deleting accounts, nightly backups.** Project owner,
+2026-09-25. **Offboard** (any owner) signs the person out on every device,
+pauses their company mail, and wipes their device's copy of the business data
+the next time it connects. **Delete** (super admin only, after offboarding)
+removes the sign-in, email, phone and company address for good but keeps the
+person's name on the records they made: 57 foreign keys point at a profile, and
+invoices, payments and payroll must be kept by law, so erasing the row would
+destroy the business's own history (migration `20260928000100`). Handing a
+leaver's company mail to a colleague is not built. Backups: the nightly
+`pg_dump` to Cloudflare R2 (`backup.yml`) now matches the server's Postgres 17,
+refuses a dump missing any core table's data, and records each verified backup
+in `backup_runs`, which the owner's System screen shows (FR-9.5). Not yet run:
+it needs the R2 bucket and GitHub secrets in `docs/restore-runbook.md`.

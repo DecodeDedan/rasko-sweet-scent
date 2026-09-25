@@ -17,6 +17,7 @@ export interface RoutingClient {
   ensureDestination(email: string): Promise<{ id: string; isVerified: boolean }>
   ensureForwardRule(address: string, forwardTo: string): Promise<string>
   setForwarding(address: string, enabled: boolean): Promise<boolean>
+  removeForwarding(address: string): Promise<boolean>
 }
 export function routingClient(config: {
   token: string

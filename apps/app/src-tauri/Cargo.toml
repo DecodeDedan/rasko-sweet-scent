@@ -25,6 +25,8 @@ serde_json = "1"
 # manifest instead, so the updater plugin is not built for mobile.
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
+# Restarts the app once an update is installed.
+tauri-plugin-process = "2"
 
 [profile.release]
 codegen-units = 1

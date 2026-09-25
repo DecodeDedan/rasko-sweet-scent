@@ -14,8 +14,8 @@
 //   1. forwarding rule   idempotent; a retry reuses it
 //   2. auth user + link  generateLink sends nothing by itself
 //   3. invitation email  if it fails, the auth user is deleted again
-//   4. profile           last: profiles.id is ON DELETE RESTRICT and its
-//                        insert writes an audit row, so it cannot be undone
+//   4. profile           last: its insert writes an audit row, which is
+//                        permanent, so it is the step that cannot be undone
 import { authLink } from '../_shared/email/auth.js'
 import { INLINE_LOGO_SRC, deliver } from '../_shared/email/deliver.ts'
 import { staffInviteEmail } from '../_shared/email/staff.js'

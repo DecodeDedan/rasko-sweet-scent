@@ -164,6 +164,8 @@ export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient
       const { data, error } = await client
         .from('profiles')
         .select(PROFILE_COLUMNS)
+        // A deleted account keeps its name for history, not a place on this list.
+        .is('deleted_at', null)
         .order('full_name')
 
       if (error) throw error
@@ -206,6 +208,12 @@ export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient
           personalEmail: input.personalEmail.trim(),
         },
       })
+      return error ? { error: await functionErrorMessage(error) } : {}
+    },
+
+    async deleteUser(userId): Promise<GatewayResult> {
+      // Super admin only, after offboarding; the function holds the service key.
+      const { error } = await client.functions.invoke('delete-user', { body: { userId } })
       return error ? { error: await functionErrorMessage(error) } : {}
     },
 

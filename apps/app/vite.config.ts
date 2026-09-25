@@ -1,12 +1,21 @@
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+
+// The installed version, shown in the shell and compared by the updater.
+// tauri.conf.json reads the same package.json, so the two cannot differ.
+const { version } = JSON.parse(
+  readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8'),
+) as { version: string }
 
 // Set by `tauri android dev` when serving to a physical device.
 const host = process.env.TAURI_DEV_HOST
 
 export default defineConfig({
   plugins: [react()],
+
+  define: { __APP_VERSION__: JSON.stringify(version) },
 
   // The .env file lives at the repository root and is shared with the website,
   // so Vite has to look one level above the app.

@@ -411,6 +411,19 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
               />
             </Field>
 
+            <Field
+              label="Last backup"
+              hint="The whole business database is copied off-site every night. Older than two days means the backup needs attention."
+            >
+              <Input
+                value={
+                  status?.lastBackupAt ? formatDateTime(status.lastBackupAt) : 'None recorded yet'
+                }
+                disabled
+                readOnly
+              />
+            </Field>
+
             <Field label="Waiting to sync">
               <Input value={`${status?.pendingWrites ?? 0} changes`} disabled readOnly />
             </Field>
@@ -425,10 +438,7 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
               <Input value={String(status?.deviceRows ?? 0)} disabled readOnly />
             </Field>
 
-            <p>
-              Automatic updates are not enabled in this build. Backups run on the server, not from
-              this device.
-            </p>
+            <p>{`This is version ${__APP_VERSION__}. New versions are offered here automatically.`}</p>
           </div>
         </Card>
       </TabPanel>

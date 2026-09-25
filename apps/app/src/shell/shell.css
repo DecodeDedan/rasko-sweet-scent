@@ -45,14 +45,6 @@
   color: var(--rasko-on-green);
 }
 
-.shell__brand-sub {
-  margin-top: 2px;
-  color: var(--rasko-green-tint-border);
-  font-size: var(--rasko-text-12);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
 .shell__nav {
   display: flex;
   flex-direction: column;
@@ -137,10 +129,20 @@
   font-weight: var(--rasko-weight-regular);
 }
 
-.shell__sidebar-slogan {
+.shell__sidebar-foot {
   margin-top: auto;
   padding: var(--rasko-space-4) var(--rasko-space-5) var(--rasko-space-5);
   border-top: 1px solid rgb(255 255 255 / 10%);
+}
+
+.shell__sidebar-version {
+  margin-top: var(--rasko-space-1);
+  color: var(--rasko-green-tint-border);
+  font-size: var(--rasko-text-12);
+  font-variant-numeric: tabular-nums;
+}
+
+.shell__sidebar-slogan {
   color: var(--rasko-green-tint-border);
   font-family: var(--rasko-font-heading);
   font-size: var(--rasko-text-14);

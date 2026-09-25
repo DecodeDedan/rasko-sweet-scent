@@ -69,7 +69,9 @@ export function UserMenu() {
           <hr className="shell__user-divider" />
 
           <p className="shell__dev-label">
-            {config ? `Environment: ${config.environment}` : 'Backend not configured'}
+            {config
+              ? `Version ${__APP_VERSION__} · ${config.environment}`
+              : `Version ${__APP_VERSION__} · backend not configured`}
           </p>
           <p className="shell__user-email">
             {isOffline ? 'Offline — signed in from this device' : 'Connected'}

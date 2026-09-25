@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { makeProfile } from '../../test/fakeGateway.js'
-import { assignableRoles, canAssignCompanyEmail, rowControls } from '../userAdmin.js'
+import {
+  assignableRoles,
+  canAssignCompanyEmail,
+  canDeleteAccount,
+  rowControls,
+} from '../userAdmin.js'
 
 const superAdmin = { userId: 'user-admin', isSuperAdmin: true }
 const owner = { userId: 'user-owner', isSuperAdmin: false }
@@ -58,6 +63,21 @@ describe('user administration rules (mirrors app.guard_profile_privileges)', () 
     it("keeps the super admin's address for the super admin alone", () => {
       const admin = makeProfile({ id: 'user-admin', email: 'me@gmail.com', isSuperAdmin: true })
       expect(canAssignCompanyEmail(owner, admin, DOMAIN)).toBe(false)
+    })
+  })
+
+  describe('deleting an account (mirrors delete-user)', () => {
+    it('is for the super admin alone, and only after offboarding', () => {
+      const offboarded = makeProfile({ id: 'user-sales', role: 'sales', isActive: false })
+      const active = makeProfile({ id: 'user-sales', role: 'sales' })
+      expect(canDeleteAccount(superAdmin, offboarded)).toBe(true)
+      expect(canDeleteAccount(superAdmin, active)).toBe(false)
+      expect(canDeleteAccount(owner, offboarded)).toBe(false)
+    })
+
+    it('never offers the super admin account', () => {
+      const admin = makeProfile({ id: 'user-admin', isSuperAdmin: true, isActive: false })
+      expect(canDeleteAccount(superAdmin, admin)).toBe(false)
     })
   })
 })

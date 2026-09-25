@@ -23,15 +23,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The client must match the server major version or pg_dump refuses.
-      # Supabase runs Postgres 15.
-      - name: Install postgresql-client 15
+      # pg_dump refuses to dump a server newer than itself. The hosted project
+      # runs Postgres 17 (select current_setting('server_version') = 17.6);
+      # bump this with the project, never below it.
+      - name: Install postgresql-client 17
         run: |
           sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
           sudo apt-get update
-          sudo apt-get install -y postgresql-client-15
+          sudo apt-get install -y postgresql-client-17
 
+      # SUPABASE_DB_URL is the SESSION POOLER string (Supabase dashboard ->
+      # Connect -> Session pooler, port 5432). The direct connection is IPv6
+      # only and GitHub's runners cannot reach it.
       - name: Dump
         id: dump
         env:
@@ -56,14 +60,26 @@ jobs:
             exit 1
           fi
 
-          # Verify it is a readable archive before it is trusted as a backup.
-          pg_restore --list "$FILE" > /dev/null
+          # Readable is not enough: a dump taken with the wrong role, or of the
+          # wrong project, is a valid archive with the business missing. Each
+          # of these must be in it WITH its rows' data.
+          pg_restore --list "$FILE" > toc.txt
+          for TABLE in profiles clients orders invoices payments products stock_movements \
+                       suppliers employees payroll_runs payroll_items audit_log; do
+            grep -Eq "TABLE DATA public ${TABLE} " toc.txt \
+              || { echo "The dump has no data for public.${TABLE}; refusing it."; exit 1; }
+          done
+          echo "size=$SIZE" >> "$GITHUB_OUTPUT"
 
       - name: Upload to R2
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
+          # Recent AWS CLIs send checksum headers R2 does not accept on every
+          # operation; only send them where S3 itself requires one.
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |
@@ -79,11 +95,27 @@ jobs:
               --endpoint-url "$R2_ENDPOINT"
           fi
 
+      # FR-9.5: the owner's System screen shows this date. Written only after
+      # the upload succeeded, so it never claims a backup that is not in R2.
+      - name: Record the backup
+        env:
+          PGCONN: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          # Through stdin: psql substitutes :'file' there, never in a -c string.
+          echo "insert into public.backup_runs (file_name, size_bytes) values (:'file', :size);" \
+            | psql "$PGCONN" -v ON_ERROR_STOP=1 \
+                -v file="${{ steps.dump.outputs.file }}" -v size="${{ steps.dump.outputs.size }}"
+
       - name: Prune daily backups older than 30 days
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
+          # Recent AWS CLIs send checksum headers R2 does not accept on every
+          # operation; only send them where S3 itself requires one.
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |
@@ -104,6 +136,10 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
+          # Recent AWS CLIs send checksum headers R2 does not accept on every
+          # operation; only send them where S3 itself requires one.
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |

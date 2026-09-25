@@ -58,6 +58,7 @@ function fakeCloudflare({ destinations = [], rules = [] } = {}) {
     }
     const id = pathname.split('/').pop()
     const index = rules.findIndex((r) => r.id === id)
+    if (init.method === 'DELETE') return ok(rules.splice(index, 1)[0])
     rules[index] = { id, ...body }
     return ok(rules[index])
   }
@@ -157,5 +158,22 @@ test('never repoints a rule it did not create, such as the business inbox', asyn
     (error) => error instanceof CloudflareError && error.status === 409,
   )
   assert.equal(await client(cf).setForwarding('orders@raskosweetscent.com', false), false)
+  assert.deepEqual(cf.rules, [handMade])
+})
+
+test('deleting an account removes its rule, and only its own', async () => {
+  const handMade = {
+    id: 'rule-hand',
+    name: 'owner forward',
+    enabled: true,
+    priority: 0,
+    matchers: [{ type: 'literal', field: 'to', value: 'boss@raskosweetscent.com' }],
+    actions: [{ type: 'forward', value: ['boss@gmail.com'] }],
+  }
+  const cf = fakeCloudflare({ rules: [structuredClone(handMade)] })
+  await client(cf).ensureForwardRule('jane.kamau@raskosweetscent.com', 'jane@gmail.com')
+
+  assert.equal(await client(cf).removeForwarding('jane.kamau@raskosweetscent.com'), true)
+  assert.equal(await client(cf).removeForwarding('boss@raskosweetscent.com'), false)
   assert.deepEqual(cf.rules, [handMade])
 })

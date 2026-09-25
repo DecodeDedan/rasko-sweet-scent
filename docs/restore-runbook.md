@@ -25,8 +25,9 @@ the dump is not necessarily lost — see §6 before you conclude it is.
 
 - The R2 bucket credentials (`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`,
   `R2_ENDPOINT`, `R2_BUCKET`) — the same values held in GitHub Actions secrets.
-- `postgresql-client-15`. The major version must match the server or `pg_restore`
-  refuses.
+- `postgresql-client-17` (on a Mac, `brew install postgresql@17`). It must be
+  at least the server's major version, 17 on the hosted project, or `pg_dump` and
+  `pg_restore` refuse. Check with `select current_setting('server_version')`.
 - The target database URL. For staging this is the staging project's connection
   string; for production, production's.
 

@@ -15,7 +15,9 @@ pub fn run() {
     // tauri.conf.json. Not built for mobile: an APK cannot replace itself, so
     // Android checks the same manifest in-app and sends the user to download.
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
-    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+    let builder = builder
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init());
 
     builder
         .run(tauri::generate_context!())

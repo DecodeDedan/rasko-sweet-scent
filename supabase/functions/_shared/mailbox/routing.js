@@ -232,5 +232,17 @@ export function routingClient(config) {
       })
       return true
     },
+
+    /**
+     * Deletes this software's rule for the address, when an account is
+     * deleted. False when there was none; a rule made by hand is never touched.
+     * @param {string} address
+     */
+    async removeForwarding(address) {
+      const rule = (await rulesFor(address)).find(isStaffRule)
+      if (!rule) return false
+      await call('DELETE', `${rulesPath}/${rule.id}`)
+      return true
+    },
   }
 }

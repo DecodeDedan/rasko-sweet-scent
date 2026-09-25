@@ -21,6 +21,7 @@ import {
 } from '../screens/index.js'
 import type { ScreenProps } from '../screens/index.js'
 import { OnboardingProvider } from '../onboarding/OnboardingProvider.js'
+import { useAppUpdate } from './useAppUpdate.js'
 import { BottomNav } from './BottomNav.js'
 import { ShellNavigationContext } from './ShellNavigation.js'
 import { Sidebar } from './Sidebar.js'
@@ -60,6 +61,8 @@ export function AppShell() {
     },
     [moduleIds],
   )
+
+  useAppUpdate()
 
   const activeModule = findModule(activeId)
   const Screen = SCREENS[activeId]

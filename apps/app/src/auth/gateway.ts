@@ -58,6 +58,11 @@ export interface AuthGateway {
   changeRole(userId: string, role: Role): Promise<GatewayResult>
   /** FR-1.4 / T4. Revokes server access; also revokes the refresh token. */
   setActive(userId: string, isActive: boolean): Promise<GatewayResult>
+  /**
+   * Super admin only, and only for an offboarded account: the sign-in and
+   * contact details go, the name stays on the records they made.
+   */
+  deleteUser(userId: string): Promise<GatewayResult>
   inviteUser(input: InviteInput): Promise<GatewayResult>
   /** Moves an existing account onto a company address; its old email receives the mail. */
   assignCompanyEmail(userId: string, localPart: string): Promise<AssignResult>

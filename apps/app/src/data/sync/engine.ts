@@ -236,6 +236,24 @@ const INSTANCE_KEY = 'server_instance'
  * Returns false when the server cannot be reached, which ends the cycle the
  * same way a failed push would.
  */
+/** Every table holding this device's copy of the server, local bookkeeping included. */
+function replicaTables(): string[] {
+  return [...TABLES.map((spec) => spec.name), 'outbox', 'outbox_dead', 'sync_state']
+}
+
+/**
+ * Forgets every row, unsent write and pull cursor this device holds. For a
+ * device whose account has been offboarded or deleted: the business data on
+ * it is no longer theirs to keep, and anything unsent could never be accepted
+ * (every policy refuses an inactive account). The next person to sign in
+ * rebuilds the copy from the server.
+ */
+export async function wipeReplica(db: SqlDatabase): Promise<void> {
+  await db.transaction(async (tx) => {
+    for (const table of replicaTables()) await tx.execute(`DELETE FROM ${table}`)
+  })
+}
+
 async function ensureSameServer(
   db: SqlDatabase,
   remote: SyncRemote,
@@ -266,10 +284,7 @@ async function ensureSameServer(
 
   await db.transaction(async (tx) => {
     if (stored) {
-      const localOnly = ['outbox', 'outbox_dead', 'sync_state']
-      for (const table of [...TABLES.map((spec) => spec.name), ...localOnly]) {
-        await tx.execute(`DELETE FROM ${table}`)
-      }
+      for (const table of replicaTables()) await tx.execute(`DELETE FROM ${table}`)
     }
     await tx.execute(
       `INSERT INTO local_meta (key, value) VALUES (?, ?)

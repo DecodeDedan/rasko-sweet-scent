@@ -32,10 +32,7 @@ export function Sidebar({ modules, activeId, onSelect }: SidebarProps) {
     <aside className="shell__sidebar">
       <div className="shell__brand">
         <BrandMark height={40} isReversed />
-        <div>
-          <p className="shell__brand-name">Rasko Sweet Scent</p>
-          <p className="shell__brand-sub">Molo · Nakuru</p>
-        </div>
+        <p className="shell__brand-name">Rasko Sweet Scent</p>
       </div>
 
       <nav className="shell__nav" aria-label="Modules">
@@ -70,7 +67,10 @@ export function Sidebar({ modules, activeId, onSelect }: SidebarProps) {
         })}
       </nav>
 
-      <p className="shell__sidebar-slogan">All that nature gives.</p>
+      <div className="shell__sidebar-foot">
+        <p className="shell__sidebar-slogan">All that nature gives.</p>
+        <p className="shell__sidebar-version">Version {__APP_VERSION__}</p>
+      </div>
     </aside>
   )
 }

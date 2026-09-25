@@ -43,6 +43,7 @@ export interface FakeGateway extends AuthGateway {
     setActive: Array<[string, boolean]>
     invite: InviteInput[]
     assign: Array<[string, string]>
+    remove: string[]
     resetRequests: string[]
   }
   setOffline(value: boolean): void
@@ -62,6 +63,7 @@ export function createFakeGateway(options: FakeGatewayOptions = {}): FakeGateway
     setActive: [],
     invite: [],
     assign: [],
+    remove: [],
     resetRequests: [],
   }
 
@@ -166,6 +168,14 @@ export function createFakeGateway(options: FakeGatewayOptions = {}): FakeGateway
           mustChangePassword: true,
         }),
       )
+      return {}
+    },
+
+    async deleteUser(userId) {
+      calls.remove.push(userId)
+      networkGuard()
+      const index = profiles.findIndex((p) => p.id === userId)
+      if (index >= 0) profiles.splice(index, 1)
       return {}
     },
 

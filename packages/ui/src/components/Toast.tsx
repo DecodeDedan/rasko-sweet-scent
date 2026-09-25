@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState } fro
 import type { ReactNode } from 'react'
 
 import { cx } from '../utils/cx.js'
+import { Button } from './Button.js'
 
 export type ToastTone = 'neutral' | 'success' | 'warning' | 'danger'
 
@@ -14,6 +15,8 @@ export interface ToastInput {
   tone?: ToastTone
   /** Milliseconds before auto-dismiss. `null` keeps it until dismissed. */
   duration?: number | null
+  /** One follow-up, such as installing an update. Dismisses the toast when chosen. */
+  action?: { label: string; onClick: () => void }
 }
 
 interface ToastRecord extends ToastInput {
@@ -94,6 +97,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <p className="rsk-toast__title">{toast.title}</p>
                 {toast.description ? (
                   <p className="rsk-toast__description">{toast.description}</p>
+                ) : null}
+                {toast.action ? (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    className="rsk-toast__action"
+                    onClick={() => {
+                      dismissToast(toast.id)
+                      toast.action?.onClick()
+                    }}
+                  >
+                    {toast.action.label}
+                  </Button>
                 ) : null}
               </div>
               <button

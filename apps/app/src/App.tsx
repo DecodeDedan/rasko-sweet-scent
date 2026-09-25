@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './auth/AuthProvider.js'
 import { openDeviceSync } from './data/bootstrap.js'
 import type { DeviceSync } from './data/bootstrap.js'
 import { SyncProvider } from './data/sync/SyncProvider.js'
+import { wipeReplica } from './data/sync/engine.js'
 import { AuthLoading } from './auth/guards.js'
 import type { AuthGateway } from './auth/gateway.js'
 import { createSupabaseGateway } from './auth/supabaseGateway.js'
@@ -20,8 +21,18 @@ import { AppShell } from './shell/AppShell.js'
  * holding the password someone else typed (FR-1.6).
  */
 function AuthGate() {
-  const { status, identity, refresh } = useAuth()
+  const { status, identity, refresh, accessRevoked } = useAuth()
   const [device, setDevice] = useState<DeviceSync | null>(null)
+
+  // Offboarded or deleted: this device forgets the business data it held,
+  // opening the database just for that if this launch never needed it.
+  useEffect(() => {
+    if (!accessRevoked) return
+    void (async () => {
+      const opened = device ?? (await openDeviceSync())
+      if (opened) await wipeReplica(opened.db)
+    })()
+  }, [accessRevoked, device])
 
   // The device database is opened once the user is through the gate: there is
   // nothing to sync before that, and opening it earlier would put a SQLite file
