@@ -167,9 +167,10 @@ build` and **fails the build** while the WhatsApp number is missing. That is
   `StemStudy.tsx` pins the section and hands the four panels off, writing progress
   into a ref that `StemCanvas.tsx` reads each frame; the stem reshapes between the
   varieties' leaf parameters (`LEAF_FORMS`, same order as `content/site.ts`) in the
-  same scroll window as the text. Below 56rem there is no pin: the list scrolls and
-  the stem is CSS-sticky above it, on its own green ground so type never crosses it.
-  three.js never listens to scroll itself.
+  same scroll window as the text. Below 56rem there is no pin: the stem is CSS-sticky,
+  full screen and softened (opacity) _behind_ the list, which scrolls over it (owner,
+  2026-09-25; it is a drawn stem, not a photograph), and the meter sticks to the foot
+  of the screen, filled from the same progress. three.js never listens to scroll itself.
 - **Every variety is sold as standard or spray** (owner, 2026-09-26). Website:
   `forms` on each variety in `content/site.ts`. App: a variety is a `categories`
   row (the four are seeded by migration `20260926000100`) and the form is

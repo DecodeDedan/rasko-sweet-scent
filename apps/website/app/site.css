@@ -526,16 +526,28 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
 
 .rw-hero__slogan {
   display: block;
-  max-width: 9ch;
+  /* One line wherever it fits beside the monogram; on a narrow phone it may
+   * wrap, balanced, rather than shrink below a readable display size. */
+  min-width: 0;
   margin: 0;
   font-family: var(--rasko-font-heading);
-  font-size: clamp(2.25rem, 0.9rem + 5.6vw, 6.25rem);
+  /* The line is 9.35em wide; 5.75rem keeps it inside the widest content
+   * column (about 895px beside the full-size monogram) on one line. */
+  font-size: clamp(2.25rem, 0.9rem + 5.6vw, 5.75rem);
   font-style: italic;
   font-weight: var(--rasko-weight-semibold);
   line-height: 1.02;
   letter-spacing: -0.02em;
   color: var(--rasko-surface);
   text-wrap: balance;
+}
+
+/* From the desktop layout up (56rem, as StemStudy's PIN_FROM) the line fits
+ * beside the monogram at every width measured, 896px to 1920px. */
+@media (min-width: 56rem) {
+  .rw-hero__slogan {
+    white-space: nowrap;
+  }
 }
 
 /* Set by SplitText at runtime: each word holds its finished width while it
@@ -1198,32 +1210,69 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
   height: 44svh;
 }
 
-/* Phone: no pin (StemStudy PIN_FROM). The stem sits above the list and stays
- * stuck under the header while the four varieties scroll past it. */
+/* Phone: no pin (StemStudy PIN_FROM). The stem fills the screen behind the
+ * list and stays there while the four varieties scroll over it (owner's
+ * request, 2026-09-25): stem and text share one grid cell, the stem sticky
+ * underneath. It is a drawn stem on the section's own green, not a
+ * photograph, and it is softened so white type over a leaf stays readable. */
 @media (max-width: 55.99rem) {
   .rw-study__inner {
     align-items: start;
   }
 
-  /* The text scrolls under the stem, never over the leaves: type is never set
-   * on an image (docs/brand.md), so the stem carries its own green ground. */
+  /* Full screen width, out past the column's gutters, so no leaf is cut off
+   * at an edge (the section clips anything beyond the screen). */
   .rw-study__canvas {
+    grid-area: 1 / 1;
     position: sticky;
-    top: 4.25rem;
-    z-index: 1;
-    order: -1;
-    height: 32svh;
-    background-color: var(--rasko-green-active);
+    top: 0;
+    z-index: 0;
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+    height: 100svh;
+    opacity: 0.5;
   }
 
   .rw-study__text {
+    grid-area: 1 / 1;
     position: relative;
-    z-index: 0;
+    z-index: 1;
   }
 
-  /* The meter tracks the pinned walk; a scrolling list has no use for it. */
+  /* The same meter, kept in view: it sticks to the foot of the screen on its
+   * own green strip while the four varieties scroll past, so the text passes
+   * under the strip, never under the bar. StemStudy fills it from the same
+   * scroll position that reshapes the stem. */
   .rw-study__meter {
-    display: none;
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    max-width: none;
+    height: 2px;
+    box-sizing: content-box;
+    margin-top: var(--rasko-space-6);
+    padding: var(--rasko-space-4) 0;
+    background-color: var(--rasko-green-active);
+  }
+
+  /* The track, inside the strip's padding (desktop draws it as the meter's
+   * own background). */
+  .rw-study__meter::before {
+    content: '';
+    position: absolute;
+    top: var(--rasko-space-4);
+    right: 0;
+    left: 0;
+    height: 2px;
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .rw-study__meter-fill {
+    position: relative;
+  }
+
+  .rw-study__meter-tick {
+    top: calc(var(--rasko-space-4) - 3px);
   }
 }
 

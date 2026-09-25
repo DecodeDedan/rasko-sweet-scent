@@ -46,7 +46,8 @@ const PIN_FROM = '(min-width: 56rem)'
  * ON A PHONE
  * No pin. The panels scroll past as a list while the stem stays stuck above
  * them (CSS sticky), and the same progress ref, taken from the section's own
- * scroll, reshapes it as each variety goes by.
+ * scroll, reshapes it as each variety goes by and fills the meter, which
+ * sticks to the foot of the screen.
  *
  * WITHOUT SCRIPT, OR WITH REDUCED MOTION
  * The panels are an ordinary list, stacked and all visible. Only once the
@@ -127,6 +128,12 @@ export function StemStudy() {
     })
 
     media.add(`not all and ${PIN_FROM}`, () => {
+      // The same meter as the pinned walk, filled from the same progress that
+      // reshapes the stem. Set here, at runtime, so without script the bar is
+      // simply full rather than held empty by the stylesheet.
+      const fill = section.querySelector<HTMLElement>('.rw-study__meter-fill')
+      if (fill !== null) gsap.set(fill, { scaleX: 0 })
+
       ScrollTrigger.create({
         trigger: list,
         // The stem reshapes as each panel crosses the middle of the screen.
@@ -135,6 +142,7 @@ export function StemStudy() {
         scrub: true,
         onUpdate: (self) => {
           progress.current = self.progress
+          if (fill !== null) gsap.set(fill, { scaleX: self.progress })
         },
       })
     })
