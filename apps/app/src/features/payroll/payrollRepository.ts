@@ -444,12 +444,28 @@ export class PayrollRepository {
       throw new PayrollRuleError('Approve the run before recording payment.')
     }
 
+    // A payslip M-Pesa is paying, or has paid, is settled by M-Pesa alone
+    // (migration 20260928000300 refuses it too): marking it by hand would pay
+    // the salary twice, or wipe the M-Pesa receipt.
+    const byMpesa = await this.payslipsPaidByMpesa(input.runId)
     const detail = await this.runDetail(input.runId)
+    const items = detail?.items ?? []
+    if (input.itemId && byMpesa.has(input.itemId)) {
+      throw new PayrollRuleError(
+        'This payslip is paid by M-Pesa. It is marked paid when M-Pesa confirms.',
+      )
+    }
     const targets = input.itemId
-      ? (detail?.items ?? []).filter((item) => item.id === input.itemId)
-      : (detail?.items ?? []).filter((item) => item.paid_at === null)
+      ? items.filter((item) => item.id === input.itemId && item.paid_at === null)
+      : items.filter((item) => item.paid_at === null && !byMpesa.has(item.id))
 
-    if (targets.length === 0) throw new PayrollRuleError('There is nothing left to pay.')
+    if (targets.length === 0) {
+      throw new PayrollRuleError(
+        byMpesa.size > 0
+          ? 'Everything left in this run is being paid by M-Pesa.'
+          : 'There is nothing left to pay.',
+      )
+    }
 
     const now = this.clock()
     for (const item of targets) {
@@ -464,6 +480,17 @@ export class PayrollRepository {
     if (after && after.items.every((item) => item.paid_at !== null) && run.status !== 'paid') {
       await this.runs.update(input.runId, { status: 'paid' })
     }
+  }
+
+  /** Payslips in the run with an M-Pesa payout in flight or paid. */
+  private async payslipsPaidByMpesa(runId: string): Promise<Set<string>> {
+    const rows = await this.db.select<{ payroll_item_id: string }>(
+      `SELECT DISTINCT payroll_item_id FROM payroll_payouts
+        WHERE payroll_run_id = ? AND deleted_at IS NULL
+          AND status IN ('queued', 'sending', 'accepted', 'unknown', 'paid')`,
+      [runId],
+    )
+    return new Set(rows.map((row) => row.payroll_item_id))
   }
 
   // ------------------------------------------------------------- mapping

@@ -17,9 +17,46 @@ recorded in `docs/PROGRESS.md` (decision 13) for client sign-off.
    whole shillings** (B2C cannot send cents; the remainder is shown and stays
    owed) and the employee's own M-Pesa number. Owner only; approved runs only.
 4. `pg_net` calls `mpesa-b2c`, which claims the row, gets a Daraja token and sends
-   a `SalaryPayment`. `mpesa-b2c-result` receives Safaricom's answer, marks the
+   a `SalaryPayment`. `payout-result` receives Safaricom's answer, marks the
    payout paid with the M-Pesa receipt, which marks the payslip paid (FR-8.7) and
    the run paid once every line is.
+
+## Callback URLs must avoid certain words
+
+Daraja will not call a ResultURL or QueueTimeOutURL containing words such as
+`mpesa`, `m-pesa`, `safaricom`, `sql` or `exec`. It still accepts the payment,
+answering `ResponseCode 0`, and then never reports the result, so the payout
+waits at "With M-Pesa" forever. That is why the result function is named
+`payout-result`. Keep any new callback name clear of those words.
+
+## The callback address: hooks.raskosweetscent.com
+
+Results reach `payout-result` through the company's own subdomain, not the
+`supabase.co` address: `MPESA_CALLBACK_BASE_URL=https://hooks.raskosweetscent.com`.
+A Cloudflare Worker named `payout-hooks` (Cloudflare → Workers & Pages) owns that
+subdomain and forwards `POST /payout-result/...` to the function; anything else
+gets 404. Safaricom delivered no result to the `supabase.co` address in sandbox
+and delivered within a minute to this one (2026-09-25). The Worker's code:
+
+```js
+export default {
+  async fetch(request) {
+    const url = new URL(request.url)
+    if (request.method !== 'POST' || !url.pathname.startsWith('/payout-result/')) {
+      return new Response('Not found', { status: 404 })
+    }
+    return fetch(`https://ezfbquyfwiolestylykx.supabase.co/functions/v1${url.pathname}`, {
+      method: 'POST',
+      headers: { 'Content-Type': request.headers.get('Content-Type') ?? 'application/json' },
+      body: await request.arrayBuffer(),
+    })
+  },
+}
+```
+
+The token travels in the path (`/payout-result/result/<token>`), never a query
+string. Sandbox pays only its test customer `254708374149`; any other number is
+declined with result code 2040.
 
 ## Money safety
 
@@ -58,7 +95,7 @@ the hosted project (or an HTTPS tunnel to the local stack). Hosted:
 
 ```bash
 supabase functions deploy mpesa-b2c --no-verify-jwt
-supabase functions deploy mpesa-b2c-result --no-verify-jwt
+supabase functions deploy payout-result --no-verify-jwt
 supabase secrets set MPESA_ENV=sandbox MPESA_CONSUMER_KEY=... MPESA_CONSUMER_SECRET=... \
   MPESA_SHORTCODE=... MPESA_INITIATOR_NAME=... MPESA_SECURITY_CREDENTIAL=... \
   MPESA_CALLBACK_BASE_URL=https://<ref>.supabase.co/functions/v1 MPESA_CALLBACK_TOKEN=$(openssl rand -hex 32)

@@ -1,6 +1,6 @@
 // M-Pesa B2C (Daraja) for salary payouts: the pure parts, no network, so they
 // are tested directly (b2c.test.mjs, `node --test`). The functions mpesa-b2c
-// and mpesa-b2c-result do the I/O.
+// and payout-result do the I/O.
 //
 // Contract, as documented by Safaricom Daraja (verify against the portal on
 // the first sandbox run; the path is overridable with MPESA_B2C_PATH):

@@ -407,9 +407,9 @@ beyond PRD §4 (which excludes Daraja reconciliation of incoming payments only).
 Decisions taken for sign-off: net pay is sent rounded **down** to whole
 shillings, the cents shown as still owed; only an **owner** can send, only for an
 **approved** run, and must type the exact total; a payout whose outcome is not
-certain is held as "check statement" and never retried automatically. Built and
-tested against the documented Daraja contract; not yet run against the sandbox,
-which needs Daraja keys and the hosted project. See `docs/mpesa-setup.md`.
+certain is held as "check statement" and never retried automatically. Verified end to
+end in the Daraja sandbox on 2026-09-25: receipt UIP030EXIF settled the payslip
+and the run. Production needs Safaricom's approval of a B2C shortcode. See `docs/mpesa-setup.md`.
 
 **14. Company email addresses, forwarded to each person's Gmail.** Project owner,
 2026-09-25. Every account signs in with `name@raskosweetscent.com`, created from

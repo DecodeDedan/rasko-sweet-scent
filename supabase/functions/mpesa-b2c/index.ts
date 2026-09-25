@@ -17,6 +17,14 @@ import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 import { DEFAULT_B2C_PATH, MPESA_BASE_URL, b2cRequestBody } from '../_shared/mpesa/b2c.js'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+// Daraja will not call a ResultURL containing words such as "mpesa" or
+// "safaricom": it accepts the payment and silently never reports the result.
+// So the receiving function is named without them.
+const RESULT_FUNCTION = 'payout-result'
+// The trailing slash matters when MPESA_CALLBACK_BASE_URL is the company
+// website (https://www.raskosweetscent.com/hooks, forwarded by
+// apps/website/vercel.json): the site 308-redirects any path without one, and
+// Safaricom does not follow a redirect with its result.
 const TOKEN_TIMEOUT_MS = 10_000
 const REQUEST_TIMEOUT_MS = 20_000
 const MONTHS = [
@@ -68,8 +76,7 @@ function mpesaConfig(): MpesaConfig | null {
   if (!consumerKey || !consumerSecret || !shortcode || !initiatorName || !securityCredential) {
     return null
   }
-  const callback = (kind: string) =>
-    `${callbackBase}/mpesa-b2c-result?kind=${kind}&token=${encodeURIComponent(token)}`
+  const callback = (kind: string) => `${callbackBase}/${RESULT_FUNCTION}/${kind}/${token}/`
   return {
     baseUrl: MPESA_BASE_URL[env],
     b2cPath: get('MPESA_B2C_PATH') ?? DEFAULT_B2C_PATH,

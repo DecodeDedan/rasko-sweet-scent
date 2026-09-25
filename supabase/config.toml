@@ -455,10 +455,10 @@ verify_jwt = false
 verify_jwt = false
 
 # M-Pesa B2C salary payouts. Called by the database (mpesa-b2c) and by
-# Safaricom (mpesa-b2c-result), neither of which carries a user JWT. The first
+# Safaricom (payout-result), neither of which carries a user JWT. The first
 # trusts only a payout id it can claim; the second requires MPESA_CALLBACK_TOKEN.
 [functions.mpesa-b2c]
 verify_jwt = false
 
-[functions.mpesa-b2c-result]
+[functions.payout-result]
 verify_jwt = false

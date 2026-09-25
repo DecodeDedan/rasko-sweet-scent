@@ -294,6 +294,31 @@ describe('approval and payment (FR-8.5, FR-8.7, FR-8.8)', () => {
     expect(after?.items.every((item) => item.paid_at === NOW)).toBe(true)
   })
 
+  it('never marks by hand a payslip M-Pesa is paying, and leaves the run open for it', async () => {
+    const repo = repoFor(db)
+    const run = await repo.prepareRun({ id: crypto.randomUUID(), year: 2026, month: 9 })
+    await repo.transitionRun(run.id, 'approved')
+    const [first, ...others] = (await repo.runDetail(run.id))?.items ?? []
+    if (!first) throw new Error('the seeded run has no payslips')
+    await db.execute(
+      `INSERT INTO payroll_payouts (id, payroll_run_id, payroll_item_id, status,
+                                    created_at, updated_at, sync_status)
+       VALUES (?, ?, ?, 'accepted', ?, ?, 'synced')`,
+      [crypto.randomUUID(), run.id, first.id, NOW, NOW],
+    )
+
+    await expect(
+      repo.markPaid({ runId: run.id, itemId: first.id, method: 'bank' }),
+    ).rejects.toThrow(/paid by M-Pesa/)
+    await repo.markPaid({ runId: run.id, method: 'bank', reference: 'BANK-1' })
+
+    const after = await repo.runDetail(run.id)
+    const byId = new Map((after?.items ?? []).map((item) => [item.id, item]))
+    expect(byId.get(first.id)?.paid_at).toBeNull()
+    expect(others.every((item) => byId.get(item.id)?.paid_at === NOW)).toBe(true)
+    expect(after?.status).toBe('approved')
+  })
+
   it('runs the pipeline forward only', async () => {
     const repo = repoFor(db)
     const run = await repo.prepareRun({ id: crypto.randomUUID(), year: 2026, month: 9 })

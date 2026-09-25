@@ -5,7 +5,10 @@
 // TRUST
 //   * the URL carries MPESA_CALLBACK_TOKEN, a long random secret known only to
 //     this project and to the ResultURL we gave Safaricom; a request without
-//     it is refused before its body is read;
+//     it is refused before its body is read. It travels in the PATH
+//     (/payout-result/result/<token>): Daraja does not call back to URLs with
+//     a query string. The old ?kind=&token= form is still read, for payouts
+//     sent before the change;
 //   * only a payout that is actually in flight ('sending', 'accepted',
 //     'unknown') can be settled, and only by its own id, so a replayed or
 //     forged callback cannot touch a finished payout;
@@ -45,16 +48,26 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return reply({ error: 'POST only.' }, 405)
 
   const expected = Deno.env.get('MPESA_CALLBACK_TOKEN')
-  const params = new URL(request.url).searchParams
-  if (!expected || !sameSecret(params.get('token') ?? '', expected)) {
+  const callbackUrl = new URL(request.url)
+  // .../payout-result/<kind>/<token>, or the older ?kind=&token=.
+  const [pathKind, pathToken] = callbackUrl.pathname.split('/').filter(Boolean).slice(-2)
+  const hasPath = pathKind === 'result' || pathKind === 'timeout'
+  const token = hasPath ? (pathToken ?? '') : (callbackUrl.searchParams.get('token') ?? '')
+  const kind = hasPath ? pathKind : callbackUrl.searchParams.get('kind')
+  if (!expected || !sameSecret(token, expected)) {
     return reply({ error: 'Forbidden.' }, 403)
   }
-  const isTimeout = params.get('kind') === 'timeout'
+  const isTimeout = kind === 'timeout'
 
   const body = await request.json().catch(() => null)
   const result = parseResult(body)
-  if (!result || !UUID.test(result.originatorId)) {
-    console.warn('mpesa-b2c-result: ignored a body that is not a result for one of our payouts')
+  // Our payout id comes back as OriginatorConversationID on the v3 endpoint.
+  // Should an answer carry Safaricom's own id instead, the ConversationID that
+  // mpesa-b2c stored when M-Pesa accepted the request identifies it just as
+  // uniquely.
+  const byOurId = result !== null && UUID.test(result.originatorId)
+  if (!result || (!byOurId && !result.conversationId)) {
+    console.warn('payout-result: ignored a body that is not a result for one of our payouts')
     return reply(ACK)
   }
 
@@ -66,11 +79,11 @@ Deno.serve(async (request) => {
   const { data: payout, error } = await admin
     .from('payroll_payouts')
     .select('id, status, amount_cents')
-    .eq('id', result.originatorId)
+    .eq(byOurId ? 'id' : 'conversation_id', byOurId ? result.originatorId : result.conversationId)
     .maybeSingle()
   if (error) return reply({ error: error.message }, 500)
   if (!payout || !IN_FLIGHT.includes(payout.status)) {
-    console.warn(`mpesa-b2c-result: ${result.originatorId} is not in flight; ignored`)
+    console.warn(`payout-result: ${result.originatorId} is not in flight; ignored`)
     return reply(ACK)
   }
 
@@ -117,6 +130,6 @@ Deno.serve(async (request) => {
     .in('status', IN_FLIGHT)
   if (updateError) return reply({ error: updateError.message }, 500)
 
-  console.info(`mpesa-b2c-result: ${payout.id} -> ${String(patch.status)}`)
+  console.info(`payout-result: ${payout.id} -> ${String(patch.status)}`)
   return reply(ACK)
 })
