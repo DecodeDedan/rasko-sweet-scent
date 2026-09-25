@@ -16,6 +16,11 @@ export interface AppConfig {
    * completes the reset; the user then signs in here with the new password.
    */
   passwordResetUrl: string
+  /**
+   * The domain every account's sign-in address is on. Used only to preview an
+   * address on the Users screen; the server's STAFF_EMAIL_DOMAIN decides.
+   */
+  staffEmailDomain: string
 }
 
 const ENVIRONMENTS: readonly AppEnvironment[] = ['development', 'staging', 'production']
@@ -72,6 +77,9 @@ export function loadConfig(): AppConfig {
     passwordResetUrl:
       import.meta.env.APP_PASSWORD_RESET_URL?.trim() ||
       'https://www.raskosweetscent.com/reset-password',
+    staffEmailDomain: (
+      import.meta.env.APP_STAFF_EMAIL_DOMAIN?.trim() || 'raskosweetscent.com'
+    ).toLowerCase(),
   }
 }
 

@@ -410,3 +410,14 @@ shillings, the cents shown as still owed; only an **owner** can send, only for a
 certain is held as "check statement" and never retried automatically. Built and
 tested against the documented Daraja contract; not yet run against the sandbox,
 which needs Daraja keys and the hosted project. See `docs/mpesa-setup.md`.
+
+**14. Company email addresses, forwarded to each person's Gmail.** Project owner,
+2026-09-25. Every account signs in with `name@raskosweetscent.com`, created from
+the Users screen by any owner (only the super admin may invite an owner or
+change the super admin's account); existing Gmail logins are converted with
+**Give company email**. The owner chose Cloudflare Email Routing over Google
+Workspace to avoid per-user fees: an address forwards to the person's own
+inbox, sending uses Gmail's "Send mail as" (guided at `/company-email/`), and
+some recipients may see "via gmail.com". Deactivating an account pauses its
+forwarding. Not yet run against Cloudflare, which needs the API token in
+`docs/company-email.md`.

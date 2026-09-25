@@ -24,6 +24,21 @@ export function assignableRoles(viewer: Viewer): readonly Role[] {
   return viewer.isSuperAdmin ? ROLES : ROLES.filter((role) => role !== 'owner')
 }
 
+/**
+ * Mirrors assign-company-email: an active account still on a personal
+ * address, and the super admin's only by the super admin. Your own counts, so
+ * the owner can move themselves first.
+ */
+export function canAssignCompanyEmail(
+  viewer: Viewer,
+  target: ProfileRecord,
+  staffEmailDomain: string,
+): boolean {
+  if (!target.isActive) return false
+  if (target.email.toLowerCase().endsWith(`@${staffEmailDomain.toLowerCase()}`)) return false
+  return !target.isSuperAdmin || viewer.isSuperAdmin
+}
+
 export function rowControls(viewer: Viewer, target: ProfileRecord): RowControls {
   // Nobody locks themselves out, and an owner cannot step down from owner:
   // leaving the role is removing it, which only a super admin may do, and the

@@ -1,13 +1,11 @@
 'use client'
 
-import { Plus, UserX, Users } from 'lucide-react'
+import { Mail, Plus, UserX, Users } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import {
   Button,
   Card,
   EmptyState,
-  Field,
-  Input,
   Modal,
   PageHeader,
   Select,
@@ -20,8 +18,9 @@ import { useAuth } from '../auth/AuthProvider.js'
 import { NoAccess } from '../auth/guards.js'
 import { ROLE_LABEL } from '../auth/session.js'
 import type { ProfileRecord, Role } from '../auth/session.js'
-import { assignableRoles, rowControls } from '../auth/userAdmin.js'
+import { assignableRoles, canAssignCompanyEmail, rowControls } from '../auth/userAdmin.js'
 import type { ScreenProps } from './common.js'
+import { AssignCompanyEmailDialog, InviteUserDialog } from './users/CompanyEmailDialogs.js'
 
 /**
  * FR-1.4: owner-only user management — invite, set role, deactivate.
@@ -41,11 +40,7 @@ export function UsersScreen({ role }: ScreenProps) {
   const [busyId, setBusyId] = useState<string | null>(null)
 
   const [isInviteOpen, setIsInviteOpen] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteName, setInviteName] = useState('')
-  const [inviteRole, setInviteRole] = useState<Role>('sales')
-  const [isInviting, setIsInviting] = useState(false)
-  const [inviteError, setInviteError] = useState<string | null>(null)
+  const [assignTarget, setAssignTarget] = useState<ProfileRecord | null>(null)
 
   const [confirmTarget, setConfirmTarget] = useState<ProfileRecord | null>(null)
 
@@ -117,34 +112,28 @@ export function UsersScreen({ role }: ScreenProps) {
     await load()
   }
 
-  async function handleInvite(event: React.FormEvent) {
-    event.preventDefault()
-    setInviteError(null)
-
-    if (!inviteEmail.trim() || !inviteName.trim()) {
-      setInviteError('Enter a name and an email address.')
-      return
-    }
-
-    setIsInviting(true)
-    const result = await gateway.inviteUser(inviteEmail, inviteName, inviteRole)
-    setIsInviting(false)
-
-    if (result.error) {
-      setInviteError(result.error)
-      return
-    }
-
+  async function handleInvited(address: string) {
     setIsInviteOpen(false)
-    setInviteEmail('')
-    setInviteName('')
-    setInviteRole('sales')
     showToast({
       tone: 'success',
       title: 'Invitation sent',
-      description: 'They must choose their own password the first time they sign in.',
+      description: `${address} is ready. The invitation went to their personal inbox.`,
     })
     await load()
+  }
+
+  async function handleAssigned(target: ProfileRecord, address: string, warning?: string) {
+    setAssignTarget(null)
+    showToast({
+      tone: warning ? 'warning' : 'success',
+      title: 'Company email created',
+      description:
+        warning ??
+        `${target.id === identity?.userId ? 'You sign' : `${target.fullName} signs`} in with ${address} from now on.`,
+    })
+    await load()
+    // Your own sign-in address is part of this session's identity.
+    if (target.id === identity?.userId) await refresh()
   }
 
   const rows = profiles ?? []
@@ -199,7 +188,26 @@ export function UsersScreen({ role }: ScreenProps) {
                   p.fullName
                 ),
             },
-            { key: 'email', header: 'Email', render: (p) => p.email },
+            {
+              key: 'email',
+              header: 'Email',
+              render: (p) =>
+                canAssignCompanyEmail(viewer, p, gateway.staffEmailDomain) ? (
+                  <span className="rsk-row">
+                    {p.email}
+                    <Button
+                      size="sm"
+                      leadingIcon={<Mail size={14} aria-hidden="true" />}
+                      disabled={busyId === p.id}
+                      onClick={() => setAssignTarget(p)}
+                    >
+                      Give company email
+                    </Button>
+                  </span>
+                ) : (
+                  p.email
+                ),
+            },
             {
               key: 'role',
               header: 'Role',
@@ -258,45 +266,24 @@ export function UsersScreen({ role }: ScreenProps) {
 
       {/* Mounted only while open — see the note in LoginScreen. */}
       {isInviteOpen ? (
-        <Modal
-          isOpen={isInviteOpen}
+        <InviteUserDialog
+          gateway={gateway}
+          offeredRoles={offeredRoles}
           onClose={() => setIsInviteOpen(false)}
-          title="Invite a user"
-          description="They receive an email invitation and choose their own password on first sign-in."
-          footer={
-            <>
-              <Button onClick={() => setIsInviteOpen(false)}>Cancel</Button>
-              <Button variant="primary" onClick={handleInvite} isLoading={isInviting}>
-                Send invitation
-              </Button>
-            </>
+          onInvited={(address) => void handleInvited(address)}
+        />
+      ) : null}
+
+      {assignTarget ? (
+        <AssignCompanyEmailDialog
+          gateway={gateway}
+          target={assignTarget}
+          isSelf={assignTarget.id === identity.userId}
+          onClose={() => setAssignTarget(null)}
+          onAssigned={(address, result) =>
+            void handleAssigned(assignTarget, address, result.warning)
           }
-        >
-          <div className="rsk-stack">
-            {inviteError ? (
-              <p className="auth-error" role="alert">
-                {inviteError}
-              </p>
-            ) : null}
-            <Field label="Full name" isRequired>
-              <Input value={inviteName} onChange={(e) => setInviteName(e.target.value)} />
-            </Field>
-            <Field label="Email" isRequired>
-              <Input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-              />
-            </Field>
-            <Field label="Role" hint="You can change this later.">
-              <Select
-                value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as Role)}
-                options={offeredRoles.map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
-              />
-            </Field>
-          </div>
-        </Modal>
+        />
       ) : null}
 
       {confirmTarget ? (

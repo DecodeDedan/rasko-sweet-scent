@@ -325,6 +325,13 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
   `unknown` means money may have moved and is never retried automatically. The app's
   preview imports the server's own rules from `_shared/mpesa/b2c.js`. Setup:
   `docs/mpesa-setup.md`.
+- **Every account signs in with a company address** (`name@raskosweetscent.com`), and
+  there are no mailboxes: `_shared/mailbox/routing.js` creates a Cloudflare Email
+  Routing rule forwarding it to the person's own inbox. The invitation therefore goes
+  to that personal inbox, never to the new address, because Cloudflare delivers
+  nothing until the inbox clicks its verification link. `invite-user` creates the
+  profile last (profiles.id is ON DELETE RESTRICT), and deactivation pauses the rule.
+  The Users screen imports the same address rules. Setup: `docs/company-email.md`.
 - **The first-run tour anchors on `data-tour`** attributes (sidebar and bottom
   nav items, `sync`, `help`). Renaming one without updating `onboarding/tour.ts`
   silently turns that stop into a centred dialog.

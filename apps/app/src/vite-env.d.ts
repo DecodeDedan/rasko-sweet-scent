@@ -12,6 +12,7 @@ interface ImportMetaEnv {
   readonly SUPABASE_ANON_KEY: string
   readonly APP_ENV: string
   readonly APP_PASSWORD_RESET_URL?: string
+  readonly APP_STAFF_EMAIL_DOMAIN?: string
 }
 
 interface ImportMeta {

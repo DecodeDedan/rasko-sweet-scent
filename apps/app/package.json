@@ -1,6 +1,6 @@
 {
   "name": "@rasko/app",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Rasko Sweet Scent — offline-first business management app (Windows + Android).",
   "type": "module",

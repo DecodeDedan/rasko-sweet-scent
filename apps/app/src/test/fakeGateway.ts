@@ -1,7 +1,9 @@
 import { vi } from 'vitest'
 
-import type { AuthGateway, GatewayResult } from '../auth/gateway.js'
+import type { AuthGateway, GatewayResult, InviteInput } from '../auth/gateway.js'
 import type { ProfileRecord, Role } from '../auth/session.js'
+
+export const STAFF_EMAIL_DOMAIN = 'raskosweetscent.com'
 
 /**
  * An in-memory AuthGateway.
@@ -39,7 +41,8 @@ export interface FakeGateway extends AuthGateway {
     signIn: Array<[string, string]>
     changeRole: Array<[string, Role]>
     setActive: Array<[string, boolean]>
-    invite: Array<[string, string, Role]>
+    invite: InviteInput[]
+    assign: Array<[string, string]>
     resetRequests: string[]
   }
   setOffline(value: boolean): void
@@ -58,6 +61,7 @@ export function createFakeGateway(options: FakeGatewayOptions = {}): FakeGateway
     changeRole: [],
     setActive: [],
     invite: [],
+    assign: [],
     resetRequests: [],
   }
 
@@ -147,18 +151,30 @@ export function createFakeGateway(options: FakeGatewayOptions = {}): FakeGateway
       return {}
     },
 
-    async inviteUser(email, fullName, role) {
-      calls.invite.push([email, fullName, role])
+    staffEmailDomain: STAFF_EMAIL_DOMAIN,
+
+    async inviteUser(input) {
+      calls.invite.push(input)
       networkGuard()
+      const email = `${input.localPart}@${STAFF_EMAIL_DOMAIN}`
       profiles.push(
         makeProfile({
           id: `user-${email}`,
           email,
-          fullName,
-          role,
+          fullName: input.fullName,
+          role: input.role,
           mustChangePassword: true,
         }),
       )
+      return {}
+    },
+
+    async assignCompanyEmail(userId, localPart) {
+      calls.assign.push([userId, localPart])
+      networkGuard()
+      const index = profiles.findIndex((p) => p.id === userId)
+      const current = profiles[index]
+      if (current) profiles[index] = { ...current, email: `${localPart}@${STAFF_EMAIL_DOMAIN}` }
       return {}
     },
   }

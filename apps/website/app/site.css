@@ -970,7 +970,26 @@ main .rw-card .rw-button:not([aria-disabled='true']):hover {
   margin-top: var(--rasko-space-4);
 }
 
-.rw-prose ul {
+.rw-prose h1 + p {
+  margin-top: var(--rasko-space-5);
+}
+
+/* The base link colour is Rasko Green, which vanishes on the green page. */
+.rw-prose a {
+  color: var(--rasko-text);
+  text-underline-offset: 3px;
+}
+
+.rw-prose a:hover {
+  color: var(--rasko-text-secondary);
+}
+
+.rw-prose strong {
+  color: var(--rasko-text);
+}
+
+.rw-prose ul,
+.rw-prose ol {
   margin: var(--rasko-space-4) 0 0;
   padding-left: 1.1rem;
 }

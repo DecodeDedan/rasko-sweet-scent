@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { loadConfig } from '../env.js'
-import type { AuthGateway, GatewayResult } from './gateway.js'
+import type { AssignResult, AuthGateway, GatewayResult } from './gateway.js'
 import { isRole } from './session.js'
 import type { ProfileRecord, Role } from './session.js'
 
@@ -96,6 +96,8 @@ function friendlyAuthError(message: string): string {
 
 export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient()): AuthGateway {
   return {
+    staffEmailDomain: loadConfig().staffEmailDomain,
+
     async signIn(email, password): Promise<GatewayResult> {
       const { error } = await client.auth.signInWithPassword({ email: email.trim(), password })
       return error ? { error: friendlyAuthError(error.message) } : {}
@@ -191,14 +193,29 @@ export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient
       return error ? { error: await functionErrorMessage(error) } : {}
     },
 
-    async inviteUser(email, fullName, role): Promise<GatewayResult> {
+    async inviteUser(input): Promise<GatewayResult> {
       // FR-1.4. Creating an auth user requires the service key, so this is an
-      // edge function too. It sets must_change_password so the invited user is
-      // forced to choose their own password on first login (FR-1.6).
+      // edge function too. It creates the company address, sends the
+      // invitation to the personal inbox, and sets must_change_password so the
+      // invited user chooses their own password on first login (FR-1.6).
       const { error } = await client.functions.invoke('invite-user', {
-        body: { email: email.trim(), fullName: fullName.trim(), role },
+        body: {
+          fullName: input.fullName.trim(),
+          role: input.role,
+          localPart: input.localPart.trim(),
+          personalEmail: input.personalEmail.trim(),
+        },
       })
       return error ? { error: await functionErrorMessage(error) } : {}
+    },
+
+    async assignCompanyEmail(userId, localPart): Promise<AssignResult> {
+      const { data, error } = await client.functions.invoke('assign-company-email', {
+        body: { userId, localPart: localPart.trim() },
+      })
+      if (error) return { error: await functionErrorMessage(error) }
+      const warning = (data as { warning?: unknown } | null)?.warning
+      return typeof warning === 'string' ? { warning } : {}
     },
   }
 }

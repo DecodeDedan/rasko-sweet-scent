@@ -20,6 +20,21 @@ export interface GatewayResult {
   error?: string
 }
 
+/** A new account on a company address (docs/company-email.md). */
+export interface InviteInput {
+  fullName: string
+  role: Role
+  /** The part before the @; the server adds the staff domain. */
+  localPart: string
+  /** Their own inbox: the company address forwards here, and the invitation goes here. */
+  personalEmail: string
+}
+
+export interface AssignResult extends GatewayResult {
+  /** The change happened, but something the owner should know did not. */
+  warning?: string
+}
+
 export interface AuthGateway {
   // ---- FR-1.1 / FR-1.2: sign in, sign out, restore -----------------------
   signIn(email: string, password: string): Promise<GatewayResult>
@@ -43,5 +58,9 @@ export interface AuthGateway {
   changeRole(userId: string, role: Role): Promise<GatewayResult>
   /** FR-1.4 / T4. Revokes server access; also revokes the refresh token. */
   setActive(userId: string, isActive: boolean): Promise<GatewayResult>
-  inviteUser(email: string, fullName: string, role: Role): Promise<GatewayResult>
+  inviteUser(input: InviteInput): Promise<GatewayResult>
+  /** Moves an existing account onto a company address; its old email receives the mail. */
+  assignCompanyEmail(userId: string, localPart: string): Promise<AssignResult>
+  /** The domain company addresses are on, for previewing one. */
+  readonly staffEmailDomain: string
 }

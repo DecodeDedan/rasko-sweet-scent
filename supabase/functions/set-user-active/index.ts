@@ -12,6 +12,12 @@
 //
 // Step 1 alone would let a token keep being refreshed forever. Step 2 alone
 // would leave up to an hour of continued access. architecture.md §2.1.
+//
+// A company address (name@raskosweetscent.com) also stops forwarding while
+// the person is deactivated, so client mail stops reaching someone who has
+// left, and resumes on reactivation.
+import { mailboxes } from '../_shared/mailbox/config.ts'
+import { isCompanyAddress } from '../_shared/mailbox/routing.js'
 import { corsHeaders, json, requireOwner } from '../_shared/owner.ts'
 
 const BAN_FOREVER = '876000h' // 100 years; GoTrue has no unbounded ban.
@@ -43,7 +49,7 @@ Deno.serve(async (request) => {
 
   const { data: target, error: targetError } = await admin
     .from('profiles')
-    .select('is_super_admin')
+    .select('is_super_admin, email')
     .eq('id', userId)
     .maybeSingle()
   if (targetError) return json({ error: 'Could not read that account.' }, 500)
@@ -76,6 +82,21 @@ Deno.serve(async (request) => {
       },
       500,
     )
+  }
+
+  const mail = mailboxes()
+  if (mail && isCompanyAddress(target.email, mail.domain)) {
+    try {
+      await mail.routing.setForwarding(String(target.email).toLowerCase(), isActive)
+    } catch (cause) {
+      const reason = cause instanceof Error ? cause.message : String(cause)
+      return json(
+        {
+          error: `Access was ${isActive ? 'restored' : 'revoked'}, but their company mail forwarding could not be ${isActive ? 'resumed' : 'paused'}: ${reason} Retry.`,
+        },
+        502,
+      )
+    }
   }
 
   return json({ ok: true })

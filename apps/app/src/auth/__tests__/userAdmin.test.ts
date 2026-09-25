@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { makeProfile } from '../../test/fakeGateway.js'
-import { assignableRoles, rowControls } from '../userAdmin.js'
+import { assignableRoles, canAssignCompanyEmail, rowControls } from '../userAdmin.js'
 
 const superAdmin = { userId: 'user-admin', isSuperAdmin: true }
 const owner = { userId: 'user-owner', isSuperAdmin: false }
@@ -36,5 +36,28 @@ describe('user administration rules (mirrors app.guard_profile_privileges)', () 
     const target = makeProfile({ id: 'user-sales', role: 'sales', isActive: false })
     expect(rowControls(owner, target).canChangeRole).toBe(false)
     expect(rowControls(owner, target).canToggleActive).toBe(true)
+  })
+
+  describe('company email (mirrors assign-company-email)', () => {
+    const DOMAIN = 'raskosweetscent.com'
+
+    it('offers it for an active account still on a personal address, your own included', () => {
+      const other = makeProfile({ id: 'user-sales', email: 'jane@gmail.com' })
+      const self = makeProfile({ id: 'user-admin', email: 'me@gmail.com', isSuperAdmin: true })
+      expect(canAssignCompanyEmail(owner, other, DOMAIN)).toBe(true)
+      expect(canAssignCompanyEmail(superAdmin, self, DOMAIN)).toBe(true)
+    })
+
+    it('does not offer it twice, or to a deactivated account', () => {
+      const moved = makeProfile({ email: 'Jane.Kamau@RaskoSweetScent.com' })
+      const gone = makeProfile({ email: 'jane@gmail.com', isActive: false })
+      expect(canAssignCompanyEmail(owner, moved, DOMAIN)).toBe(false)
+      expect(canAssignCompanyEmail(owner, gone, DOMAIN)).toBe(false)
+    })
+
+    it("keeps the super admin's address for the super admin alone", () => {
+      const admin = makeProfile({ id: 'user-admin', email: 'me@gmail.com', isSuperAdmin: true })
+      expect(canAssignCompanyEmail(owner, admin, DOMAIN)).toBe(false)
+    })
   })
 })
