@@ -255,7 +255,7 @@ export function renderEmail(input) {
         <td style="vertical-align:middle;padding-right:14px;"><img src="${logo}" width="41" height="48" alt="RSS" style="display:block;border:0;width:41px;height:48px;"></td>
         <td style="vertical-align:middle;">
           <p style="margin:0;font-family:${SERIF};font-size:19px;font-weight:600;color:${INK};">${escapeHtml(companyName)}</p>
-          <p style="margin:2px 0 0;font-family:${SANS};font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:${INK_SECONDARY};">Cut foliage &middot; Molo, Nakuru</p>
+          <p style="margin:2px 0 0;font-family:${SANS};font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:${INK_SECONDARY};">Highland eucalyptus, grown for the trade</p>
         </td>
       </tr></table>
     </td></tr>
