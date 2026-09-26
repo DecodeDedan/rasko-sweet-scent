@@ -1,6 +1,6 @@
 import { vi } from 'vitest'
 
-import type { AuthGateway, GatewayResult, InviteInput } from '../auth/gateway.js'
+import type { AuthGateway, GatewayResult, InviteInput, PayoutWallet } from '../auth/gateway.js'
 import type { ProfileRecord, Role } from '../auth/session.js'
 
 export const STAFF_EMAIL_DOMAIN = 'raskosweetscent.com'
@@ -34,6 +34,8 @@ export interface FakeGatewayOptions {
   /** Makes every network-bound call reject, as an unreachable server would. */
   offline?: boolean
   password?: string
+  /** What payoutWallet answers. Defaults to Daraja, which reports no balance. */
+  wallet?: PayoutWallet | { error: string }
 }
 
 export interface FakeGateway extends AuthGateway {
@@ -186,6 +188,11 @@ export function createFakeGateway(options: FakeGatewayOptions = {}): FakeGateway
       const current = profiles[index]
       if (current) profiles[index] = { ...current, email: `${localPart}@${STAFF_EMAIL_DOMAIN}` }
       return {}
+    },
+
+    async payoutWallet() {
+      networkGuard()
+      return options.wallet ?? { provider: 'daraja' }
     },
   }
 

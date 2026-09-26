@@ -334,6 +334,10 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
   `NO`, so an IntaSend send that times out is `unknown`, never retried. The
   payout rules live in `_shared/payouts/rules.js` and are mirrored in
   `app.prepare_payroll_payout`. Setup: `docs/intasend-setup.md`.
+- **The Pay salaries dialog polls while payouts are in flight** (`syncNow` every
+  15 s, only while open) and reads the IntaSend balance through `payout-wallet`
+  via `AuthGateway.payoutWallet()`. The balance is advisory: it blocks sending
+  only when known and short, never when unreachable (NFR-S1).
 - **Every account signs in with a company address** (`name@raskosweetscent.com`), and
   there are no mailboxes: `_shared/mailbox/routing.js` creates a Cloudflare Email
   Routing rule forwarding it to the person's own inbox. The invitation therefore goes

@@ -35,6 +35,14 @@ export interface AssignResult extends GatewayResult {
   warning?: string
 }
 
+/**
+ * The balance salary payouts draw from (migration 20260929000100). Daraja's
+ * shortcode balance is not readable, so only IntaSend reports a figure.
+ */
+export type PayoutWallet =
+  | { provider: 'daraja' }
+  | { provider: 'intasend'; availableCents: number; updatedAt: string | null }
+
 export interface AuthGateway {
   // ---- FR-1.1 / FR-1.2: sign in, sign out, restore -----------------------
   signIn(email: string, password: string): Promise<GatewayResult>
@@ -68,4 +76,9 @@ export interface AuthGateway {
   assignCompanyEmail(userId: string, localPart: string): Promise<AssignResult>
   /** The domain company addresses are on, for previewing one. */
   readonly staffEmailDomain: string
+
+  // ---- payroll: the payout wallet (owner only) ----------------------------
+  // Not an auth call, but the one other edge function the UI reads, kept here
+  // so tests fake it the same way. Advisory: paying never waits on it.
+  payoutWallet(): Promise<PayoutWallet | { error: string }>
 }

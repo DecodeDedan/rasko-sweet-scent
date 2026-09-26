@@ -131,3 +131,27 @@ test('an empty or foreign body is still in flight, not paid', () => {
   assert.equal(interpretStatus(null, 100).status, 'accepted')
   assert.equal(interpretStatus('nope', 100).status, 'accepted')
 })
+
+test('reads the KES settlement wallet balance, bare or paginated', async () => {
+  const { disbursingWallet } = await import('./intasend.js')
+  const wallets = [
+    { wallet_id: 'W1', currency: 'USD', wallet_type: 'SETTLEMENT', available_balance: '99.00' },
+    { wallet_id: 'W2', currency: 'KES', wallet_type: 'WORKING', available_balance: '10.00' },
+    {
+      wallet_id: 'W3',
+      currency: 'KES',
+      wallet_type: 'SETTLEMENT',
+      available_balance: '48200.55',
+      updated_at: 't',
+    },
+  ]
+  assert.deepEqual(disbursingWallet(wallets), {
+    walletId: 'W3',
+    availableCents: 4820055,
+    updatedAt: 't',
+  })
+  assert.equal(disbursingWallet({ results: wallets }).walletId, 'W3')
+  assert.equal(disbursingWallet([wallets[1]]).walletId, 'W2')
+  assert.equal(disbursingWallet([wallets[0]]), null)
+  assert.equal(disbursingWallet({ detail: 'Invalid token' }), null)
+})

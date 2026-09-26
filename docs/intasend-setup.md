@@ -38,6 +38,22 @@ On the server (migration `20260929000100`):
    amount sent and with a reference, the payout is paid and the payslip is
    marked paid with the M-Pesa receipt or PesaLink reference.
 
+## The Pay salaries dialog
+
+- **Wallet balance.** Before sending, the dialog shows the IntaSend wallet
+  balance against the run total (`payout-wallet`, owner only). A run the
+  balance cannot cover cannot be sent until the wallet is topped up. IntaSend's
+  fees come out of the wallet on top, so a run covered to the shilling can still
+  fail a line; that line fails without moving money. Offline or unreadable, the
+  balance is shown as not available and sending is still allowed.
+- **Fix details.** A line blocked by a missing phone, bank account or payment
+  method has a Fix details button that opens the employee over the dialog;
+  saving returns to it with the line re-checked.
+- **Live progress.** After sending, the dialog stays open and asks the server
+  every 15 seconds while any payment is on its way, so lines turn Paid within
+  seconds of IntaSend confirming. Closing it falls back to the normal
+  five-minute sync.
+
 ## Money safety
 
 Everything in `docs/mpesa-setup.md` still holds, plus:
@@ -77,7 +93,11 @@ supabase secrets set PAYOUT_PROVIDER=intasend INTASEND_SECRET_KEY=ISSecretKey_te
 supabase db push
 supabase functions deploy mpesa-b2c --no-verify-jwt
 supabase functions deploy payout-result --no-verify-jwt
+supabase functions deploy payout-wallet
 ```
+
+`payout-wallet` keeps JWT verification on: only a signed-in owner may read the
+balance.
 
 4. Give an M-Pesa employee the test number `+254708374149`, approve a small
    run and pay it. IntaSend's sandbox runs on Safaricom's test platform, which
@@ -111,8 +131,6 @@ Payouts already sent keep being settled by the provider that sent them.
 
 - Funding the wallet from the app. Top up on the IntaSend dashboard (M-Pesa,
   card or bank deposit).
-- Showing the wallet balance in the app. A low balance fails the payout
-  cleanly before any money moves, with a message saying so.
 - The bank list is IntaSend's documented list (`_shared/payouts/rules.js`,
   `KENYA_BANKS`). A bank that is missing can be added there from
   `GET /api/v1/send-money/bank-codes/ke/`.

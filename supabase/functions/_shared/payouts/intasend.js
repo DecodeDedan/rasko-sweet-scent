@@ -170,3 +170,34 @@ export function interpretStatus(body, sentShillings) {
   }
   return result('accepted', txCode || batchCode, reason || 'With IntaSend.')
 }
+
+export const WALLETS_PATH = '/api/v1/wallets/'
+
+/**
+ * The wallet a send-money request draws from, out of GET /api/v1/wallets/.
+ * A request that names no wallet_id draws from the KES settlement wallet (the
+ * `wallet` object IntaSend returns with every send-money answer is that one),
+ * so that is the balance the owner needs to see. The list may come bare or
+ * paginated ({ results: [...] }); both are read.
+ * unverified: that the default wallet is always the KES SETTLEMENT wallet;
+ * confirm against the `wallet` in the first sandbox send-money answer.
+ * @param {unknown} body
+ * @returns {{ walletId: string, availableCents: number, updatedAt: string | null } | null}
+ */
+export function disbursingWallet(body) {
+  const list = Array.isArray(body)
+    ? body
+    : body && typeof body === 'object' && Array.isArray(/** @type {any} */ (body).results)
+      ? /** @type {any} */ (body).results
+      : []
+  const kes = list.filter((wallet) => wallet && wallet.currency === 'KES')
+  const wallet = kes.find((w) => w.wallet_type === 'SETTLEMENT') ?? kes[0]
+  if (!wallet) return null
+  const available = Number(wallet.available_balance)
+  if (!Number.isFinite(available)) return null
+  return {
+    walletId: String(wallet.wallet_id ?? ''),
+    availableCents: Math.round(available * 100),
+    updatedAt: wallet.updated_at ? String(wallet.updated_at) : null,
+  }
+}

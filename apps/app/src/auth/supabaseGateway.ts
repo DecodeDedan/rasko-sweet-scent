@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { loadConfig } from '../env.js'
-import type { AssignResult, AuthGateway, GatewayResult } from './gateway.js'
+import type { AssignResult, AuthGateway, GatewayResult, PayoutWallet } from './gateway.js'
 import { isRole } from './session.js'
 import type { ProfileRecord, Role } from './session.js'
 
@@ -224,6 +224,21 @@ export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient
       if (error) return { error: await functionErrorMessage(error) }
       const warning = (data as { warning?: unknown } | null)?.warning
       return typeof warning === 'string' ? { warning } : {}
+    },
+
+    async payoutWallet(): Promise<PayoutWallet | { error: string }> {
+      const { data, error } = await client.functions.invoke('payout-wallet', { body: {} })
+      if (error) return { error: await functionErrorMessage(error) }
+      const answer = (data ?? {}) as Record<string, unknown>
+      if (answer.provider === 'daraja') return { provider: 'daraja' }
+      if (answer.provider === 'intasend' && typeof answer.availableCents === 'number') {
+        return {
+          provider: 'intasend',
+          availableCents: answer.availableCents,
+          updatedAt: typeof answer.updatedAt === 'string' ? answer.updatedAt : null,
+        }
+      }
+      return { error: 'The wallet balance could not be read.' }
     },
   }
 }

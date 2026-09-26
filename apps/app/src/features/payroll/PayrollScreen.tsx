@@ -103,6 +103,8 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
   const canPrepare = canPreparePayroll(role)
   const canApprove = canApprovePayroll(role)
   const [payingRun, setPayingRun] = useState<PayrollRun | null>(null)
+  // Bumped when an employee is saved, so an open pay dialog re-reads its plan.
+  const [employeesVersion, setEmployeesVersion] = useState(0)
 
   const [refreshError, setRefreshError] = useState<string | null>(null)
 
@@ -144,6 +146,7 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
       else await repo!.createEmployee({ id: newId(), ...values })
       showToast({ tone: 'success', title: editing ? 'Employee updated' : 'Employee added' })
       await reload()
+      setEmployeesVersion((version) => version + 1)
       return {}
     } catch (cause) {
       return { error: cause instanceof Error ? cause.message : 'Could not save the employee.' }
@@ -557,8 +560,20 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
         <PayMpesaDialog
           runId={payingRun.id}
           periodLabel={`Payroll for ${periodLabel(payingRun)}`}
+          refreshKey={employeesVersion}
           onClose={() => setPayingRun(null)}
           onRequested={() => void reload()}
+          onFixEmployee={(employeeId) => {
+            // Opens over the dialog (a later showModal sits on top); closing
+            // the form returns to it with the plan re-read.
+            const employee = employees.find((candidate) => candidate.id === employeeId)
+            if (employee) setEditing(employee)
+            else
+              showToast({
+                tone: 'danger',
+                title: 'That employee record is not on this device yet.',
+              })
+          }}
         />
       ) : null}
     </div>

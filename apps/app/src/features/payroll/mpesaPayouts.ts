@@ -27,6 +27,7 @@ export type PayoutChannel = 'mpesa' | 'bank'
 
 export interface PayoutLine {
   itemId: string
+  employeeId: string | null
   employeeName: string
   channel: PayoutChannel | null
   /** Where the money goes: the M-Pesa number, or "Equity Bank ···6789". */
@@ -34,8 +35,13 @@ export interface PayoutLine {
   msisdn: string | null
   amountShillings: number
   remainderCents: number
-  /** Why this line will not be sent by M-Pesa; null when it will. */
+  /** Why this line will not be paid out; null when it will. */
   blocker: string | null
+  /**
+   * The blocker is missing or wrong details on the employee record (no phone,
+   * no bank account, no payment method), which the owner can fix there.
+   */
+  needsDetails: boolean
   /** The latest payout for this line, if one was requested. */
   payout: {
     status: PayoutStatus
@@ -54,6 +60,21 @@ export interface PayoutPlan {
 
 /** A payout that may already be moving money; its line cannot be sent again. */
 const LIVE: readonly PayoutStatus[] = ['queued', 'sending', 'accepted', 'unknown', 'paid']
+/** Still on its way to a final answer: worth asking the server again soon. */
+const IN_FLIGHT: readonly PayoutStatus[] = ['queued', 'sending', 'accepted']
+
+export function hasPayoutsInFlight(plan: PayoutPlan): boolean {
+  return plan.lines.some((line) => line.payout !== null && IN_FLIGHT.includes(line.payout.status))
+}
+
+/**
+ * How many shillings the wallet is short of the run, or 0 when it covers it.
+ * Provider fees come out of the wallet on top, so covering the total exactly
+ * can still fall short; IntaSend then refuses the line without moving money.
+ */
+export function walletShortfall(totalShillings: number, availableCents: number): number {
+  return Math.max(0, Math.ceil((totalShillings * 100 - availableCents) / 100))
+}
 
 /** payment_details arrives as JSON text from SQLite, or already parsed. */
 function parseDetails(value: unknown): unknown {
@@ -85,7 +106,7 @@ export class MpesaPayoutsRepository {
 
   async plan(runId: string): Promise<PayoutPlan> {
     const rows = await this.db.select<Record<string, unknown>>(
-      `SELECT i.id AS item_id, i.net_pay_cents, i.paid_at,
+      `SELECT i.id AS item_id, i.employee_id, i.net_pay_cents, i.paid_at,
               e.full_name, e.phone, e.payment_method, e.payment_details,
               p.status AS payout_status, p.channel AS payout_channel,
               p.mpesa_receipt, p.result_desc
@@ -116,8 +137,15 @@ export class MpesaPayoutsRepository {
         isPaid: row['paid_at'] !== null,
         bank,
       })
+      const isPaid = row['paid_at'] !== null
+      const needsDetails =
+        !isPaid &&
+        !isLive &&
+        (channel === null || (channel === 'mpesa' && !msisdn) || (channel === 'bank' && !bank))
       return {
         itemId: String(row['item_id']),
+        employeeId: (row['employee_id'] as string | null) ?? null,
+        needsDetails,
         employeeName: String(row['full_name'] ?? 'Unknown employee'),
         channel,
         destination:

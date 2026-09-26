@@ -4,7 +4,12 @@ import { openNodeDatabase } from '../../../data/sqlite/nodeDatabase.js'
 import { migrateLocalSchema } from '../../../data/sqlite/schema.js'
 import type { SqlDatabase } from '../../../data/sqlite/types.js'
 import { pendingCount } from '../../../data/sync/outbox.js'
-import { MpesaPayoutsRepository, PayoutRuleError } from '../mpesaPayouts.js'
+import {
+  MpesaPayoutsRepository,
+  PayoutRuleError,
+  hasPayoutsInFlight,
+  walletShortfall,
+} from '../mpesaPayouts.js'
 
 const OWNER = '11111111-1111-4111-8111-111111111111'
 const RUN = 'f0000000-0000-4000-8000-000000000001'
@@ -142,5 +147,29 @@ describe('M-Pesa salary payouts (migration 20260927000100)', () => {
 
     const plan = await owner.plan(RUN)
     expect(plan.payable.map((line) => line.employeeName)).toEqual(['Jane Wanjiku'])
+  })
+})
+
+describe('pay dialog helpers', () => {
+  it('works out how many shillings the wallet is short, never negative', () => {
+    expect(walletShortfall(23456, 2000000)).toBe(3456)
+    expect(walletShortfall(23456, 2345600)).toBe(0)
+    expect(walletShortfall(23456, 2345550)).toBe(1)
+    expect(walletShortfall(100, 999999)).toBe(0)
+  })
+
+  it('flags only lines whose employee record is missing payment details', async () => {
+    const db = openNodeDatabase()
+    await migrateLocalSchema(db)
+    await seed(db)
+    const plan = await new MpesaPayoutsRepository(db, 'owner', { userId: OWNER }).plan(RUN)
+    const needs = (name: string) =>
+      plan.lines.find((line) => line.employeeName === name)?.needsDetails
+    expect(needs('John Kamau')).toBe(true) // no phone
+    expect(needs('Mary Chebet')).toBe(true) // bank, no account
+    expect(needs('Jane Wanjiku')).toBe(false)
+    expect(needs('Ann Njeri')).toBe(false) // already paid
+    expect(hasPayoutsInFlight(plan)).toBe(false)
+    await db.close()
   })
 })
