@@ -17,7 +17,7 @@ import { INLINE_LOGO_SRC, deliver, providers } from '../_shared/email/deliver.ts
 import {
   detailsTable,
   formatDate,
-  formatKes,
+  formatMoney,
   itemsTable,
   paymentBox,
 } from '../_shared/email/layout.js'
@@ -105,24 +105,35 @@ function daysSince(isoDate: string, now: Date): number {
   return Math.max(0, Math.floor((now.getTime() - from) / 86_400_000))
 }
 
-function lineRows(lines: Row[]) {
+/**
+ * A sale's figures are in its own currency (migration 20260930000200); a
+ * payment is in its invoice's. A missing or malformed code is shillings, as
+ * the column's default is.
+ */
+function currencyOf(row: Row): string {
+  const code = typeof row.currency === 'string' ? row.currency.trim().toUpperCase() : ''
+  return /^[A-Z]{3}$/.test(code) ? code : 'KES'
+}
+
+function lineRows(lines: Row[], currency: string) {
   return lines.map((line) => ({
     description: line.description,
     quantity: String(Number(line.quantity)),
-    amount: formatKes(line.line_total_cents),
+    amount: formatMoney(line.line_total_cents, currency),
   }))
 }
 
 function invoiceBlocks(company: Row, invoice: Row, status: Row, lines: Row[]): string {
-  const totals: Array<[string, string]> = [['Subtotal', formatKes(invoice.subtotal_cents)]]
-  if (invoice.discount_cents > 0)
-    totals.push(['Discount', `- ${formatKes(invoice.discount_cents)}`])
+  const currency = currencyOf(invoice)
+  const money = (cents: number) => formatMoney(cents, currency)
+  const totals: Array<[string, string]> = [['Subtotal', money(invoice.subtotal_cents)]]
+  if (invoice.discount_cents > 0) totals.push(['Discount', `- ${money(invoice.discount_cents)}`])
   if (invoice.vat_cents > 0) {
-    totals.push([`VAT ${invoice.vat_rate_bp / 100}%`, formatKes(invoice.vat_cents)])
+    totals.push([`VAT ${invoice.vat_rate_bp / 100}%`, money(invoice.vat_cents)])
   }
-  totals.push(['Total', formatKes(invoice.total_cents)])
-  if (status.paid_cents > 0) totals.push(['Paid', `- ${formatKes(status.paid_cents)}`])
-  totals.push(['Balance due', formatKes(status.balance_cents)])
+  totals.push(['Total', money(invoice.total_cents)])
+  if (status.paid_cents > 0) totals.push(['Paid', `- ${money(status.paid_cents)}`])
+  totals.push(['Balance due', money(status.balance_cents)])
 
   return (
     detailsTable([
@@ -130,7 +141,7 @@ function invoiceBlocks(company: Row, invoice: Row, status: Row, lines: Row[]): s
       ['Issue date', formatDate(invoice.issue_date)],
       ['Due date', formatDate(invoice.due_date)],
     ]) +
-    (lines.length ? itemsTable(lineRows(lines), totals) : '') +
+    (lines.length ? itemsTable(lineRows(lines, currency), totals) : '') +
     (status.balance_cents > 0 ? paymentBox(company) : '')
   )
 }
@@ -152,13 +163,14 @@ async function gatherFacts(
       if (email.template_key === 'payment_reminder' && status.balance_cents <= 0) {
         throw new PermanentError('This invoice is fully paid; there is nothing to remind about.')
       }
+      const money = (cents: number) => formatMoney(cents, currencyOf(invoice))
       return {
         vars: {
           ...base,
           invoice_number: invoice.invoice_number,
           due_date: formatDate(invoice.due_date),
-          total: formatKes(invoice.total_cents),
-          balance: formatKes(status.balance_cents),
+          total: money(invoice.total_cents),
+          balance: money(status.balance_cents),
           days_overdue: daysSince(invoice.due_date, new Date()),
         },
         blocksHtml: invoiceBlocks(company, invoice, status, lines),
@@ -171,22 +183,24 @@ async function gatherFacts(
       )
       const { invoice, status } = await invoiceFacts(admin, payment.invoice_id)
       const method = METHOD_LABEL[payment.method] ?? payment.method
+      // payments carry no currency column: a payment is in its invoice's currency.
+      const money = (cents: number) => formatMoney(cents, currencyOf(invoice))
       return {
         vars: {
           ...base,
-          amount: formatKes(payment.amount_cents),
+          amount: money(payment.amount_cents),
           method,
           paid_date: formatDate(payment.paid_at),
           invoice_number: invoice.invoice_number,
-          balance: formatKes(status.balance_cents),
+          balance: money(status.balance_cents),
         },
         blocksHtml: detailsTable([
-          ['Amount received', formatKes(payment.amount_cents)],
+          ['Amount received', money(payment.amount_cents)],
           ['Method', method],
           ['Reference', payment.reference ?? ''],
           ['Date', formatDate(payment.paid_at)],
           ['Invoice', invoice.invoice_number],
-          ['Balance remaining', formatKes(status.balance_cents)],
+          ['Balance remaining', money(status.balance_cents)],
         ]),
       }
     }
@@ -201,14 +215,16 @@ async function gatherFacts(
         'order',
       )
       if (order.status === 'cancelled') throw new PermanentError('This order has been cancelled.')
+      const currency = currencyOf(order)
+      const money = (cents: number) => formatMoney(cents, currency)
       const totals: Array<[string, string]> = []
       if (order.discount_cents > 0) {
         totals.push(
-          ['Subtotal', formatKes(order.subtotal_cents)],
-          ['Discount', `- ${formatKes(order.discount_cents)}`],
+          ['Subtotal', money(order.subtotal_cents)],
+          ['Discount', `- ${money(order.discount_cents)}`],
         )
       }
-      totals.push(['Order total', formatKes(order.total_cents)])
+      totals.push(['Order total', money(order.total_cents)])
       return {
         vars: {
           ...base,
@@ -216,14 +232,14 @@ async function gatherFacts(
           delivery_date: order.delivery_at
             ? formatDate(order.delivery_at)
             : 'a date we will confirm with you',
-          total: formatKes(order.total_cents),
+          total: money(order.total_cents),
         },
         blocksHtml:
           detailsTable([
             ['Order number', order.order_number],
             ['Delivery', order.delivery_at ? formatDate(order.delivery_at) : ''],
             ['Deliver to', order.delivery_address ?? ''],
-          ]) + itemsTable(lineRows(await linesFor(admin, order.id)), totals),
+          ]) + itemsTable(lineRows(await linesFor(admin, order.id), currency), totals),
       }
     }
     case 'message':

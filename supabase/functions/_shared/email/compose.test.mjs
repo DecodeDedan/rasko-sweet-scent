@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import { composeEmail } from './compose.js'
-import { formatDate, formatKes, paymentBox } from './layout.js'
+import { formatDate, formatKes, formatMoney, paymentBox } from './layout.js'
 
 const template = {
   subject: 'Invoice {{invoice_number}} from {{company_name}}',
@@ -72,6 +72,24 @@ test('omits the payment box while no payment detail is set', () => {
 test('formats money and dates the PRD way', () => {
   assert.equal(formatKes(1250000), 'KES 12,500.00')
   assert.equal(formatDate('2026-09-25'), '25/09/2026')
+})
+
+test('formats a sale in its own currency, code first, matching the app', () => {
+  assert.equal(formatMoney(108000, 'USD'), 'USD 1,080.00')
+  assert.equal(formatMoney(1250000, 'KES'), 'KES 12,500.00')
+  assert.equal(formatMoney(1250000), 'KES 12,500.00')
+  assert.equal(formatMoney(-5, 'EUR'), '-EUR 0.05')
+  assert.equal(formatMoney(Number.NaN, 'USD'), 'USD 0.00')
+  assert.equal(formatKes(108000), 'KES 1,080.00')
+})
+
+test('a dollar balance reaches the email as dollars, never as shillings', () => {
+  const email = composeEmail(template, {
+    ...facts,
+    vars: { ...facts.vars, balance: formatMoney(68000, 'USD') },
+  })
+  assert.match(email.text, /The amount due is USD 680\.00\./)
+  assert.doesNotMatch(email.text, /KES/)
 })
 
 test('points the logo at the attached image when sending, not at a hosted URL', () => {

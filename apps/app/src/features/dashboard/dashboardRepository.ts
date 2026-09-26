@@ -1,5 +1,12 @@
 import type { SqlDatabase } from '../../data/sqlite/types.js'
 import type { Role } from '../../auth/session.js'
+import {
+  DEFAULT_CURRENCY,
+  currenciesIn,
+  normaliseCurrency,
+  totalsByCurrency,
+} from '../invoices/currency.js'
+import type { MoneyTotal } from '../invoices/currency.js'
 
 /**
  * Dashboard and reports (FR-2.1 – FR-2.8).
@@ -14,13 +21,31 @@ import type { Role } from '../../auth/session.js'
  * what this device draws; RLS is what actually stops a sales user reading
  * anybody else's rows. Both exist because the local mirror holds whatever the
  * last pull returned, and that pull was already scoped.
+ *
+ * ## Amounts in different currencies are never added together
+ *
+ * A sale is priced in its order's currency, copied to its invoice; a payment
+ * is in its invoice's currency. The summary therefore returns one total per
+ * currency, and every per-currency report takes the currency it reports in.
  */
 
+/**
+ * What has been paid against each invoice: payments less their reversals. A
+ * reversed payment never happened (FR-5.5), the same rule the invoice and
+ * client balances apply.
+ */
+const NET_PAID = `
+  SELECT p.invoice_id, SUM(p.amount_cents - COALESCE(r.reversed, 0)) AS amount
+  FROM payments p
+  LEFT JOIN (SELECT payment_id, SUM(amount_cents) AS reversed FROM reversals GROUP BY payment_id) r
+    ON r.payment_id = p.id
+  GROUP BY p.invoice_id`
+
 export interface DailySummary {
-  salesCents: number
+  sales: MoneyTotal[]
   orderCount: number
-  paymentsReceivedCents: number
-  outstandingReceivablesCents: number
+  paymentsReceived: MoneyTotal[]
+  outstandingReceivables: MoneyTotal[]
 }
 
 export interface TrendPoint {
@@ -89,6 +114,15 @@ function nairobiMonth(column: string): string {
   return `strftime('%Y-%m', ${column}, '${NAIROBI_OFFSET}')`
 }
 
+/** Rows written before the column existed carry no code; they are shillings. */
+function currencyOf(alias: string): string {
+  return `COALESCE(${alias}.currency, '${DEFAULT_CURRENCY}')`
+}
+
+function toTotals(rows: ReadonlyArray<{ currency: unknown; total: unknown }>): MoneyTotal[] {
+  return totalsByCurrency(rows.map((row) => ({ currency: row.currency, cents: row.total })))
+}
+
 function dayKey(iso: string): string {
   return iso.slice(0, 10)
 }
@@ -115,44 +149,77 @@ export class DashboardRepository {
     const orderScope = this.scope('o')
     const invoiceScope = this.scope('i')
 
-    const orders = await this.db.select<{ total: number; n: number }>(
-      `SELECT COALESCE(SUM(o.total_cents), 0) AS total, COUNT(*) AS n
+    const orders = await this.db.select<{ currency: string; total: number; n: number }>(
+      `SELECT ${currencyOf('o')} AS currency, COALESCE(SUM(o.total_cents), 0) AS total, COUNT(*) AS n
        FROM orders o
        WHERE o.deleted_at IS NULL AND o.status <> 'cancelled'
-         AND ${nairobiDay('o.created_at')} = ?${orderScope.clause}`,
+         AND ${nairobiDay('o.created_at')} = ?${orderScope.clause}
+       GROUP BY currency`,
       [today, ...orderScope.params],
     )
 
     // Payments are scoped through their invoice, since a payment has no client.
-    const payments = await this.db.select<{ total: number }>(
-      `SELECT COALESCE(SUM(p.amount_cents), 0) AS total
-       FROM payments p
-       JOIN invoices i ON i.id = p.invoice_id
-       WHERE ${nairobiDay('p.paid_at')} = ?${invoiceScope.clause}`,
-      [today, ...invoiceScope.params],
+    // A reversal recorded today takes its amount back out of today's money in
+    // (FR-5.5): the figure is what was actually collected, net.
+    const payments = await this.db.select<{ currency: string; total: number }>(
+      `SELECT currency, SUM(amount) AS total FROM (
+         SELECT ${currencyOf('i')} AS currency, p.amount_cents AS amount
+         FROM payments p
+         JOIN invoices i ON i.id = p.invoice_id
+         WHERE ${nairobiDay('p.paid_at')} = ?${invoiceScope.clause}
+         UNION ALL
+         SELECT ${currencyOf('i')} AS currency, -r.amount_cents AS amount
+         FROM reversals r
+         JOIN payments p ON p.id = r.payment_id
+         JOIN invoices i ON i.id = p.invoice_id
+         WHERE ${nairobiDay('r.reversed_at')} = ?${invoiceScope.clause}
+       )
+       GROUP BY currency`,
+      [today, ...invoiceScope.params, today, ...invoiceScope.params],
     )
 
-    const receivables = await this.db.select<{ total: number }>(
-      `SELECT COALESCE(SUM(i.total_cents - COALESCE(paid.amount, 0)), 0) AS total
+    const receivables = await this.db.select<{ currency: string; total: number }>(
+      `SELECT ${currencyOf('i')} AS currency,
+              COALESCE(SUM(i.total_cents - COALESCE(paid.amount, 0)), 0) AS total
        FROM invoices i
-       LEFT JOIN (
-         SELECT invoice_id, SUM(amount_cents) AS amount FROM payments GROUP BY invoice_id
-       ) paid ON paid.invoice_id = i.id
+       LEFT JOIN (${NET_PAID}) paid ON paid.invoice_id = i.id
        WHERE i.deleted_at IS NULL AND i.status NOT IN ('draft', 'voided')
-         AND i.total_cents > COALESCE(paid.amount, 0)${invoiceScope.clause}`,
+         AND i.total_cents > COALESCE(paid.amount, 0)${invoiceScope.clause}
+       GROUP BY currency`,
       invoiceScope.params,
     )
 
     return {
-      salesCents: Number(orders[0]?.total ?? 0),
-      orderCount: Number(orders[0]?.n ?? 0),
-      paymentsReceivedCents: Number(payments[0]?.total ?? 0),
-      outstandingReceivablesCents: Number(receivables[0]?.total ?? 0),
+      sales: toTotals(orders),
+      orderCount: orders.reduce((sum, row) => sum + Number(row.n ?? 0), 0),
+      paymentsReceived: toTotals(payments),
+      outstandingReceivables: toTotals(receivables),
     }
   }
 
+  /** The currencies sales have been priced in, shillings always first and always present. */
+  async salesCurrencies(): Promise<string[]> {
+    const orderScope = this.scope('o')
+    const invoiceScope = this.scope('i')
+    const rows = await this.db.select<{ currency: string }>(
+      `SELECT DISTINCT ${currencyOf('o')} AS currency FROM orders o
+       WHERE o.deleted_at IS NULL${orderScope.clause}
+       UNION
+       SELECT DISTINCT ${currencyOf('i')} AS currency FROM invoices i
+       WHERE i.deleted_at IS NULL${invoiceScope.clause}`,
+      [...orderScope.params, ...invoiceScope.params],
+    )
+    return currenciesIn(
+      rows.map((row) => ({ currency: normaliseCurrency(row.currency), cents: 0 })),
+    )
+  }
+
   /** FR-2.2. Every day appears, including the ones with no sales — a gap would read as missing data. */
-  async salesTrend(days = 30, endDate?: string): Promise<TrendPoint[]> {
+  async salesTrend(
+    days = 30,
+    endDate?: string,
+    currency: string = DEFAULT_CURRENCY,
+  ): Promise<TrendPoint[]> {
     const end = endDate ?? this.nairobiToday()
     const endMs = Date.parse(`${end}T00:00:00.000Z`)
     const start = new Date(endMs - (days - 1) * DAY_MS).toISOString().slice(0, 10)
@@ -164,9 +231,10 @@ export class DashboardRepository {
               COUNT(*) AS n
        FROM orders o
        WHERE o.deleted_at IS NULL AND o.status <> 'cancelled'
-         AND ${nairobiDay('o.created_at')} BETWEEN ? AND ?${orderScope.clause}
+         AND ${nairobiDay('o.created_at')} BETWEEN ? AND ?
+         AND ${currencyOf('o')} = ?${orderScope.clause}
        GROUP BY day`,
-      [start, end, ...orderScope.params],
+      [start, end, currency, ...orderScope.params],
     )
 
     const byDay = new Map(rows.map((row) => [row.day, row]))
@@ -186,7 +254,11 @@ export class DashboardRepository {
   }
 
   /** FR-2.3. */
-  async topClients(limit = 5, month?: string): Promise<RankedClient[]> {
+  async topClients(
+    limit = 5,
+    month?: string,
+    currency: string = DEFAULT_CURRENCY,
+  ): Promise<RankedClient[]> {
     const period = month ?? this.nairobiToday().slice(0, 7)
     const orderScope = this.scope('o')
 
@@ -197,11 +269,12 @@ export class DashboardRepository {
        FROM orders o
        JOIN clients c ON c.id = o.client_id
        WHERE o.deleted_at IS NULL AND o.status <> 'cancelled'
-         AND ${nairobiMonth('o.created_at')} = ?${orderScope.clause}
+         AND ${nairobiMonth('o.created_at')} = ?
+         AND ${currencyOf('o')} = ?${orderScope.clause}
        GROUP BY c.id, c.name
        ORDER BY total DESC
        LIMIT ?`,
-      [period, ...orderScope.params, limit],
+      [period, currency, ...orderScope.params, limit],
     )
 
     return rows.map((row) => ({
@@ -213,7 +286,11 @@ export class DashboardRepository {
   }
 
   /** FR-2.3. Ranked by value, not volume — a cheap high-runner is not the top product. */
-  async topProducts(limit = 5, month?: string): Promise<RankedProduct[]> {
+  async topProducts(
+    limit = 5,
+    month?: string,
+    currency: string = DEFAULT_CURRENCY,
+  ): Promise<RankedProduct[]> {
     const period = month ?? this.nairobiToday().slice(0, 7)
     const orderScope = this.scope('o')
 
@@ -225,11 +302,12 @@ export class DashboardRepository {
        JOIN orders o   ON o.id = oi.order_id
        JOIN products p ON p.id = oi.product_id
        WHERE oi.deleted_at IS NULL AND o.deleted_at IS NULL AND o.status <> 'cancelled'
-         AND ${nairobiMonth('o.created_at')} = ?${orderScope.clause}
+         AND ${nairobiMonth('o.created_at')} = ?
+         AND ${currencyOf('o')} = ?${orderScope.clause}
        GROUP BY p.id, p.name, p.sku
        ORDER BY total DESC
        LIMIT ?`,
-      [period, ...orderScope.params, limit],
+      [period, currency, ...orderScope.params, limit],
     )
 
     return rows.map((row) => ({
@@ -242,19 +320,21 @@ export class DashboardRepository {
   }
 
   /** FR-2.4. The same buckets the payables report uses, so the two read alike. */
-  async receivablesAging(asOf?: string): Promise<AgingBucket[]> {
+  async receivablesAging(
+    asOf?: string,
+    currency: string = DEFAULT_CURRENCY,
+  ): Promise<AgingBucket[]> {
     const today = asOf ?? this.nairobiToday()
     const invoiceScope = this.scope('i')
 
     const rows = await this.db.select<Record<string, unknown>>(
       `SELECT i.due_date, i.total_cents - COALESCE(paid.amount, 0) AS balance
        FROM invoices i
-       LEFT JOIN (
-         SELECT invoice_id, SUM(amount_cents) AS amount FROM payments GROUP BY invoice_id
-       ) paid ON paid.invoice_id = i.id
+       LEFT JOIN (${NET_PAID}) paid ON paid.invoice_id = i.id
        WHERE i.deleted_at IS NULL AND i.status NOT IN ('draft', 'voided')
-         AND i.total_cents > COALESCE(paid.amount, 0)${invoiceScope.clause}`,
-      invoiceScope.params,
+         AND i.total_cents > COALESCE(paid.amount, 0)
+         AND ${currencyOf('i')} = ?${invoiceScope.clause}`,
+      [currency, ...invoiceScope.params],
     )
 
     const buckets: AgingBucket[] = [

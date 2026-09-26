@@ -1,3 +1,5 @@
+import type { MoneyTotal } from '../invoices/currency.js'
+
 export type ClientType = 'individual' | 'corporate' | 'event_planner'
 
 export const CLIENT_TYPES: readonly ClientType[] = ['individual', 'corporate', 'event_planner']
@@ -27,10 +29,10 @@ export interface Client {
 
 /** A client plus the figures the list and detail screens show (FR-3.2, FR-3.3). */
 export interface ClientSummary extends Client {
-  /** Total of every issued invoice, all time. */
-  lifetimeCents: number
-  /** Invoiced minus paid plus reversed, over issued invoices. */
-  outstandingCents: number
+  /** Total of every issued invoice, all time, one amount per currency. */
+  lifetime: MoneyTotal[]
+  /** Invoiced minus paid plus reversed, over issued invoices, one amount per currency. */
+  outstanding: MoneyTotal[]
   invoiceCount: number
   orderCount: number
   lastActivityAt: string | null
@@ -51,6 +53,8 @@ export interface ClientOrderRow {
   status: string
   delivery_at: string | null
   total_cents: number
+  /** ISO 4217; every amount on the row is in it. */
+  currency: string
 }
 
 export interface ClientInvoiceRow {
@@ -62,12 +66,16 @@ export interface ClientInvoiceRow {
   total_cents: number
   paid_cents: number
   balance_cents: number
+  /** ISO 4217; every amount on the row is in it. */
+  currency: string
 }
 
 export interface ClientPaymentRow {
   id: string
   invoice_number: string | null
   amount_cents: number
+  /** The invoice's currency: a payment has none of its own. */
+  currency: string
   method: string
   paid_at: string | null
   reference: string | null

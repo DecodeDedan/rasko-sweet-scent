@@ -41,6 +41,8 @@ export interface CompanyProfile {
   company_name: string
   address: string | null
   phone: string | null
+  /** The letterhead's second number, shown with the WhatsApp mark. */
+  whatsapp: string | null
   email: string | null
   kra_pin: string | null
   logo_url: string | null
@@ -130,6 +132,7 @@ export class SettingsRepository {
       company_name: String(row['company_name'] ?? 'Rasko Sweet Scent'),
       address: (row['address'] as string | null) ?? null,
       phone: (row['phone'] as string | null) ?? null,
+      whatsapp: (row['whatsapp'] as string | null) ?? null,
       email: (row['email'] as string | null) ?? null,
       kra_pin: (row['kra_pin'] as string | null) ?? null,
       logo_url: (row['logo_url'] as string | null) ?? null,
@@ -154,10 +157,16 @@ export class SettingsRepository {
 
     // The table CHECKs this, and an invoice with an unreachable phone number is
     // worse than a refused save.
-    if (patch.phone && !/^\+254[17][0-9]{8}$/.test(patch.phone)) {
-      throw new SettingsRuleError(
-        'Enter the phone as +254 followed by nine digits, for example +254712345678.',
-      )
+    for (const [field, label] of [
+      ['phone', 'phone'],
+      ['whatsapp', 'WhatsApp number'],
+    ] as const) {
+      const number = patch[field]
+      if (number && !/^\+254[17][0-9]{8}$/.test(number)) {
+        throw new SettingsRuleError(
+          `Enter the ${label} as +254 followed by nine digits, for example +254712345678.`,
+        )
+      }
     }
 
     await this.company.update(current.id, patch)

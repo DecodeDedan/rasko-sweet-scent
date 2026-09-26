@@ -2,6 +2,8 @@ import { Repository } from '../../data/repositories/repository.js'
 import type { WriteContext } from '../../data/repositories/repository.js'
 import type { SqlDatabase } from '../../data/sqlite/types.js'
 import type { Role } from '../../auth/session.js'
+import { formatTotals, normaliseCurrency, totalsByCurrency } from '../invoices/currency.js'
+import type { MoneyTotal } from '../invoices/currency.js'
 import type {
   Client,
   ClientDetail,
@@ -28,6 +30,10 @@ import type {
  * That is a genuine duplication and it can drift. `__tests__/balances.test.ts`
  * pins it: the expected figures in that file were read out of the Postgres views
  * against the seeded data, so if either definition changes, the test fails.
+ *
+ * Both figures are one amount per currency (`MoneyTotal[]`): an invoice's
+ * payments and reversals are in that invoice's currency, and shillings are
+ * never added to dollars.
  */
 
 /**
@@ -51,36 +57,99 @@ const SUMMARY_SELECT = `
   SELECT
     c.id, c.name, c.client_type, c.phone, c.email, c.kra_pin, c.address,
     c.credit_terms_days, c.notes, c.created_by, c.created_at, c.updated_at, c.deleted_at,
-    COALESCE(inv.invoiced_cents, 0)                                   AS lifetime_cents,
-    COALESCE(inv.invoiced_cents, 0)
-      - COALESCE(pay.paid_cents, 0)
-      + COALESCE(rev.reversed_cents, 0)                               AS outstanding_cents,
     COALESCE(inv.invoice_count, 0)                                    AS invoice_count,
     COALESCE(ord.order_count, 0)                                      AS order_count,
     ord.last_activity_at                                              AS last_activity_at
   FROM clients c
   LEFT JOIN (
-    SELECT i.client_id, SUM(i.total_cents) AS invoiced_cents, COUNT(*) AS invoice_count
+    SELECT i.client_id, COUNT(*) AS invoice_count
     FROM invoices i WHERE ${ISSUED} GROUP BY i.client_id
   ) inv ON inv.client_id = c.id
-  LEFT JOIN (
-    SELECT i.client_id, SUM(p.amount_cents) AS paid_cents
-    FROM payments p JOIN invoices i ON i.id = p.invoice_id
-    WHERE ${ISSUED} GROUP BY i.client_id
-  ) pay ON pay.client_id = c.id
-  LEFT JOIN (
-    -- Reversals add back: a reversed payment never happened (FR-5.5).
-    SELECT i.client_id, SUM(r.amount_cents) AS reversed_cents
-    FROM reversals r
-    JOIN payments p ON p.id = r.payment_id
-    JOIN invoices i ON i.id = p.invoice_id
-    WHERE ${ISSUED} GROUP BY i.client_id
-  ) rev ON rev.client_id = c.id
   LEFT JOIN (
     SELECT o.client_id, COUNT(*) AS order_count, MAX(o.created_at) AS last_activity_at
     FROM orders o WHERE o.deleted_at IS NULL GROUP BY o.client_id
   ) ord ON ord.client_id = c.id
 `
+
+/**
+ * Lifetime value and outstanding balance per (client, invoice currency), for
+ * the clients selected by the given WHERE clause. One grouped query for the
+ * whole list, merged in JS, rather than one per client.
+ */
+function moneySelect(clientWhere: string): string {
+  return `
+  SELECT
+    i.client_id,
+    i.currency,
+    SUM(i.total_cents)                                                AS lifetime_cents,
+    SUM(i.total_cents)
+      - COALESCE(SUM(pay.paid_cents), 0)
+      + COALESCE(SUM(rev.reversed_cents), 0)                          AS outstanding_cents
+  FROM invoices i
+  LEFT JOIN (
+    SELECT p.invoice_id, SUM(p.amount_cents) AS paid_cents
+    FROM payments p GROUP BY p.invoice_id
+  ) pay ON pay.invoice_id = i.id
+  LEFT JOIN (
+    -- Reversals add back: a reversed payment never happened (FR-5.5).
+    SELECT p.invoice_id, SUM(r.amount_cents) AS reversed_cents
+    FROM reversals r JOIN payments p ON p.id = r.payment_id
+    GROUP BY p.invoice_id
+  ) rev ON rev.invoice_id = i.id
+  WHERE ${ISSUED} AND i.client_id IN (SELECT c.id FROM clients c${clientWhere})
+  GROUP BY i.client_id, i.currency
+`
+}
+
+interface MoneyRow {
+  client_id: string
+  currency: string | null
+  lifetime_cents: number
+  outstanding_cents: number
+}
+
+interface ClientMoney {
+  lifetime: MoneyTotal[]
+  outstanding: MoneyTotal[]
+}
+
+function foldMoney(rows: readonly MoneyRow[]): Map<string, ClientMoney> {
+  const byClient = new Map<string, MoneyRow[]>()
+  for (const row of rows) byClient.set(row.client_id, [...(byClient.get(row.client_id) ?? []), row])
+  return new Map(
+    [...byClient.entries()].map(([clientId, clientRows]) => [
+      clientId,
+      {
+        lifetime: totalsByCurrency(
+          clientRows.map((r) => ({ currency: r.currency, cents: r.lifetime_cents })),
+        ),
+        outstanding: totalsByCurrency(
+          clientRows.map((r) => ({ currency: r.currency, cents: r.outstanding_cents })),
+        ),
+      },
+    ]),
+  )
+}
+
+/** The currencies in which a client owes something, i.e. FR-3.5's blockers. */
+export function owedTotals(outstanding: readonly MoneyTotal[]): MoneyTotal[] {
+  return outstanding.filter((t) => t.cents > 0)
+}
+
+/**
+ * Sort by balance without adding currencies together: shillings owed first,
+ * then how many other currencies are owed, then name.
+ */
+function compareOutstanding(a: ClientSummary, b: ClientSummary): number {
+  const kes = (c: ClientSummary) => c.outstanding.find((t) => t.currency === 'KES')?.cents ?? 0
+  const others = (c: ClientSummary) =>
+    owedTotals(c.outstanding).filter((t) => t.currency !== 'KES').length
+  return (
+    kes(b) - kes(a) ||
+    others(b) - others(a) ||
+    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+  )
+}
 
 interface SummaryRow {
   id: string
@@ -96,14 +165,12 @@ interface SummaryRow {
   created_at: string | null
   updated_at: string | null
   deleted_at: string | null
-  lifetime_cents: number
-  outstanding_cents: number
   invoice_count: number
   order_count: number
   last_activity_at: string | null
 }
 
-function toSummary(row: SummaryRow): ClientSummary {
+function toSummary(row: SummaryRow, money: ClientMoney | undefined): ClientSummary {
   return {
     id: row.id,
     name: row.name,
@@ -118,8 +185,8 @@ function toSummary(row: SummaryRow): ClientSummary {
     created_at: row.created_at,
     updated_at: row.updated_at,
     deleted_at: row.deleted_at,
-    lifetimeCents: Number(row.lifetime_cents ?? 0),
-    outstandingCents: Number(row.outstanding_cents ?? 0),
+    lifetime: money?.lifetime ?? [],
+    outstanding: money?.outstanding ?? [],
     invoiceCount: Number(row.invoice_count ?? 0),
     orderCount: Number(row.order_count ?? 0),
     lastActivityAt: row.last_activity_at,
@@ -127,8 +194,9 @@ function toSummary(row: SummaryRow): ClientSummary {
 }
 
 export class ClientNotDeletableError extends Error {
-  constructor(readonly outstandingCents: number) {
-    super('This client still has unpaid invoices.')
+  /** Only the currencies with something still owed. */
+  constructor(readonly outstanding: MoneyTotal[]) {
+    super(`This client still owes ${formatTotals(outstanding)} on issued invoices.`)
     this.name = 'ClientNotDeletableError'
   }
 }
@@ -191,14 +259,21 @@ export class ClientsRepository {
     where += this.scopeClause(params)
 
     const order =
-      query.sort === 'outstanding'
-        ? ' ORDER BY outstanding_cents DESC, c.name COLLATE NOCASE'
-        : query.sort === 'recent'
-          ? ' ORDER BY COALESCE(last_activity_at, c.created_at) DESC, c.name COLLATE NOCASE'
-          : ' ORDER BY c.name COLLATE NOCASE'
+      query.sort === 'recent'
+        ? ' ORDER BY COALESCE(last_activity_at, c.created_at) DESC, c.name COLLATE NOCASE'
+        : ' ORDER BY c.name COLLATE NOCASE'
 
-    const rows = await this.db.select<SummaryRow>(SUMMARY_SELECT + where + order, params)
-    return rows.map(toSummary)
+    const summaries = await this.summaries(where, params, order)
+    return query.sort === 'outstanding' ? [...summaries].sort(compareOutstanding) : summaries
+  }
+
+  private async summaries(where: string, params: unknown[], order = ''): Promise<ClientSummary[]> {
+    const [rows, moneyRows] = await Promise.all([
+      this.db.select<SummaryRow>(SUMMARY_SELECT + where + order, params),
+      this.db.select<MoneyRow>(moneySelect(where), params),
+    ])
+    const money = foldMoney(moneyRows)
+    return rows.map((row) => toSummary(row, money.get(row.id)))
   }
 
   async findSummary(
@@ -210,9 +285,8 @@ export class ClientsRepository {
       ' WHERE c.id = ?' +
       (options.includeDeleted ? '' : ' AND c.deleted_at IS NULL') +
       this.scopeClause(params)
-    const rows = await this.db.select<SummaryRow>(SUMMARY_SELECT + where, params)
-    const row = rows[0]
-    return row ? toSummary(row) : null
+    const [summary] = await this.summaries(where, params)
+    return summary ?? null
   }
 
   /** FR-3.3: contact details, order and invoice history, and recent payments. */
@@ -221,14 +295,14 @@ export class ClientsRepository {
     if (!client) return null
 
     const orders = await this.db.select<ClientOrderRow>(
-      `SELECT id, order_number, status, delivery_at, total_cents
+      `SELECT id, order_number, status, delivery_at, total_cents, currency
        FROM orders WHERE client_id = ? AND deleted_at IS NULL
        ORDER BY COALESCE(delivery_at, created_at) DESC`,
       [id],
     )
 
     const invoices = await this.db.select<ClientInvoiceRow>(
-      `SELECT i.id, i.invoice_number, i.status, i.issue_date, i.due_date, i.total_cents,
+      `SELECT i.id, i.invoice_number, i.status, i.issue_date, i.due_date, i.total_cents, i.currency,
               COALESCE(p.paid, 0) - COALESCE(r.reversed, 0) AS paid_cents,
               i.total_cents - COALESCE(p.paid, 0) + COALESCE(r.reversed, 0) AS balance_cents
        FROM invoices i
@@ -243,7 +317,7 @@ export class ClientsRepository {
     )
 
     const payments = await this.db.select<ClientPaymentRow>(
-      `SELECT p.id, i.invoice_number, p.amount_cents, p.method, p.paid_at, p.reference
+      `SELECT p.id, i.invoice_number, p.amount_cents, i.currency, p.method, p.paid_at, p.reference
        FROM payments p JOIN invoices i ON i.id = p.invoice_id
        WHERE i.client_id = ?
        ORDER BY p.paid_at DESC
@@ -251,7 +325,17 @@ export class ClientsRepository {
       [id],
     )
 
-    return { client, orders, invoices, payments }
+    // Rows written before the currency column existed carry NULL: shillings.
+    const withCurrency = <T extends { currency: string }>(row: T): T => ({
+      ...row,
+      currency: normaliseCurrency(row.currency),
+    })
+    return {
+      client,
+      orders: orders.map(withCurrency),
+      invoices: invoices.map(withCurrency),
+      payments: payments.map(withCurrency),
+    }
   }
 
   async create(values: Omit<Client, 'created_at' | 'updated_at' | 'deleted_at' | 'created_by'>) {
@@ -263,7 +347,7 @@ export class ClientsRepository {
   }
 
   /**
-   * FR-3.5: refuse while any issued invoice still has a balance.
+   * FR-3.5: refuse while any issued invoice still has a balance, in any currency.
    *
    * Checked here so the user gets an immediate, specific answer offline. It is
    * NOT the enforcement — the `clients_guard_soft_delete` trigger refuses the
@@ -274,9 +358,9 @@ export class ClientsRepository {
   async softDelete(id: string): Promise<void> {
     const summary = await this.findSummary(id)
     if (!summary) throw new Error('Client not found on this device.')
-    if (summary.outstandingCents > 0) {
-      throw new ClientNotDeletableError(summary.outstandingCents)
-    }
+    // Refused while ANY currency is owed; a dollar debt is not offset by a shilling credit.
+    const owed = owedTotals(summary.outstanding)
+    if (owed.length > 0) throw new ClientNotDeletableError(owed)
     await this.repo.softDelete(id)
   }
 }

@@ -502,7 +502,8 @@ select i.id                                as invoice_id,
        coalesce(r.reversed_cents, 0)       as reversed_cents,
        i.total_cents
          - coalesce(p.paid_cents, 0)
-         + coalesce(r.reversed_cents, 0)   as balance_cents
+         + coalesce(r.reversed_cents, 0)   as balance_cents,
+       i.currency
 from invoices i
 left join lateral (
   select sum(amount_cents) as paid_cents from payments where invoice_id = i.id
@@ -514,6 +515,10 @@ left join lateral (
 ) r on true
 where i.deleted_at is null;
 ```
+
+Every amount is in the invoice's `currency` (ISO 4217; payments and reversals have none of
+their own), so no view ever sums money across currencies: those that aggregate group by it
+(migration `20260930000300`). `invoice_status` also carries `currency`.
 
 `invoice_status` layers FR-5.6 on top:
 
@@ -553,13 +558,13 @@ the merge conflict the append-only design exists to avoid.
 
 ### 3.3 Other reporting views
 
-| View                  | Feeds          | Notes                                                                                                                                                                            |
-| --------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `client_balances`     | FR-3.3, FR-2.4 | Outstanding per client, plus aging buckets 0–30/31–60/61–90/90+ computed from `due_date`.                                                                                        |
-| `supplier_balances`   | FR-2.5, FR-7.4 | `purchases.total_cents - sum(supplier_payments)`, same aging buckets.                                                                                                            |
-| `daily_sales`         | FR-2.1, FR-2.2 | Grouped by `date_trunc('day', issue_date)` in `Africa/Nairobi`, not UTC — a sale at 01:00 Nairobi belongs to that day, and grouping in UTC would file it under the previous one. |
-| `inventory_valuation` | FR-6.8         | `current_stock * cost_price_cents`.                                                                                                                                              |
-| `wastage_report`      | FR-6.5         | `stock_movements` where `movement_type = 'wastage'`.                                                                                                                             |
+| View                  | Feeds          | Notes                                                                                                                                                                       |
+| --------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `client_balances`     | FR-3.3, FR-2.4 | One row per client and `currency`: outstanding plus aging buckets 0–30/31–60/61–90/90+ from `due_date`. A client with no issued invoice appears once, as `KES` with zeroes. |
+| `supplier_balances`   | FR-2.5, FR-7.4 | `purchases.total_cents - sum(supplier_payments)`, same aging buckets.                                                                                                       |
+| `daily_sales`         | FR-2.1, FR-2.2 | Grouped by day in `Africa/Nairobi` and by `currency`. Not UTC — a sale at 01:00 Nairobi belongs to that day, and grouping in UTC would file it under the previous one.      |
+| `inventory_valuation` | FR-6.8         | `current_stock * cost_price_cents`.                                                                                                                                         |
+| `wastage_report`      | FR-6.5         | `stock_movements` where `movement_type = 'wastage'`.                                                                                                                        |
 
 ---
 

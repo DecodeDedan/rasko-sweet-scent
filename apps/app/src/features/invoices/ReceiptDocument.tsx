@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { Button, formatDateTime, formatKes } from '@rasko/ui'
+import { Button, formatDateTime, formatMoney } from '@rasko/ui'
 
 import { PAYMENT_METHOD_LABEL } from './types.js'
 import type { CompanySettings, InvoiceDetail, PaymentRecord } from './types.js'
@@ -74,27 +74,29 @@ export function ReceiptDocument({
           <tbody>
             <tr>
               <td>Amount received</td>
-              <td className="rsk-numeric">{formatKes(payment.amount_cents)}</td>
+              <td className="rsk-numeric">{formatMoney(payment.amount_cents, invoice.currency)}</td>
             </tr>
             {payment.reversedCents > 0 ? (
               <tr>
                 <td>Reversed</td>
-                <td className="rsk-numeric">-{formatKes(payment.reversedCents)}</td>
+                <td className="rsk-numeric">
+                  -{formatMoney(payment.reversedCents, invoice.currency)}
+                </td>
               </tr>
             ) : null}
           </tbody>
           <tfoot>
             <tr className="doc-total-row">
               <td>Net received</td>
-              <td className="rsk-numeric">{formatKes(net)}</td>
+              <td className="rsk-numeric">{formatMoney(net, invoice.currency)}</td>
             </tr>
             <tr>
               <td>Invoice total</td>
-              <td className="rsk-numeric">{formatKes(invoice.total_cents)}</td>
+              <td className="rsk-numeric">{formatMoney(invoice.total_cents, invoice.currency)}</td>
             </tr>
             <tr>
               <td>Balance remaining</td>
-              <td className="rsk-numeric">{formatKes(invoice.balanceCents)}</td>
+              <td className="rsk-numeric">{formatMoney(invoice.balanceCents, invoice.currency)}</td>
             </tr>
           </tfoot>
         </table>

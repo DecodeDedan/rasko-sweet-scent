@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { Button, formatDate, formatDateTime, formatKes, formatQuantity } from '@rasko/ui'
+import { Button, formatDate, formatDateTime, formatMoney, formatQuantity } from '@rasko/ui'
 
 import { ORDER_STATUS_LABEL } from './statusPipeline.js'
 import type { OrderDetail } from './types.js'
@@ -101,25 +101,31 @@ export function OrderSummaryDocument({
               <tr key={item.id}>
                 <td>{item.description}</td>
                 <td className="rsk-numeric">{formatQuantity(item.quantity)}</td>
-                <td className="rsk-numeric">{formatKes(item.unit_price_cents)}</td>
-                <td className="rsk-numeric">{formatKes(item.line_total_cents)}</td>
+                <td className="rsk-numeric">
+                  {formatMoney(item.unit_price_cents, order.currency)}
+                </td>
+                <td className="rsk-numeric">
+                  {formatMoney(item.line_total_cents, order.currency)}
+                </td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr>
               <td colSpan={3}>Subtotal</td>
-              <td className="rsk-numeric">{formatKes(order.subtotal_cents)}</td>
+              <td className="rsk-numeric">{formatMoney(order.subtotal_cents, order.currency)}</td>
             </tr>
             {order.discount_cents > 0 ? (
               <tr>
                 <td colSpan={3}>Discount</td>
-                <td className="rsk-numeric">-{formatKes(order.discount_cents)}</td>
+                <td className="rsk-numeric">
+                  -{formatMoney(order.discount_cents, order.currency)}
+                </td>
               </tr>
             ) : null}
             <tr className="doc-total-row">
               <td colSpan={3}>Total</td>
-              <td className="rsk-numeric">{formatKes(order.total_cents)}</td>
+              <td className="rsk-numeric">{formatMoney(order.total_cents, order.currency)}</td>
             </tr>
           </tfoot>
         </table>

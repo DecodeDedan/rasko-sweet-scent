@@ -44,6 +44,8 @@ export interface Invoice {
   vat_rate_bp: number
   vat_cents: number
   total_cents: number
+  /** ISO 4217, copied from the order; every *_cents figure is in its minor unit. */
+  currency: string
   voided_at: string | null
   void_reason: string | null
   created_by: string | null
@@ -88,8 +90,22 @@ export interface ReversalRecord {
   created_by: string | null
 }
 
+/** One printed particulars row, taken from the invoiced order's lines. */
+export interface InvoiceLine {
+  description: string
+  quantity: number
+  unitPriceCents: number
+  discountCents: number
+  lineTotalCents: number
+}
+
 export interface InvoiceDetail {
   invoice: InvoiceSummary
+  /** Empty for an invoice raised without an order. */
+  lines: InvoiceLine[]
+  orderNumber: string | null
+  /** The order's "Delivery No", printed in the letterhead. */
+  deliveryNumber: string | null
   payments: PaymentRecord[]
   reversals: ReversalRecord[]
   /** Contact details for follow-up (FR-5.8). */
@@ -101,6 +117,7 @@ export interface CompanySettings {
   company_name: string
   address: string | null
   phone: string | null
+  whatsapp: string | null
   email: string | null
   kra_pin: string | null
   mpesa_paybill: string | null

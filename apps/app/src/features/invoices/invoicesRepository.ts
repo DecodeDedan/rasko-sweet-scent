@@ -1,4 +1,5 @@
 import { Repository } from '../../data/repositories/repository.js'
+import { normaliseCurrency } from './currency.js'
 import type { WriteContext } from '../../data/repositories/repository.js'
 import type { SqlDatabase } from '../../data/sqlite/types.js'
 import type { Role } from '../../auth/session.js'
@@ -68,6 +69,7 @@ function toSummary(row: Record<string, unknown>, today?: Date): InvoiceSummary {
     vat_rate_bp: Number(row['vat_rate_bp'] ?? 0),
     vat_cents: Number(row['vat_cents'] ?? 0),
     total_cents: total,
+    currency: normaliseCurrency(row['currency']),
     clientName: String(row['client_name'] ?? 'Walk-in'),
     clientPhone: row['client_phone'] == null ? null : String(row['client_phone']),
     paidCents: paid,
@@ -196,8 +198,29 @@ export class InvoicesRepository {
       [id],
     )
 
+    const lineRows = await this.db.select<Record<string, unknown>>(
+      `SELECT description, quantity, unit_price_cents, discount_cents, line_total_cents
+       FROM order_items WHERE order_id = ? AND deleted_at IS NULL ORDER BY position, id`,
+      [row['order_id'] ?? ''],
+    )
+    const orderRows = await this.db.select<Record<string, unknown>>(
+      'SELECT order_number, delivery_number FROM orders WHERE id = ?',
+      [row['order_id'] ?? ''],
+    )
+    const order = orderRows[0]
+
     return {
       invoice: toSummary(row, this.today),
+      // Raw SELECT bypasses the codec: quantity is stored in thousandths.
+      lines: lineRows.map((l) => ({
+        description: String(l['description'] ?? ''),
+        quantity: Number(l['quantity'] ?? 0) / 1000,
+        unitPriceCents: Number(l['unit_price_cents'] ?? 0),
+        discountCents: Number(l['discount_cents'] ?? 0),
+        lineTotalCents: Number(l['line_total_cents'] ?? 0),
+      })),
+      orderNumber: order?.['order_number'] == null ? null : String(order['order_number']),
+      deliveryNumber: order?.['delivery_number'] == null ? null : String(order['delivery_number']),
       payments: paymentRows.map((p) => ({
         id: String(p['id']),
         invoice_id: String(p['invoice_id']),
@@ -233,6 +256,7 @@ export class InvoicesRepository {
       company_name: String(row['company_name'] ?? 'Rasko Sweet Scent'),
       address: row['address'] == null ? null : String(row['address']),
       phone: row['phone'] == null ? null : String(row['phone']),
+      whatsapp: row['whatsapp'] == null ? null : String(row['whatsapp']),
       email: row['email'] == null ? null : String(row['email']),
       kra_pin: row['kra_pin'] == null ? null : String(row['kra_pin']),
       mpesa_paybill: row['mpesa_paybill'] == null ? null : String(row['mpesa_paybill']),

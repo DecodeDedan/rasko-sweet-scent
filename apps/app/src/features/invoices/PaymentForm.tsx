@@ -1,12 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { Button, Field, Input, Modal, Select, formatKes } from '@rasko/ui'
+import { Button, Field, Input, Modal, Select, formatMoney } from '@rasko/ui'
 
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABEL } from './types.js'
 import type { PaymentMethod } from './types.js'
 
-/** FR-5.3. Amounts are entered in shillings and stored as integer cents. */
+/**
+ * FR-5.3. Amounts are entered in the invoice's currency, in whole units with
+ * decimals, and stored as integer cents of that currency.
+ */
 function toCents(input: string): number {
   const value = Number(input)
   if (!Number.isFinite(value)) return Number.NaN
@@ -17,6 +20,8 @@ export interface PaymentFormProps {
   isOpen: boolean
   onClose: () => void
   balanceCents: number
+  /** The invoice's ISO 4217 code; a payment is always in its invoice's currency. */
+  currency: string
   onSubmit: (values: {
     amountCents: number
     method: PaymentMethod
@@ -26,7 +31,13 @@ export interface PaymentFormProps {
   }) => Promise<{ error?: string }>
 }
 
-export function PaymentForm({ isOpen, onClose, balanceCents, onSubmit }: PaymentFormProps) {
+export function PaymentForm({
+  isOpen,
+  onClose,
+  balanceCents,
+  currency,
+  onSubmit,
+}: PaymentFormProps) {
   const [amount, setAmount] = useState((balanceCents / 100).toFixed(2))
   const [method, setMethod] = useState<PaymentMethod>('mpesa')
   const [reference, setReference] = useState('')
@@ -72,7 +83,7 @@ export function PaymentForm({ isOpen, onClose, balanceCents, onSubmit }: Payment
       isOpen={isOpen}
       onClose={onClose}
       title="Record a payment"
-      description={`Balance outstanding: ${formatKes(balanceCents)}`}
+      description={`Balance outstanding: ${formatMoney(balanceCents, currency)}`}
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
@@ -89,7 +100,11 @@ export function PaymentForm({ isOpen, onClose, balanceCents, onSubmit }: Payment
           </p>
         ) : null}
 
-        <Field label="Amount in shillings" isRequired hint="Part payments are fine.">
+        <Field
+          label={currency === 'KES' ? 'Amount in shillings' : `Amount in ${currency}`}
+          isRequired
+          hint="Part payments are fine."
+        >
           <Input
             isNumeric
             inputMode="decimal"

@@ -14,6 +14,9 @@ export interface Order {
   total_cents: number
   delivery_at: string | null
   delivery_address: string | null
+  delivery_number: string | null
+  /** ISO 4217; every *_cents figure on the order is in its minor unit. */
+  currency: string
   event_date: string | null
   event_venue: string | null
   event_setup_notes: string | null

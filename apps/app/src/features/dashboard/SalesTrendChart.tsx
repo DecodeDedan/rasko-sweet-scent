@@ -1,6 +1,6 @@
 'use client'
 
-import { formatKes } from '@rasko/ui'
+import { formatMoney } from '@rasko/ui'
 
 import type { TrendPoint } from './dashboardRepository.js'
 
@@ -11,7 +11,14 @@ import type { TrendPoint } from './dashboardRepository.js'
  * ships a palette this brand does not permit. Bars are Rasko Green; the axis
  * and grid are the border neutral (docs/brand.md).
  */
-export function SalesTrendChart({ points }: { points: readonly TrendPoint[] }) {
+export function SalesTrendChart({
+  points,
+  currency,
+}: {
+  points: readonly TrendPoint[]
+  /** Every point is in this one currency; the repository never mixes them. */
+  currency: string
+}) {
   if (points.length === 0) return null
 
   const width = 720
@@ -30,7 +37,8 @@ export function SalesTrendChart({ points }: { points: readonly TrendPoint[] }) {
   return (
     <figure className="rsk-stack">
       <figcaption>
-        <span className="rsk-numeric">{formatKes(total)}</span> over the last {points.length} days
+        <span className="rsk-numeric">{formatMoney(total, currency)}</span> over the last{' '}
+        {points.length} days
       </figcaption>
 
       <svg
@@ -38,7 +46,7 @@ export function SalesTrendChart({ points }: { points: readonly TrendPoint[] }) {
         width="100%"
         height={height}
         role="img"
-        aria-label={`Daily sales for the last ${points.length} days, totalling ${formatKes(total)}. Highest day ${formatKes(peak)}.`}
+        aria-label={`Daily sales for the last ${points.length} days, totalling ${formatMoney(total, currency)}. Highest day ${formatMoney(peak, currency)}.`}
         style={{ display: 'block', maxWidth: '100%' }}
       >
         <line
@@ -66,7 +74,8 @@ export function SalesTrendChart({ points }: { points: readonly TrendPoint[] }) {
                 fill="var(--rasko-green)"
               >
                 <title>
-                  {point.date}: {formatKes(point.salesCents)} across {point.orderCount} orders
+                  {point.date}: {formatMoney(point.salesCents, currency)} across {point.orderCount}{' '}
+                  orders
                 </title>
               </rect>
               {labelled.has(index) ? (

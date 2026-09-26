@@ -87,10 +87,26 @@ export function paragraphs(escapedText) {
     .join('')
 }
 
-/** KES 12,500.00 (PRD §7). Mirrors formatKes in packages/ui for a runtime that cannot import it. */
+/**
+ * "USD 1,080.00": integer minor units in the given ISO 4217 currency, code
+ * first so a figure is never mistaken for shillings. Mirrors formatMoney in
+ * packages/ui for a runtime that cannot import it; the output must match.
+ */
+export function formatMoney(cents, currency = 'KES') {
+  const number = typeof cents === 'bigint' ? cents : Number(cents ?? 0)
+  if (typeof number === 'number' && !Number.isFinite(number)) return `${currency} 0.00`
+
+  const value = typeof number === 'bigint' ? number : BigInt(Math.round(number))
+  const isNegative = value < 0n
+  const absolute = isNegative ? -value : value
+  const major = (absolute / 100n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  const minor = (absolute % 100n).toString().padStart(2, '0')
+  return `${isNegative ? '-' : ''}${currency} ${major}.${minor}`
+}
+
+/** KES 12,500.00 (PRD §7), for figures that are always shillings, such as payroll. */
 export function formatKes(cents) {
-  const amount = Number(cents ?? 0) / 100
-  return `KES ${amount.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return formatMoney(cents, 'KES')
 }
 
 /** DD/MM/YYYY in Africa/Nairobi (PRD §7). */

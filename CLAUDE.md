@@ -278,6 +278,19 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
   leaves `invoice_number` null; the server allocates from its row-locked counter when
   the row arrives. A device that invented one would break FR-5.1 the first time two
   devices were offline together.
+- **The invoice copies the paper invoice book, faces included** (owner, 2026-09-26).
+  `features/invoices/invoice.css` bundles its own open-licensed faces in
+  `invoices/fonts/` instead of Lora/Manrope, and everything keyed in is set in the
+  blue ballpoint face. The stamp is vector (`InvoiceStamp.tsx`); only the signature
+  is a raster, cut from the scan. Only issued invoices are stamped.
+- **Orders carry a currency** (`orders.currency`, copied to `invoices.currency`,
+  migration `20260930000200`). Every `*_cents` on that order is in that currency's
+  minor unit; payments and reversals take their invoice's. Format a sale with
+  `formatMoney(cents, currency)`; `formatKes` is for payroll, purchases and stock only.
+  Never add two currencies: totals across sales are `MoneyTotal[]`
+  (`invoices/currency.ts`, `formatTotals`), the dashboard's trend, rankings and aging
+  filter to one currency, and the server views group by it (migration `20260930000300`).
+  Catalogue prices are shillings, so a non-KES order never prefills them.
 - **Printed documents are HTML, not a PDF library.** `OrderSummaryDocument` is an A4
   print view; both WebViews save a print job as PDF. `@media print` hides `.shell`, so
   only the document prints.

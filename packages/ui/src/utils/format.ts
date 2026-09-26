@@ -11,16 +11,18 @@
 const NAIROBI = 'Africa/Nairobi'
 
 /**
- * Money is stored as integer cents (PRD §7) and formatted without ever becoming
- * a float, so large values cannot drift.
+ * Money is stored as integer minor units (PRD §7) and formatted without ever
+ * becoming a float, so large values cannot drift. Sales can be priced in a
+ * currency other than shillings; the ISO code leads, "USD 1,080.00", so a
+ * figure is never mistaken for shillings.
  */
-export function formatKes(cents: number | bigint): string {
+export function formatMoney(cents: number | bigint, currency: string = 'KES'): string {
   // A formatter must never be the thing that unmounts the screen. `BigInt(NaN)`
   // throws a RangeError, so one undefined figure anywhere in a table takes the
   // whole module down with it — which is exactly how a partial payroll row
   // turned the Payroll page blank. Render zero instead: a visible wrong number
   // can be reported, a blank page cannot.
-  if (typeof cents === 'number' && !Number.isFinite(cents)) return 'KES 0.00'
+  if (typeof cents === 'number' && !Number.isFinite(cents)) return `${currency} 0.00`
 
   const value = typeof cents === 'bigint' ? cents : BigInt(Math.round(cents))
   const isNegative = value < 0n
@@ -29,7 +31,12 @@ export function formatKes(cents: number | bigint): string {
   const major = (absolute / 100n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
   const minor = (absolute % 100n).toString().padStart(2, '0')
 
-  return `${isNegative ? '-' : ''}KES ${major}.${minor}`
+  return `${isNegative ? '-' : ''}${currency} ${major}.${minor}`
+}
+
+/** Shillings: payroll, purchases, stock and every figure that is not a sale. */
+export function formatKes(cents: number | bigint): string {
+  return formatMoney(cents, 'KES')
 }
 
 const dateFormatter = new Intl.DateTimeFormat('en-GB', {

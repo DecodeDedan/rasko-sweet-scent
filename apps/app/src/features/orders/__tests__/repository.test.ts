@@ -241,6 +241,28 @@ describe('orders repository', () => {
     expect(String(rows[0]?.['client_snapshot'])).toContain('Menengai')
   })
 
+  it('invoices in the currency keyed on the order, shillings when none was', async () => {
+    const dollars = 'ac000000-0000-4000-8000-000000000020'
+    const shillings = 'ac000000-0000-4000-8000-000000000021'
+    await db.execute("UPDATE orders SET currency = 'USD' WHERE id = ?", [ORDER.confirmed])
+    await asOwner.convertToInvoice(ORDER.confirmed, dollars)
+    await db.execute('UPDATE orders SET currency = NULL WHERE id = ?', [ORDER.confirmed])
+    await db.execute('UPDATE invoices SET deleted_at = ? WHERE id = ?', [
+      '2026-09-01T00:00:00.000Z',
+      dollars,
+    ])
+    await asOwner.convertToInvoice(ORDER.confirmed, shillings)
+
+    const rows = await db.select<{ id: string; currency: string }>(
+      'SELECT id, currency FROM invoices WHERE id IN (?, ?) ORDER BY id',
+      [dollars, shillings],
+    )
+    expect(rows).toEqual([
+      { id: dollars, currency: 'USD' },
+      { id: shillings, currency: 'KES' },
+    ])
+  })
+
   it('charges no VAT while the business is not registered (PRD §12.3 default)', async () => {
     const invoiceId = 'ac000000-0000-4000-8000-000000000010'
     await asOwner.convertToInvoice(ORDER.confirmed, invoiceId)

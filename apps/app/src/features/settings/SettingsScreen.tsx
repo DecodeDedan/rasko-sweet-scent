@@ -55,6 +55,7 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
   const [companyName, setCompanyName] = useState<string | null>(null)
   const [address, setAddress] = useState<string | null>(null)
   const [phone, setPhone] = useState<string | null>(null)
+  const [whatsapp, setWhatsapp] = useState<string | null>(null)
   const [email, setEmail] = useState<string | null>(null)
   const [kraPin, setKraPin] = useState<string | null>(null)
   const [paybill, setPaybill] = useState<string | null>(null)
@@ -100,6 +101,7 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
         company_name: value(companyName, profile?.company_name),
         address: value(address, profile?.address) || null,
         phone: value(phone, profile?.phone) || null,
+        whatsapp: value(whatsapp, profile?.whatsapp) || null,
         email: value(email, profile?.email) || null,
         kra_pin: value(kraPin, profile?.kra_pin) || null,
         mpesa_paybill: value(paybill, profile?.mpesa_paybill) || null,
@@ -219,6 +221,15 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
                 disabled={!canEditProfile}
                 placeholder="+254712345678"
                 onChange={(event) => setPhone(event.target.value)}
+              />
+            </Field>
+
+            <Field label="WhatsApp number" hint="Printed beside the phone on invoices.">
+              <Input
+                value={value(whatsapp, profile?.whatsapp)}
+                disabled={!canEditProfile}
+                placeholder="+254712345678"
+                onChange={(event) => setWhatsapp(event.target.value)}
               />
             </Field>
 

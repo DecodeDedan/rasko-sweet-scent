@@ -53,7 +53,7 @@ describe('clients queries', () => {
 
     const byOutstanding = await asOwner.list({ sort: 'outstanding' })
     expect(byOutstanding[0]?.name).toBe('Menengai Events & Planning')
-    expect(byOutstanding[0]?.outstandingCents).toBe(12750000)
+    expect(byOutstanding[0]?.outstanding).toEqual([{ currency: 'KES', cents: 12750000 }])
 
     const byRecent = await asOwner.list({ sort: 'recent' })
     // Menengai is the only client with an order, so it has the latest activity.
@@ -109,7 +109,7 @@ describe('clients queries', () => {
     const detail = await asOwner.detail(CLIENT.grace)
     expect(detail?.orders).toEqual([])
     expect(detail?.invoices).toEqual([])
-    expect(detail?.client.lifetimeCents).toBe(0)
+    expect(detail?.client.lifetime).toEqual([])
   })
 
   // ------------------------------------------------- FR-3.5 delete guard

@@ -62,6 +62,7 @@ export {
   formatDate,
   formatDateTime,
   formatKes,
+  formatMoney,
   formatPhone,
   formatQuantity,
 } from './utils/format.js'

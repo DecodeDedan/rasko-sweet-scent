@@ -12,11 +12,11 @@ import {
   Select,
   StatusChip,
   Table,
-  formatKes,
   formatPhone,
   useToast,
 } from '@rasko/ui'
 
+import { formatTotals } from '../invoices/currency.js'
 import { ScopeBadge } from '../../screens/common.js'
 import type { ScreenProps } from '../../screens/common.js'
 import { ClientDetailDrawer } from './ClientDetailDrawer.js'
@@ -119,7 +119,7 @@ export function ClientsScreen({ role, scope }: ScreenProps) {
         title: 'Cannot delete this client',
         description:
           cause instanceof ClientNotDeletableError
-            ? `${formatKes(cause.outstandingCents)} is still outstanding on their issued invoices.`
+            ? `${formatTotals(cause.outstanding)} is still outstanding on their issued invoices.`
             : cause instanceof Error
               ? cause.message
               : 'Could not delete the client.',
@@ -242,13 +242,13 @@ export function ClientsScreen({ role, scope }: ScreenProps) {
                     key: 'lifetime',
                     header: 'Lifetime',
                     isNumeric: true,
-                    render: (c) => formatKes(c.lifetimeCents),
+                    render: (c) => formatTotals(c.lifetime),
                   },
                   {
                     key: 'outstanding',
                     header: 'Outstanding',
                     isNumeric: true,
-                    render: (c) => formatKes(c.outstandingCents),
+                    render: (c) => formatTotals(c.outstanding),
                   },
                 ]}
               />
@@ -273,7 +273,7 @@ export function ClientsScreen({ role, scope }: ScreenProps) {
                     {client.phone ? formatPhone(client.phone) : 'No phone number'}
                   </span>
                   <span className="client-card-line rsk-numeric">
-                    {formatKes(client.outstandingCents)} outstanding
+                    {formatTotals(client.outstanding)} outstanding
                   </span>
                 </button>
               </Card>

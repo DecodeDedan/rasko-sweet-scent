@@ -11,7 +11,7 @@ import {
   Table,
   formatDate,
   formatDateTime,
-  formatKes,
+  formatMoney,
   formatPhone,
 } from '@rasko/ui'
 
@@ -201,14 +201,16 @@ export function InvoiceDetailDrawer({
           <div className="client-figures">
             <div>
               <p className="shell__stat-label">Total</p>
-              <p className="client-figure">{formatKes(invoice.total_cents)}</p>
+              <p className="client-figure">{formatMoney(invoice.total_cents, invoice.currency)}</p>
             </div>
             <div>
               <p className="shell__stat-label">Balance</p>
-              <p className="client-figure">{formatKes(invoice.balanceCents)}</p>
+              <p className="client-figure">{formatMoney(invoice.balanceCents, invoice.currency)}</p>
               <p className="shell__stat-note">
-                {formatKes(invoice.paidCents)} paid
-                {invoice.reversedCents > 0 ? `, ${formatKes(invoice.reversedCents)} reversed` : ''}
+                {formatMoney(invoice.paidCents, invoice.currency)} paid
+                {invoice.reversedCents > 0
+                  ? `, ${formatMoney(invoice.reversedCents, invoice.currency)} reversed`
+                  : ''}
               </p>
             </div>
           </div>
@@ -255,8 +257,8 @@ export function InvoiceDetailDrawer({
                   isNumeric: true,
                   render: (p) =>
                     p.reversedCents > 0
-                      ? `${formatKes(p.amount_cents)} (${formatKes(p.reversedCents)} reversed)`
-                      : formatKes(p.amount_cents),
+                      ? `${formatMoney(p.amount_cents, invoice.currency)} (${formatMoney(p.reversedCents, invoice.currency)} reversed)`
+                      : formatMoney(p.amount_cents, invoice.currency),
                 },
                 {
                   key: 'actions',
@@ -268,11 +270,11 @@ export function InvoiceDetailDrawer({
                       </Button>
                       <Button
                         size="sm"
-                        aria-label={`Email the receipt for ${formatKes(p.amount_cents)}`}
+                        aria-label={`Email the receipt for ${formatMoney(p.amount_cents, invoice.currency)}`}
                         onClick={() =>
                           setEmailing({
                             kind: 'receipt',
-                            contextLabel: `Receipt for ${formatKes(p.amount_cents)} on ${invoice.invoice_number ?? 'this invoice'}`,
+                            contextLabel: `Receipt for ${formatMoney(p.amount_cents, invoice.currency)} on ${invoice.invoice_number ?? 'this invoice'}`,
                             related: { table: 'payments', id: p.id },
                           })
                         }
@@ -297,7 +299,8 @@ export function InvoiceDetailDrawer({
           {reversing ? (
             <section className="rsk-stack">
               <h3 className="client-section-title">
-                Reverse {formatKes(reversing.amount_cents - reversing.reversedCents)}
+                Reverse{' '}
+                {formatMoney(reversing.amount_cents - reversing.reversedCents, invoice.currency)}
               </h3>
               <p className="client-empty">
                 The payment stays on the record. A reversal is added beside it, so the history shows

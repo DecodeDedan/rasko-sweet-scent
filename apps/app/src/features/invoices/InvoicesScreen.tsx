@@ -12,7 +12,7 @@ import {
   Table,
   Tabs,
   formatDate,
-  formatKes,
+  formatMoney,
   formatPhone,
   useToast,
 } from '@rasko/ui'
@@ -143,13 +143,13 @@ export function InvoicesScreen({ role, scope }: ScreenProps) {
       key: 'total',
       header: 'Total',
       isNumeric: true,
-      render: (i: InvoiceSummary) => formatKes(i.total_cents),
+      render: (i: InvoiceSummary) => formatMoney(i.total_cents, i.currency),
     },
     {
       key: 'balance',
       header: 'Balance',
       isNumeric: true,
-      render: (i: InvoiceSummary) => formatKes(i.balanceCents),
+      render: (i: InvoiceSummary) => formatMoney(i.balanceCents, i.currency),
     },
   ]
 
@@ -241,7 +241,7 @@ export function InvoicesScreen({ role, scope }: ScreenProps) {
                       <span className="client-card-line">{invoice.clientName}</span>
                       <span className="client-card-line">Due {formatDate(invoice.due_date)}</span>
                       <span className="client-card-line rsk-numeric">
-                        {formatKes(invoice.balanceCents)} outstanding
+                        {formatMoney(invoice.balanceCents, invoice.currency)} outstanding
                       </span>
                     </button>
                   </Card>
@@ -283,6 +283,7 @@ export function InvoicesScreen({ role, scope }: ScreenProps) {
         <PaymentForm
           isOpen
           balanceCents={paying.invoice.balanceCents}
+          currency={paying.invoice.currency}
           onClose={() => setPaying(null)}
           onSubmit={handlePayment}
         />

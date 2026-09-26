@@ -15,7 +15,7 @@ import {
   Tabs,
   formatDate,
   formatDateTime,
-  formatKes,
+  formatMoney,
   useToast,
 } from '@rasko/ui'
 
@@ -174,7 +174,7 @@ export function OrdersScreen({ role, scope }: ScreenProps) {
       key: 'total',
       header: 'Total',
       isNumeric: true,
-      render: (o: OrderSummary) => formatKes(o.total_cents),
+      render: (o: OrderSummary) => formatMoney(o.total_cents, o.currency),
     },
   ]
 
@@ -302,7 +302,7 @@ export function OrdersScreen({ role, scope }: ScreenProps) {
                           {order.delivery_at ? formatDateTime(order.delivery_at) : 'Not scheduled'}
                         </span>
                         <span className="client-card-line rsk-numeric">
-                          {formatKes(order.total_cents)}
+                          {formatMoney(order.total_cents, order.currency)}
                         </span>
                       </button>
                     </Card>

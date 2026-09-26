@@ -2,13 +2,15 @@
 
 import { Mail, Pencil, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Button, Drawer, StatusChip, Table, formatDate, formatKes, formatPhone } from '@rasko/ui'
+import { Button, Drawer, StatusChip, Table, formatDate, formatMoney, formatPhone } from '@rasko/ui'
 
 import { EmailActivity } from '../email/EmailActivity.js'
 import { SendEmailDialog } from '../email/SendEmailDialog.js'
 import { useEmailHistory } from '../email/useEmail.js'
+import { formatTotals } from '../invoices/currency.js'
 import { CLIENT_TYPE_LABEL } from './types.js'
 import type { ClientDetail } from './types.js'
+import { owedTotals } from './clientsRepository.js'
 import type { ClientsRepository } from './clientsRepository.js'
 
 /** FR-3.3: contact details, history, lifetime value and outstanding balance. */
@@ -48,7 +50,8 @@ export function ClientDetailDrawer({
   if (!clientId) return null
 
   const client = detail?.client
-  const isSettled = (client?.outstandingCents ?? 0) <= 0
+  const owed = owedTotals(client?.outstanding ?? [])
+  const isSettled = owed.length === 0
 
   /*
    * A disabled outlined button at reduced opacity barely reads as disabled, and
@@ -58,7 +61,7 @@ export function ClientDetailDrawer({
   const blockedReason = !canDelete
     ? 'Only a manager or the owner can delete a client.'
     : !isSettled && client
-      ? `Cannot delete: ${formatKes(client.outstandingCents)} is still outstanding.`
+      ? `Cannot delete: ${formatTotals(owed)} is still outstanding.`
       : null
 
   return (
@@ -128,14 +131,14 @@ export function ClientDetailDrawer({
           <div className="client-figures">
             <div>
               <p className="shell__stat-label">Lifetime value</p>
-              <p className="client-figure">{formatKes(client.lifetimeCents)}</p>
+              <p className="client-figure">{formatTotals(client.lifetime)}</p>
               <p className="shell__stat-note">
                 {client.invoiceCount} invoice{client.invoiceCount === 1 ? '' : 's'}
               </p>
             </div>
             <div>
               <p className="shell__stat-label">Outstanding</p>
-              <p className="client-figure">{formatKes(client.outstandingCents)}</p>
+              <p className="client-figure">{formatTotals(client.outstanding)}</p>
               <p className="shell__stat-note">
                 {isSettled ? 'Nothing owed' : 'Owed on issued invoices'}
               </p>
@@ -163,13 +166,13 @@ export function ClientDetailDrawer({
                   key: 'total',
                   header: 'Total',
                   isNumeric: true,
-                  render: (row) => formatKes(row.total_cents),
+                  render: (row) => formatMoney(row.total_cents, row.currency),
                 },
                 {
                   key: 'balance',
                   header: 'Balance',
                   isNumeric: true,
-                  render: (row) => formatKes(row.balance_cents),
+                  render: (row) => formatMoney(row.balance_cents, row.currency),
                 },
               ]}
             />
@@ -194,7 +197,7 @@ export function ClientDetailDrawer({
                   key: 'total',
                   header: 'Total',
                   isNumeric: true,
-                  render: (row) => formatKes(row.total_cents),
+                  render: (row) => formatMoney(row.total_cents, row.currency),
                 },
               ]}
             />
@@ -218,7 +221,7 @@ export function ClientDetailDrawer({
                   key: 'amount',
                   header: 'Amount',
                   isNumeric: true,
-                  render: (row) => formatKes(row.amount_cents),
+                  render: (row) => formatMoney(row.amount_cents, row.currency),
                 },
               ]}
             />

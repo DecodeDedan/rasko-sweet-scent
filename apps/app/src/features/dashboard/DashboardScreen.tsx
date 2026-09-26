@@ -6,10 +6,13 @@ import {
   Button,
   Card,
   EmptyState,
+  Field,
   PageHeader,
+  Select,
   StatusChip,
   Table,
   formatKes,
+  formatMoney,
   formatQuantity,
   useToast,
 } from '@rasko/ui'
@@ -19,6 +22,7 @@ import { useSync } from '../../data/sync/SyncProvider.js'
 import { useSyncedEffect } from '../../data/sync/useSyncedEffect.js'
 import { ScopeBadge } from '../../screens/common.js'
 import { SetupChecklist } from '../../onboarding/SetupChecklist.js'
+import { DEFAULT_CURRENCY, formatTotals } from '../invoices/currency.js'
 import type { ScreenProps } from '../../screens/common.js'
 import { DashboardRepository, toCsv } from './dashboardRepository.js'
 import type {
@@ -47,6 +51,9 @@ function downloadCsv(filename: string, csv: string): void {
 
 interface DashboardData {
   summary: DailySummary
+  currencies: string[]
+  /** The currency the trend, rankings and aging below were read in. */
+  currency: string
   trend: TrendPoint[]
   clients: RankedClient[]
   products: RankedProduct[]
@@ -68,6 +75,7 @@ export function DashboardScreen({ role, scope }: ScreenProps) {
 
   const [data, setData] = useState<DashboardData | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [currency, setCurrency] = useState<string>(DEFAULT_CURRENCY)
 
   // Sales never see payables or payroll, so those queries are not even run.
   const seesFinance = role !== 'sales'
@@ -76,24 +84,39 @@ export function DashboardScreen({ role, scope }: ScreenProps) {
     if (!repo) return
     try {
       setError(null)
+      const currencies = await repo.salesCurrencies()
+      // A currency can vanish when its last order is deleted; fall back to shillings.
+      const selected = currencies.includes(currency) ? currency : DEFAULT_CURRENCY
       const [summary, trend, clients, products, aging, payablesCents, lowStock, wastage] =
         await Promise.all([
           repo.dailySummary(),
-          repo.salesTrend(30),
-          repo.topClients(5),
-          repo.topProducts(5),
-          repo.receivablesAging(),
+          repo.salesTrend(30, undefined, selected),
+          repo.topClients(5, undefined, selected),
+          repo.topProducts(5, undefined, selected),
+          repo.receivablesAging(undefined, selected),
           seesFinance ? repo.payablesTotalCents() : Promise.resolve(0),
           seesFinance ? repo.lowStockAlerts() : Promise.resolve([]),
           seesFinance
             ? repo.wastageAlert()
             : Promise.resolve({ totalCostCents: 0, occurrences: 0, topProduct: null }),
         ])
-      setData({ summary, trend, clients, products, aging, payablesCents, lowStock, wastage })
+      if (selected !== currency) setCurrency(selected)
+      setData({
+        summary,
+        currencies,
+        currency: selected,
+        trend,
+        clients,
+        products,
+        aging,
+        payablesCents,
+        lowStock,
+        wastage,
+      })
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not build the dashboard.')
     }
-  }, [repo, seesFinance])
+  }, [repo, seesFinance, currency])
 
   useSyncedEffect(load)
 
@@ -115,9 +138,9 @@ export function DashboardScreen({ role, scope }: ScreenProps) {
   function exportTrend() {
     if (!data) return
     downloadCsv(
-      `rasko-sales-${new Date().toISOString().slice(0, 10)}.csv`,
+      `rasko-sales-${data.currency.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`,
       toCsv(
-        ['Date', 'Orders', 'Sales (KES)'],
+        ['Date', 'Orders', `Sales (${data.currency})`],
         data.trend.map((point) => [
           point.date,
           point.orderCount,
@@ -131,9 +154,9 @@ export function DashboardScreen({ role, scope }: ScreenProps) {
   function exportAging() {
     if (!data) return
     downloadCsv(
-      `rasko-receivables-${new Date().toISOString().slice(0, 10)}.csv`,
+      `rasko-receivables-${data.currency.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`,
       toCsv(
-        ['Age', 'Invoices', 'Outstanding (KES)'],
+        ['Age', 'Invoices', `Outstanding (${data.currency})`],
         data.aging.map((bucket) => [
           bucket.label,
           bucket.invoiceCount,
@@ -145,6 +168,7 @@ export function DashboardScreen({ role, scope }: ScreenProps) {
   }
 
   const summary = data?.summary
+  const shown = data?.currency ?? DEFAULT_CURRENCY
 
   return (
     <div className="rsk-stack">
@@ -184,7 +208,7 @@ export function DashboardScreen({ role, scope }: ScreenProps) {
       <div className="rsk-metrics">
         <Card>
           <p className="rsk-metric__label">Sales today</p>
-          <p className="rsk-metric__value rsk-numeric">{formatKes(summary?.salesCents ?? 0)}</p>
+          <p className="rsk-metric__value rsk-numeric">{formatTotals(summary?.sales ?? [])}</p>
         </Card>
         <Card>
           <p className="rsk-metric__label">Orders today</p>
@@ -193,21 +217,37 @@ export function DashboardScreen({ role, scope }: ScreenProps) {
         <Card>
           <p className="rsk-metric__label">Payments received</p>
           <p className="rsk-metric__value rsk-numeric">
-            {formatKes(summary?.paymentsReceivedCents ?? 0)}
+            {formatTotals(summary?.paymentsReceived ?? [])}
           </p>
         </Card>
         <Card>
           <p className="rsk-metric__label">Owed to us</p>
           <p className="rsk-metric__value rsk-numeric">
-            {formatKes(summary?.outstandingReceivablesCents ?? 0)}
+            {formatTotals(summary?.outstandingReceivables ?? [])}
           </p>
         </Card>
       </div>
 
+      {/* Only once a sale has been priced in something other than shillings. */}
+      {data && data.currencies.length > 1 ? (
+        <Card>
+          <Field
+            label="Currency"
+            hint="The sales trend, receivables aging and rankings below are in this currency."
+          >
+            <Select
+              value={currency}
+              onChange={(event) => setCurrency(event.target.value)}
+              options={data.currencies.map((code) => ({ value: code, label: code }))}
+            />
+          </Field>
+        </Card>
+      ) : null}
+
       {/* FR-2.2 */}
       <Card>
         <h2 className="rsk-section-title">Sales, last 30 days</h2>
-        {data ? <SalesTrendChart points={data.trend} /> : null}
+        {data ? <SalesTrendChart points={data.trend} currency={data.currency} /> : null}
       </Card>
 
       {/* FR-2.4 */}
@@ -234,7 +274,7 @@ export function DashboardScreen({ role, scope }: ScreenProps) {
               key: 'amount',
               header: 'Outstanding',
               isNumeric: true,
-              render: (bucket) => formatKes(bucket.amountCents),
+              render: (bucket) => formatMoney(bucket.amountCents, shown),
             },
           ]}
         />
@@ -269,7 +309,7 @@ export function DashboardScreen({ role, scope }: ScreenProps) {
               key: 'total',
               header: 'Value',
               isNumeric: true,
-              render: (client) => formatKes(client.totalCents),
+              render: (client) => formatMoney(client.totalCents, shown),
             },
           ]}
         />
@@ -298,7 +338,7 @@ export function DashboardScreen({ role, scope }: ScreenProps) {
               key: 'total',
               header: 'Value',
               isNumeric: true,
-              render: (product) => formatKes(product.totalCents),
+              render: (product) => formatMoney(product.totalCents, shown),
             },
           ]}
         />

@@ -8,7 +8,7 @@ import {
   StatusChip,
   Table,
   formatDateTime,
-  formatKes,
+  formatMoney,
   formatQuantity,
 } from '@rasko/ui'
 
@@ -168,7 +168,7 @@ export function OrderDetailDrawer({
 
           <div className="rsk-row" style={{ justifyContent: 'space-between' }}>
             <StatusChip tone={toneFor(order.status)}>{ORDER_STATUS_LABEL[order.status]}</StatusChip>
-            <span className="rsk-numeric">{formatKes(order.total_cents)}</span>
+            <span className="rsk-numeric">{formatMoney(order.total_cents, order.currency)}</span>
           </div>
 
           <dl className="client-facts">
@@ -270,13 +270,13 @@ export function OrderDetailDrawer({
                   key: 'price',
                   header: 'Unit price',
                   isNumeric: true,
-                  render: (i) => formatKes(i.unit_price_cents),
+                  render: (i) => formatMoney(i.unit_price_cents, order.currency),
                 },
                 {
                   key: 'total',
                   header: 'Amount',
                   isNumeric: true,
-                  render: (i) => formatKes(i.line_total_cents),
+                  render: (i) => formatMoney(i.line_total_cents, order.currency),
                 },
               ]}
             />

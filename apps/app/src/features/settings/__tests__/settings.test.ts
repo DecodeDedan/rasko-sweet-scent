@@ -70,6 +70,8 @@ describe('company profile (FR-9.1)', () => {
     const repo = repoFor(db)
     await expect(repo.updateCompanyProfile({ phone: '0712345678' })).rejects.toThrow(/\+254/)
     await expect(repo.updateCompanyProfile({ phone: '+254712345678' })).resolves.toBeUndefined()
+    await expect(repo.updateCompanyProfile({ whatsapp: '0101339635' })).rejects.toThrow(/WhatsApp/)
+    await expect(repo.updateCompanyProfile({ whatsapp: '+254101339635' })).resolves.toBeUndefined()
   })
 
   it('lets a manager edit the profile but not tax', async () => {

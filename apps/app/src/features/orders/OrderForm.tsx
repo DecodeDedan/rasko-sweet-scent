@@ -2,8 +2,10 @@
 
 import { Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { Button, Field, Input, Modal, Select, formatKes } from '@rasko/ui'
+import { Button, Field, Input, Modal, Select, formatMoney } from '@rasko/ui'
 
+import { CURRENCIES, CURRENCY_LABEL, DEFAULT_CURRENCY } from '../invoices/currency.js'
+import type { Currency } from '../invoices/currency.js'
 import type { DraftLine, OrderType, ProductOption } from './types.js'
 
 /** Client-generated ids, so an order created offline is complete before it syncs. */
@@ -24,6 +26,9 @@ export interface OrderFormValues {
   orderType: OrderType
   deliveryAt: string | null
   deliveryAddress: string | null
+  /** The book's "Delivery No". */
+  deliveryNumber: string | null
+  currency: Currency
   eventDate: string | null
   eventVenue: string | null
   eventSetupNotes: string | null
@@ -46,6 +51,8 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
   const [orderType, setOrderType] = useState<OrderType>('standard')
   const [deliveryAt, setDeliveryAt] = useState('')
   const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [deliveryNumber, setDeliveryNumber] = useState('')
+  const [currency, setCurrency] = useState<Currency>(DEFAULT_CURRENCY)
   const [eventVenue, setEventVenue] = useState('')
   const [eventSetupNotes, setEventSetupNotes] = useState('')
   const [notes, setNotes] = useState('')
@@ -59,7 +66,11 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
     setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)))
   }
 
-  /** Choosing a catalogue product fills the description and current price. */
+  /**
+   * Choosing a catalogue product fills the description, and the current price
+   * only for a shilling order: catalogue prices are shillings, and there is no
+   * exchange rate to convert them with.
+   */
   function chooseProduct(key: string, productId: string) {
     if (!productId) {
       updateLine(key, { productId: null })
@@ -70,9 +81,23 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
     updateLine(key, {
       productId,
       description: product.name,
-      unitPrice: String(product.selling_price_cents),
+      ...(currency === DEFAULT_CURRENCY ? { unitPrice: String(product.selling_price_cents) } : {}),
     })
   }
+
+  const isForeign = currency !== DEFAULT_CURRENCY
+  // Switching currency never rewrites a typed price; it flags shilling prices
+  // the catalogue filled in before the switch instead.
+  const hasShillingPrices =
+    isForeign &&
+    lines.some((line) => {
+      const product = products.find((p) => p.id === line.productId)
+      return (
+        product != null &&
+        product.selling_price_cents !== 0 &&
+        line.unitPrice === String(product.selling_price_cents)
+      )
+    })
 
   const subtotal = lines.reduce((sum, line) => {
     const quantity = Number(line.quantity) || 0
@@ -109,6 +134,8 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
       orderType,
       deliveryAt: deliveryAt ? new Date(deliveryAt).toISOString() : null,
       deliveryAddress: deliveryAddress.trim() || null,
+      deliveryNumber: deliveryNumber.trim().slice(0, 40) || null,
+      currency,
       eventDate: orderType === 'event' && deliveryAt ? deliveryAt.slice(0, 10) : null,
       eventVenue: orderType === 'event' ? eventVenue.trim() || null : null,
       eventSetupNotes: orderType === 'event' ? eventSetupNotes.trim() || null : null,
@@ -180,6 +207,14 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
           />
         </Field>
 
+        <Field label="Currency" hint="Prices below are keyed in this currency.">
+          <Select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value as Currency)}
+            options={CURRENCIES.map((code) => ({ value: code, label: CURRENCY_LABEL[code] }))}
+          />
+        </Field>
+
         <Field label="Delivery date and time" isRequired={orderType === 'event'}>
           <Input
             type="datetime-local"
@@ -190,6 +225,14 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
 
         <Field label="Delivery address">
           <Input value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} />
+        </Field>
+
+        <Field label="Delivery No" hint="Printed on the invoice.">
+          <Input
+            value={deliveryNumber}
+            maxLength={40}
+            onChange={(e) => setDeliveryNumber(e.target.value)}
+          />
         </Field>
 
         {orderType === 'event' ? (
@@ -205,6 +248,15 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
 
         <div>
           <h3 className="client-section-title">Lines</h3>
+          {isForeign ? (
+            <p className="rsk-field__hint" id="order-price-hint">
+              Catalogue prices are in shillings, so they are not filled in. Key each unit price in{' '}
+              {currency} cents.
+              {hasShillingPrices
+                ? ' Some lines still hold the shilling price filled in before the currency changed.'
+                : ''}
+            </p>
+          ) : null}
           <div className="rsk-stack">
             {lines.map((line) => (
               <div className="order-line" key={line.key}>
@@ -229,7 +281,8 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
                   onChange={(e) => updateLine(line.key, { quantity: e.target.value })}
                 />
                 <Input
-                  aria-label="Unit price in cents"
+                  aria-label={`Unit price in ${currency} cents`}
+                  aria-describedby={isForeign ? 'order-price-hint' : undefined}
                   inputMode="numeric"
                   isNumeric
                   value={line.unitPrice}
@@ -260,7 +313,7 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
           </Button>
         </div>
 
-        <Field label="Order discount in cents">
+        <Field label={`Order discount in ${currency} cents`}>
           <Input
             isNumeric
             inputMode="numeric"
@@ -275,9 +328,9 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
 
         <div className="order-totals">
           <span>Subtotal</span>
-          <span className="rsk-numeric">{formatKes(subtotal)}</span>
+          <span className="rsk-numeric">{formatMoney(subtotal, currency)}</span>
           <span>Total</span>
-          <strong className="rsk-numeric">{formatKes(total)}</strong>
+          <strong className="rsk-numeric">{formatMoney(total, currency)}</strong>
         </div>
       </div>
     </Modal>

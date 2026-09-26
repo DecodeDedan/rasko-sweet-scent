@@ -5,6 +5,7 @@ import type { Role } from '../../auth/session.js'
 import { checkTransition, canDelete, canEdit } from './statusPipeline.js'
 import type { OrderStatus } from './statusPipeline.js'
 import { activeTaxRule, computeVat } from '../invoices/vat.js'
+import { normaliseCurrency } from '../invoices/currency.js'
 import type {
   DeliveryGroup,
   DraftLine,
@@ -58,6 +59,7 @@ function toSummary(row: Record<string, unknown>): OrderSummary {
     subtotal_cents: Number(row['subtotal_cents'] ?? 0),
     discount_cents: Number(row['discount_cents'] ?? 0),
     total_cents: Number(row['total_cents'] ?? 0),
+    currency: normaliseCurrency(row['currency']),
     clientName: String(row['client_name'] ?? 'Unknown client'),
     clientEmail: row['client_email'] ? String(row['client_email']) : null,
     itemCount: Number(row['item_count'] ?? 0),
@@ -76,6 +78,9 @@ export interface NewOrderInput {
   orderType: OrderType
   deliveryAt: string | null
   deliveryAddress: string | null
+  deliveryNumber?: string | null
+  /** ISO 4217, keyed on the order form. Omitted means shillings. */
+  currency?: string
   eventDate: string | null
   eventVenue: string | null
   eventSetupNotes: string | null
@@ -281,6 +286,8 @@ export class OrdersRepository {
       total_cents: total,
       delivery_at: input.deliveryAt,
       delivery_address: input.deliveryAddress,
+      delivery_number: input.deliveryNumber ?? null,
+      currency: normaliseCurrency(input.currency),
       event_date: input.eventDate,
       event_venue: input.eventVenue,
       event_setup_notes: input.eventSetupNotes,
@@ -428,6 +435,7 @@ export class OrdersRepository {
       vat_rate_bp: vat.vatRateBp,
       vat_cents: vat.vatCents,
       total_cents: detail.order.total_cents + vat.vatCents,
+      currency: normaliseCurrency(detail.order.currency),
     } as never)
 
     return invoiceId
