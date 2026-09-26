@@ -396,6 +396,11 @@ export const TABLES: readonly TableSpec[] = [
       c('result_desc', 'text'),
       c('recipient_name', 'text'),
       c('settled_at', 'ts'),
+      // Migration 20260929000100: IntaSend and bank payouts.
+      c('provider', 'text'),
+      c('channel', 'text'),
+      c('bank_code', 'text'),
+      c('bank_account', 'text'),
       ...MUTABLE_BASE,
     ],
   },

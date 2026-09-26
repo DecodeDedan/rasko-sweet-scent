@@ -299,7 +299,7 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
                       ) : null}
                       {(run.status === 'approved' || run.status === 'paid') && canApprove ? (
                         <Button variant="ghost" onClick={() => setPayingRun(run)}>
-                          Pay by M-Pesa
+                          Pay salaries
                         </Button>
                       ) : null}
                       {run.status === 'approved' && canApprove ? (

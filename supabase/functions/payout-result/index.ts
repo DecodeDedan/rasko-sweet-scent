@@ -18,9 +18,20 @@
 //
 // Safaricom retries a callback it thinks failed, so this always answers 200
 // once the token checks out, even for an id it does not recognise.
-import { createClient } from 'jsr:@supabase/supabase-js@2'
+//
+// IntaSend (migration 20260929000100) calls /payout-result/intasend/<token>/,
+// the callback_url given with each payout. Its body is only a hint of which
+// payout changed: the function looks that payout up and asks IntaSend itself
+// for the status (intasendClient.ts), so a forged body cannot settle anything.
+import { type SupabaseClient, createClient } from 'jsr:@supabase/supabase-js@2'
 
 import { parseResult } from '../_shared/mpesa/b2c.js'
+import {
+  type ClaimedPayout,
+  IN_FLIGHT as INTASEND_IN_FLIGHT,
+  intasendConfig,
+  reconcileIntasendPayout,
+} from '../_shared/payouts/intasendClient.ts'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const ACK = { ResultCode: 0, ResultDesc: 'Accepted' }
@@ -51,7 +62,7 @@ Deno.serve(async (request) => {
   const callbackUrl = new URL(request.url)
   // .../payout-result/<kind>/<token>, or the older ?kind=&token=.
   const [pathKind, pathToken] = callbackUrl.pathname.split('/').filter(Boolean).slice(-2)
-  const hasPath = pathKind === 'result' || pathKind === 'timeout'
+  const hasPath = pathKind === 'result' || pathKind === 'timeout' || pathKind === 'intasend'
   const token = hasPath ? (pathToken ?? '') : (callbackUrl.searchParams.get('token') ?? '')
   const kind = hasPath ? pathKind : callbackUrl.searchParams.get('kind')
   if (!expected || !sameSecret(token, expected)) {
@@ -60,6 +71,7 @@ Deno.serve(async (request) => {
   const isTimeout = kind === 'timeout'
 
   const body = await request.json().catch(() => null)
+  if (kind === 'intasend') return intasendHint(body)
   const result = parseResult(body)
   // Our payout id comes back as OriginatorConversationID on the v3 endpoint.
   // Should an answer carry Safaricom's own id instead, the ConversationID that
@@ -133,3 +145,48 @@ Deno.serve(async (request) => {
   console.info(`payout-result: ${payout.id} -> ${String(patch.status)}`)
   return reply(ACK)
 })
+
+/**
+ * IntaSend says a payout changed. Find which one (our id rides as
+ * batch_reference; the tracking id is the fallback) and ask IntaSend.
+ * IntaSend retries anything but a 2xx five times over hours, so every
+ * outcome past the token answers 200.
+ */
+async function intasendHint(body: unknown): Promise<Response> {
+  const hint = body && typeof body === 'object' ? (body as Record<string, unknown>) : {}
+  const reference = typeof hint.batch_reference === 'string' ? hint.batch_reference : ''
+  const trackingId = typeof hint.tracking_id === 'string' ? hint.tracking_id.slice(0, 100) : ''
+  if (!UUID.test(reference) && !trackingId) return reply({ ok: true })
+
+  const url = Deno.env.get('SUPABASE_URL')
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const intasend = intasendConfig()
+  if (!url || !serviceKey || 'error' in intasend) {
+    console.error('payout-result: IntaSend callback arrived but IntaSend is not configured')
+    return reply({ error: 'Not configured.' }, 500)
+  }
+  const admin: SupabaseClient = createClient(url, serviceKey, { auth: { persistSession: false } })
+
+  const { data: payout, error } = await admin
+    .from('payroll_payouts')
+    .select(
+      'id, payroll_run_id, employee_id, amount_cents, msisdn, channel, bank_code, bank_account, conversation_id, status',
+    )
+    .eq('provider', 'intasend')
+    .eq(
+      UUID.test(reference) ? 'id' : 'conversation_id',
+      UUID.test(reference) ? reference : trackingId,
+    )
+    .maybeSingle()
+  if (error) return reply({ error: error.message }, 500)
+  if (!payout || !INTASEND_IN_FLIGHT.includes(payout.status)) return reply({ ok: true })
+
+  const status = await reconcileIntasendPayout(
+    admin,
+    intasend.config,
+    payout as ClaimedPayout,
+    trackingId || null,
+  )
+  console.info(`payout-result: intasend ${payout.id} -> ${status}`)
+  return reply({ ok: true })
+}

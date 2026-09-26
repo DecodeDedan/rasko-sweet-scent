@@ -38,7 +38,7 @@ test('says why an item cannot go by M-Pesa', () => {
   }
   assert.equal(payoutBlocker(ok), null)
   assert.match(payoutBlocker({ ...ok, isPaid: true }), /Already paid/)
-  assert.match(payoutBlocker({ ...ok, paymentMethod: 'bank' }), /bank/)
+  assert.match(payoutBlocker({ ...ok, paymentMethod: 'bank' }), /bank account/)
   assert.match(payoutBlocker({ ...ok, msisdn: null }), /M-Pesa number/)
   assert.match(payoutBlocker({ ...ok, netPayCents: 500 }), /minimum/)
   assert.match(payoutBlocker({ ...ok, netPayCents: (B2C_MAX_SHILLINGS + 1) * 100 }), /limit/)

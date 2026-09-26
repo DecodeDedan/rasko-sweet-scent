@@ -1,6 +1,6 @@
 'use client'
 
-import { Smartphone } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Field, Input, Modal, StatusChip, formatKes, useToast } from '@rasko/ui'
 import type { StatusTone } from '@rasko/ui'
@@ -14,7 +14,7 @@ import type { PayoutLine, PayoutPlan, PayoutStatus } from './mpesaPayouts.js'
 const STATUS: Record<PayoutStatus, { label: string; tone: StatusTone }> = {
   queued: { label: 'Waiting to send', tone: 'neutral' },
   sending: { label: 'Sending', tone: 'neutral' },
-  accepted: { label: 'With M-Pesa', tone: 'neutral' },
+  accepted: { label: 'Awaiting confirmation', tone: 'neutral' },
   paid: { label: 'Paid', tone: 'success' },
   failed: { label: 'Not paid', tone: 'danger' },
   unknown: { label: 'Check statement', tone: 'warning' },
@@ -22,13 +22,18 @@ const STATUS: Record<PayoutStatus, { label: string; tone: StatusTone }> = {
 
 const shillings = (value: number) => `KES ${value.toLocaleString('en-KE')}`
 
+const CHANNEL_LABEL = { mpesa: 'M-Pesa', bank: 'Bank transfer' } as const
+
 function lineDetail(line: PayoutLine): string {
-  const parts = [line.blocker ?? line.msisdn ?? '']
+  const via = line.channel
+    ? `${CHANNEL_LABEL[line.channel]}${line.destination ? ` to ${line.destination}` : ''}`
+    : ''
+  const parts = [line.blocker ?? via]
   if (!line.blocker && line.remainderCents > 0) {
-    parts.push(`${formatKes(line.remainderCents)} not sent (M-Pesa pays whole shillings)`)
+    parts.push(`${formatKes(line.remainderCents)} not sent (payouts are whole shillings)`)
   }
   if (line.payout?.status === 'paid' && line.payout.receipt) {
-    parts.push(`Receipt ${line.payout.receipt}`)
+    parts.push(`${line.payout.channel === 'bank' ? 'Reference' : 'Receipt'} ${line.payout.receipt}`)
   }
   if (
     (line.payout?.status === 'failed' || line.payout?.status === 'unknown') &&
@@ -40,8 +45,8 @@ function lineDetail(line: PayoutLine): string {
 }
 
 /**
- * Paying a run's salaries by M-Pesa B2C: a centre modal, because it is one
- * deliberate act. It lists who will be paid and how much, who will not and
+ * Paying a run's salaries, by M-Pesa or bank transfer: a centre modal, because
+ * it is one deliberate act. It lists who will be paid and how much, who will not and
  * why, and asks the owner to type the total, so the money that leaves is the
  * sum they read. Queuing is local; the server sends and settles each payout.
  */
@@ -75,7 +80,7 @@ export function PayMpesaDialog({
   const [error, setError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
 
-  // Re-read after each sync: that is when M-Pesa's answers come back.
+  // Re-read after each sync: that is when the provider's answers come back.
   useEffect(() => {
     if (!repo) return
     let cancelled = false
@@ -100,8 +105,8 @@ export function PayMpesaDialog({
       const count = await repo.request(runId, typed, newId)
       showToast({
         tone: 'success',
-        title: 'Salaries sent to M-Pesa',
-        description: `${count} payment${count === 1 ? '' : 's'} queued. Each payslip is marked paid when M-Pesa confirms it.`,
+        title: 'Salaries sent for payment',
+        description: `${count} payment${count === 1 ? '' : 's'} queued. Each payslip is marked paid when its payment is confirmed.`,
       })
       onRequested()
       onClose()
@@ -120,14 +125,14 @@ export function PayMpesaDialog({
       isOpen
       size="lg"
       onClose={onClose}
-      title="Pay salaries by M-Pesa"
+      title="Pay salaries"
       description={periodLabel}
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
           <Button
             variant="primary"
-            leadingIcon={<Smartphone size={15} aria-hidden="true" />}
+            leadingIcon={<Send size={15} aria-hidden="true" />}
             isLoading={isSending}
             disabled={!plan || plan.payable.length === 0}
             onClick={() => void send()}
@@ -177,7 +182,7 @@ export function PayMpesaDialog({
             </p>
             <Field
               label="Type the total to confirm"
-              hint={`Enter ${total.toLocaleString('en-KE')} exactly. Money sent by M-Pesa cannot be recalled.`}
+              hint={`Enter ${total.toLocaleString('en-KE')} exactly. Money sent cannot be recalled.`}
             >
               <Input
                 inputMode="numeric"
@@ -189,8 +194,7 @@ export function PayMpesaDialog({
           </>
         ) : plan ? (
           <p className="client-empty">
-            No one in this run can be paid by M-Pesa right now. The reason is shown against each
-            name.
+            No one in this run can be paid out right now. The reason is shown against each name.
           </p>
         ) : null}
       </div>

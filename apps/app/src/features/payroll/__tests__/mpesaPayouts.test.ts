@@ -72,7 +72,7 @@ describe('M-Pesa salary payouts (migration 20260927000100)', () => {
     })
 
     const reason = (name: string) => plan.lines.find((line) => line.employeeName === name)?.blocker
-    expect(reason('Mary Chebet')).toMatch(/bank/)
+    expect(reason('Mary Chebet')).toMatch(/bank account/)
     expect(reason('John Kamau')).toMatch(/M-Pesa number/)
     expect(reason('Ann Njeri')).toMatch(/Already paid/)
   })
@@ -101,6 +101,31 @@ describe('M-Pesa salary payouts (migration 20260927000100)', () => {
     const manager = new MpesaPayoutsRepository(db, 'manager', { userId: OWNER })
     await expect(manager.request(RUN, '41456', newId)).rejects.toBeInstanceOf(PayoutRuleError)
     await expect(owner.request(RUN, '41456', newId)).rejects.toThrow(/Approve the payroll run/)
+  })
+
+  it('pays a bank employee with a complete account by bank transfer (migration 20260929000100)', async () => {
+    await seed(db)
+    await db.execute(`UPDATE employees SET payment_details = ? WHERE id = ?`, [
+      JSON.stringify({ bank_code: '68', account_number: '0123456789', account_name: 'Mary C' }),
+      employee('3'),
+    ])
+
+    const plan = await owner.plan(RUN)
+    const mary = plan.lines.find((line) => line.employeeName === 'Mary Chebet')
+    expect(mary).toMatchObject({
+      channel: 'bank',
+      destination: 'Equity Bank ···6789',
+      blocker: null,
+      amountShillings: 30000,
+    })
+    expect(plan.totalShillings).toBe(23456 + 18000 + 30000)
+
+    await owner.request(RUN, '71456', newId)
+    const [queued] = await db.select<{ channel: string; msisdn: string | null }>(
+      'SELECT channel, msisdn FROM payroll_payouts WHERE payroll_item_id = ?',
+      [item('3')],
+    )
+    expect(queued).toEqual({ channel: 'bank', msisdn: null })
   })
 
   it('lets a failed payout be sent again, but never one that may have gone through', async () => {

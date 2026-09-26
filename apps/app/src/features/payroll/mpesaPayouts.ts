@@ -2,32 +2,47 @@ import { Repository } from '../../data/repositories/repository.js'
 import type { WriteContext } from '../../data/repositories/repository.js'
 import type { SqlDatabase } from '../../data/sqlite/types.js'
 import type { Role } from '../../auth/session.js'
-// The same rules the server applies (migration 20260927000100, b2c.js), so
-// the plan the owner confirms is the payout the server will make.
+// The same rules the server applies (migrations 20260927000100 and
+// 20260929000100, rules.js), so the plan the owner confirms is the payout the
+// server will make.
 import {
+  bankAccount,
+  bankName,
   payoutAmount,
   payoutBlocker,
   toMsisdn,
-} from '../../../../../supabase/functions/_shared/mpesa/b2c.js'
+} from '../../../../../supabase/functions/_shared/payouts/rules.js'
 
 /**
- * M-Pesa B2C salary payouts. Requesting one is a local insert naming the
- * payslip line; sync carries it up, the server fixes the amount and phone,
- * sends it, and the outcome syncs back. Nothing here touches the network.
+ * Salary payouts, by M-Pesa or bank transfer. Requesting one is a local insert
+ * naming the payslip line; sync carries it up, the server fixes the amount,
+ * channel and destination, sends it through the configured provider (Daraja
+ * or IntaSend), and the outcome syncs back. Nothing here touches the network.
+ * (The name predates bank payouts.)
  */
 
 export type PayoutStatus = 'queued' | 'sending' | 'accepted' | 'paid' | 'failed' | 'unknown'
 
+export type PayoutChannel = 'mpesa' | 'bank'
+
 export interface PayoutLine {
   itemId: string
   employeeName: string
+  channel: PayoutChannel | null
+  /** Where the money goes: the M-Pesa number, or "Equity Bank ···6789". */
+  destination: string | null
   msisdn: string | null
   amountShillings: number
   remainderCents: number
   /** Why this line will not be sent by M-Pesa; null when it will. */
   blocker: string | null
   /** The latest payout for this line, if one was requested. */
-  payout: { status: PayoutStatus; receipt: string | null; detail: string | null } | null
+  payout: {
+    status: PayoutStatus
+    channel: PayoutChannel
+    receipt: string | null
+    detail: string | null
+  } | null
 }
 
 export interface PayoutPlan {
@@ -39,6 +54,16 @@ export interface PayoutPlan {
 
 /** A payout that may already be moving money; its line cannot be sent again. */
 const LIVE: readonly PayoutStatus[] = ['queued', 'sending', 'accepted', 'unknown', 'paid']
+
+/** payment_details arrives as JSON text from SQLite, or already parsed. */
+function parseDetails(value: unknown): unknown {
+  if (typeof value !== 'string') return value
+  try {
+    return JSON.parse(value) as unknown
+  } catch {
+    return null
+  }
+}
 
 export class PayoutRuleError extends Error {
   constructor(message: string) {
@@ -61,8 +86,9 @@ export class MpesaPayoutsRepository {
   async plan(runId: string): Promise<PayoutPlan> {
     const rows = await this.db.select<Record<string, unknown>>(
       `SELECT i.id AS item_id, i.net_pay_cents, i.paid_at,
-              e.full_name, e.phone, e.payment_method,
-              p.status AS payout_status, p.mpesa_receipt, p.result_desc
+              e.full_name, e.phone, e.payment_method, e.payment_details,
+              p.status AS payout_status, p.channel AS payout_channel,
+              p.mpesa_receipt, p.result_desc
          FROM payroll_items i
          LEFT JOIN employees e ON e.id = i.employee_id
          LEFT JOIN payroll_payouts p ON p.id = (
@@ -77,18 +103,29 @@ export class MpesaPayoutsRepository {
     const lines = rows.map((row): PayoutLine => {
       const netPayCents = Number(row['net_pay_cents'] ?? 0)
       const msisdn = toMsisdn(row['phone'] as string | null)
+      const method = (row['payment_method'] as string | null) ?? null
+      const channel: PayoutChannel | null = method === 'mpesa' || method === 'bank' ? method : null
+      const bank = bankAccount(parseDetails(row['payment_details']))
       const status = (row['payout_status'] as PayoutStatus | null) ?? null
       const isLive = status !== null && LIVE.includes(status)
       const { amountShillings, remainderCents } = payoutAmount(netPayCents)
       const ruleBlocker = payoutBlocker({
         netPayCents,
         msisdn,
-        paymentMethod: (row['payment_method'] as string | null) ?? null,
+        paymentMethod: method,
         isPaid: row['paid_at'] !== null,
+        bank,
       })
       return {
         itemId: String(row['item_id']),
         employeeName: String(row['full_name'] ?? 'Unknown employee'),
+        channel,
+        destination:
+          channel === 'bank'
+            ? bank
+              ? `${bankName(bank.bankCode) ?? `Bank ${bank.bankCode}`} ···${bank.accountNumber.slice(-4)}`
+              : null
+            : msisdn,
         msisdn,
         amountShillings,
         remainderCents,
@@ -96,6 +133,7 @@ export class MpesaPayoutsRepository {
         payout: status
           ? {
               status,
+              channel: row['payout_channel'] === 'bank' ? 'bank' : 'mpesa',
               receipt: (row['mpesa_receipt'] as string | null) ?? null,
               detail: (row['result_desc'] as string | null) ?? null,
             }
@@ -130,7 +168,7 @@ export class MpesaPayoutsRepository {
 
     const plan = await this.plan(runId)
     if (plan.payable.length === 0) {
-      throw new PayoutRuleError('There is no one left to pay by M-Pesa in this run.')
+      throw new PayoutRuleError('There is no one left to pay in this run.')
     }
     const typed = Number(typedTotal.replace(/[,\s]/g, ''))
     if (!Number.isFinite(typed) || typed !== plan.totalShillings) {
@@ -139,8 +177,8 @@ export class MpesaPayoutsRepository {
       )
     }
 
-    // The amount and phone travel only as a local preview; the server
-    // replaces both from the approved run (app.prepare_payroll_payout).
+    // The amount, channel and destination travel only as a local preview; the
+    // server replaces them all from the approved run (app.prepare_payroll_payout).
     for (const line of plan.payable) {
       await this.payouts.insert({
         id: newId(),
@@ -148,7 +186,8 @@ export class MpesaPayoutsRepository {
         payroll_item_id: line.itemId,
         amount_cents: line.amountShillings * 100,
         remainder_cents: line.remainderCents,
-        msisdn: line.msisdn,
+        msisdn: line.channel === 'mpesa' ? line.msisdn : null,
+        channel: line.channel ?? 'mpesa',
         status: 'queued',
         attempts: 0,
       })

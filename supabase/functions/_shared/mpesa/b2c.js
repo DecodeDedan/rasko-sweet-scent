@@ -16,60 +16,15 @@ export const MPESA_BASE_URL = {
 }
 export const DEFAULT_B2C_PATH = '/mpesa/b2c/v3/paymentrequest'
 
-/**
- * Safaricom's per-transaction B2C bounds in shillings. Provider limits, not
- * business settings: a salary above the ceiling has to go by bank.
- * unverified: current Daraja B2C limits; confirm with Safaricom when the
- * shortcode is approved.
- */
-export const B2C_MIN_SHILLINGS = 10
-export const B2C_MAX_SHILLINGS = 250000
-
-/**
- * B2C sends whole shillings. The payout is net pay rounded DOWN, so M-Pesa
- * never overpays; the cents left over are reported, to be settled another way.
- * @param {number} netPayCents
- * @returns {{ amountShillings: number, amountCents: number, remainderCents: number }}
- */
-export function payoutAmount(netPayCents) {
-  const net = Math.max(0, Math.trunc(Number(netPayCents) || 0))
-  const amountShillings = Math.floor(net / 100)
-  return {
-    amountShillings,
-    amountCents: amountShillings * 100,
-    remainderCents: net - amountShillings * 100,
-  }
-}
-
-/**
- * The stored phone (+2547XXXXXXXX, enforced by the employees CHECK) as the
- * 2547XXXXXXXX form Daraja wants. Anything else is refused rather than guessed.
- * @param {string | null | undefined} phone
- * @returns {string | null}
- */
-export function toMsisdn(phone) {
-  const digits = String(phone ?? '').replace(/[\s-]/g, '')
-  const match = /^(?:\+?254|0)([17]\d{8})$/.exec(digits)
-  return match ? `254${match[1]}` : null
-}
-
-/**
- * Why an item cannot be paid by M-Pesa, or null if it can.
- * @param {{ netPayCents: number, msisdn: string | null, paymentMethod: string | null, isPaid: boolean }} item
- */
-export function payoutBlocker(item) {
-  if (item.isPaid) return 'Already paid.'
-  if (item.paymentMethod !== 'mpesa') return 'Paid by bank, not M-Pesa.'
-  if (!item.msisdn) return 'No valid M-Pesa number on the employee record.'
-  const { amountShillings } = payoutAmount(item.netPayCents)
-  if (amountShillings < B2C_MIN_SHILLINGS) {
-    return `Below the M-Pesa minimum of KES ${B2C_MIN_SHILLINGS}.`
-  }
-  if (amountShillings > B2C_MAX_SHILLINGS) {
-    return `Above the M-Pesa limit of KES ${B2C_MAX_SHILLINGS.toLocaleString('en-KE')}; pay by bank.`
-  }
-  return null
-}
+// The rules both providers share (amount, phone, limits) live in
+// ../payouts/rules.js; re-exported so Daraja callers keep one import.
+export {
+  B2C_MAX_SHILLINGS,
+  B2C_MIN_SHILLINGS,
+  payoutAmount,
+  payoutBlocker,
+  toMsisdn,
+} from '../payouts/rules.js'
 
 /**
  * The B2C request body. `payoutId` is our row id and becomes the

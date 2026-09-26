@@ -435,3 +435,20 @@ leaver's company mail to a colleague is not built. Backups: the nightly
 refuses a dump missing any core table's data, and records each verified backup
 in `backup_runs`, which the owner's System screen shows (FR-9.5). Not yet run:
 it needs the R2 bucket and GitHub secrets in `docs/restore-runbook.md`.
+
+**16. Salaries paid through IntaSend, by M-Pesa and by bank.** Project owner,
+2026-09-26, after comparing IntaSend with TendePay: IntaSend has a public
+payouts API and sandbox; TendePay is a payroll product of its own that would
+duplicate this module. IntaSend sends to M-Pesa (B2C) and to Kenyan banks
+(PesaLink, KES 100 to 999,999) from one funded wallet. Decisions taken for
+sign-off: the provider is a server secret (`PAYOUT_PROVIDER`, `daraja` by
+default) so switching is a settings change; each payslip is its own IntaSend
+request, released without IntaSend's second approval step because the typed
+total is the approval; bank employees are paid only when their record carries
+a bank and account number, otherwise they are listed for payment by hand;
+IntaSend's callback is never trusted as it stands, only its status endpoint
+read with our key. Wallet top-up and balance stay on the IntaSend dashboard.
+Built and tested (migration `20260929000100`, `_shared/payouts/`); **not yet
+run against the IntaSend sandbox**, which needs a sandbox secret key. Before
+going live, confirm fees, the float's custodian bank and idempotency with
+IntaSend in writing. See `docs/intasend-setup.md`.

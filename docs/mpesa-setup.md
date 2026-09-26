@@ -4,6 +4,10 @@ Owner-requested extension (2026-09-27). PRD §4 leaves Daraja reconciliation of
 _incoming_ payments out of v1; paying salaries _out_ was not covered, so this is
 recorded in `docs/PROGRESS.md` (decision 13) for client sign-off.
 
+IntaSend can send the same payouts instead, and also pays bank accounts: see
+`docs/intasend-setup.md`. `PAYOUT_PROVIDER` (a function secret) picks which one
+sends; it defaults to `daraja`, the integration described here.
+
 ## How it works
 
 1. An owner opens an **approved** payroll run and chooses **Pay by M-Pesa**. The

@@ -1,9 +1,17 @@
-// Sends one queued salary payout to M-Pesa B2C (migration 20260927000100).
+// Sends one queued salary payout (migrations 20260927000100, 20260929000100).
+// The name predates IntaSend; it is the payout dispatcher for both providers,
+// and app.payout_dispatch points at it in every environment.
+//
+// PAYOUT_PROVIDER picks who sends: 'daraja' (the default; M-Pesa only) or
+// 'intasend' (M-Pesa and bank). The provider is stamped on the row when it is
+// claimed, so its answer is always checked with the provider that sent it.
 //
 // Called by the database (insert trigger and the once-a-minute sweep) with
 // { id } only; verify_jwt is off. It re-reads the row with the service key and
-// acts only on a row it can move from 'queued' to 'sending' in one conditional
-// UPDATE, so a duplicate or forged call cannot send anything twice.
+// sends only a row it can move from 'queued' to 'sending' in one conditional
+// UPDATE, so a duplicate or forged call cannot send anything twice. For an
+// IntaSend payout still 'accepted', the same call asks IntaSend for its
+// status instead: a read, so a forged call can at most hurry an answer along.
 //
 // WHEN MONEY MAY HAVE MOVED, STOP
 // Before the payment request leaves (no credentials, token refused, network
@@ -15,6 +23,12 @@
 import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 
 import { DEFAULT_B2C_PATH, MPESA_BASE_URL, b2cRequestBody } from '../_shared/mpesa/b2c.js'
+import {
+  type ClaimedPayout,
+  intasendConfig,
+  reconcileIntasendPayout,
+  sendIntasendPayout,
+} from '../_shared/payouts/intasendClient.ts'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 // Daraja will not call a ResultURL containing words such as "mpesa" or
@@ -110,6 +124,25 @@ async function record(admin: SupabaseClient, id: string, patch: Record<string, u
   if (error) console.error(`mpesa-b2c: could not record ${id}: ${error.message}`)
 }
 
+const PAYOUT_COLUMNS =
+  'id, payroll_run_id, employee_id, amount_cents, msisdn, channel, bank_code, bank_account, conversation_id, status, provider, attempts'
+
+type Provider = 'daraja' | 'intasend'
+
+function payoutProvider(): Provider | null {
+  const value = (Deno.env.get('PAYOUT_PROVIDER')?.trim() || 'daraja').toLowerCase()
+  return value === 'daraja' || value === 'intasend' ? value : null
+}
+
+async function periodOf(admin: SupabaseClient, runId: string): Promise<string> {
+  const { data: run } = await admin
+    .from('payroll_runs')
+    .select('period_year, period_month')
+    .eq('id', runId)
+    .maybeSingle()
+  return run ? `${MONTHS[run.period_month - 1]} ${run.period_year}` : ''
+}
+
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return json({ error: 'POST only.' }, 405)
 
@@ -123,23 +156,73 @@ Deno.serve(async (request) => {
 
   const url = Deno.env.get('SUPABASE_URL')
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  const config = mpesaConfig()
-  // Not configured: leave it queued and unclaimed; the sweep retries once set.
-  if (!url || !serviceKey || !config) return json({ error: 'M-Pesa is not configured.' }, 503)
-
+  const provider = payoutProvider()
+  if (!url || !serviceKey) return json({ error: 'Not configured.' }, 503)
+  if (!provider) return json({ error: 'PAYOUT_PROVIDER must be daraja or intasend.' }, 503)
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
+
+  const { data: current, error: readError } = await admin
+    .from('payroll_payouts')
+    .select(PAYOUT_COLUMNS)
+    .eq('id', id)
+    .maybeSingle()
+  if (readError) return json({ error: readError.message }, 500)
+  if (!current) return json({ skipped: 'no such payout' })
+
+  // An IntaSend payout already sent: ask what became of it.
+  if (current.status === 'accepted' && current.provider === 'intasend') {
+    const intasend = intasendConfig()
+    if ('error' in intasend) return json({ error: intasend.error }, 503)
+    const status = await reconcileIntasendPayout(admin, intasend.config, current as ClaimedPayout)
+    return json({ reconciled: current.id, status })
+  }
+  if (current.status !== 'queued') return json({ skipped: 'not queued' })
+
+  // Not configured: leave it queued and unclaimed; the sweep retries once set.
+  const intasend = provider === 'intasend' ? intasendConfig() : null
+  if (intasend && 'error' in intasend) return json({ error: intasend.error }, 503)
+  const config = provider === 'daraja' ? mpesaConfig() : null
+  if (provider === 'daraja' && !config) return json({ error: 'M-Pesa is not configured.' }, 503)
+
+  // Daraja has no bank rail. Refused before anything is sent, so it may be
+  // paid again once PAYOUT_PROVIDER is intasend.
+  if (provider === 'daraja' && current.channel === 'bank') {
+    await admin
+      .from('payroll_payouts')
+      .update({
+        status: 'failed',
+        provider,
+        result_desc:
+          'Bank payouts go through IntaSend, which is not switched on. Nothing was sent.',
+      })
+      .eq('id', current.id)
+      .eq('status', 'queued')
+    return json({ error: 'Bank payouts need IntaSend.' }, 422)
+  }
 
   const { data: payout, error: claimError } = await admin
     .from('payroll_payouts')
-    .update({ status: 'sending' })
+    .update({ status: 'sending', provider })
     .eq('id', id)
     .eq('status', 'queued')
-    .select('id, payroll_run_id, amount_cents, msisdn, attempts')
+    .select(PAYOUT_COLUMNS)
     .maybeSingle()
   if (claimError) return json({ error: claimError.message }, 500)
   if (!payout) return json({ skipped: 'not queued' })
 
   await record(admin, payout.id, { attempts: payout.attempts + 1 })
+  const period = await periodOf(admin, payout.payroll_run_id)
+
+  if (intasend) {
+    const status = await sendIntasendPayout(
+      admin,
+      intasend.config,
+      payout as ClaimedPayout,
+      `Salary ${period}`.trim(),
+    )
+    return json({ sent: payout.id, status }, status === 'failed' ? 422 : 200)
+  }
+  if (!config) return json({ error: 'M-Pesa is not configured.' }, 503)
 
   // ---- Before anything reaches Safaricom: nothing has been paid.
   let token: string
@@ -154,13 +237,6 @@ Deno.serve(async (request) => {
     })
     return json({ error: reason }, isCredential ? 422 : 502)
   }
-
-  const { data: run } = await admin
-    .from('payroll_runs')
-    .select('period_year, period_month')
-    .eq('id', payout.payroll_run_id)
-    .maybeSingle()
-  const period = run ? `${MONTHS[run.period_month - 1]} ${run.period_year}` : ''
 
   const body = b2cRequestBody(config, {
     payoutId: payout.id,

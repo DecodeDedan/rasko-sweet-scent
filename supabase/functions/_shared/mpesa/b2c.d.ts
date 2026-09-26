@@ -1,16 +1,9 @@
-// Types for b2c.js, so the app previews a payout with the very rules the
-// server applies. Deno reads the JSDoc in b2c.js instead.
-export const B2C_MIN_SHILLINGS: number
-export const B2C_MAX_SHILLINGS: number
-export function payoutAmount(netPayCents: number): {
-  amountShillings: number
-  amountCents: number
-  remainderCents: number
-}
-export function toMsisdn(phone: string | null | undefined): string | null
-export function payoutBlocker(item: {
-  netPayCents: number
-  msisdn: string | null
-  paymentMethod: string | null
-  isPaid: boolean
-}): string | null
+// Types for b2c.js. The shared payout rules it re-exports are typed in
+// ../payouts/rules.d.ts; Deno reads the JSDoc instead.
+export {
+  B2C_MAX_SHILLINGS,
+  B2C_MIN_SHILLINGS,
+  payoutAmount,
+  payoutBlocker,
+  toMsisdn,
+} from '../payouts/rules.js'

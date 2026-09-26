@@ -4,6 +4,10 @@ import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button, Field, Input, Modal, Select } from '@rasko/ui'
 
+import {
+  KENYA_BANKS,
+  bankAccount,
+} from '../../../../../supabase/functions/_shared/payouts/rules.js'
 import type { Allowance } from './statutory.js'
 import type { Employee, PaymentMethod, SalaryType } from './types.js'
 
@@ -38,8 +42,18 @@ export interface EmployeeFormValues {
   basic_pay_cents: number
   allowances: Allowance[]
   payment_method: PaymentMethod | null
+  /** Bank account for PesaLink payouts: { bank_code, account_number, account_name }. */
+  payment_details: Record<string, unknown> | null
   is_active: boolean
 }
+
+const BANK_OPTIONS = [
+  { value: '', label: 'Choose a bank' },
+  ...KENYA_BANKS.map((bank) => ({ value: bank.code, label: bank.name })),
+]
+
+const detail = (details: Record<string, unknown> | null | undefined, key: string) =>
+  typeof details?.[key] === 'string' ? (details[key] as string) : ''
 
 export function EmployeeForm({
   isOpen,
@@ -64,6 +78,11 @@ export function EmployeeForm({
   const [salaryType, setSalaryType] = useState<SalaryType>(employee?.salary_type ?? 'monthly')
   const [basicPay, setBasicPay] = useState(((employee?.basic_pay_cents ?? 0) / 100).toFixed(2))
   const [method, setMethod] = useState<PaymentMethod | ''>(employee?.payment_method ?? 'mpesa')
+  const [bankCode, setBankCode] = useState(detail(employee?.payment_details, 'bank_code'))
+  const [accountNumber, setAccountNumber] = useState(
+    detail(employee?.payment_details, 'account_number'),
+  )
+  const [accountName, setAccountName] = useState(detail(employee?.payment_details, 'account_name'))
   const [isActive, setIsActive] = useState(employee?.is_active ?? true)
   const [allowances, setAllowances] = useState<DraftAllowance[]>(
     (employee?.allowances ?? []).map((allowance) => ({
@@ -85,6 +104,23 @@ export function EmployeeForm({
     // The employees table CHECKs this exact shape; failing here beats a sync error.
     if (phone.trim() && !/^\+254[17][0-9]{8}$/.test(phone.trim())) {
       return setError('Enter the phone as +254 followed by nine digits, for example +254712345678.')
+    }
+
+    // A bank account is optional (the owner may pay by hand), but a partial one
+    // would fail at payout time, so it is all or nothing.
+    const hasBankInput = Boolean(bankCode || accountNumber.trim() || accountName.trim())
+    const bank =
+      method === 'bank' && hasBankInput
+        ? bankAccount({
+            bank_code: bankCode,
+            account_number: accountNumber,
+            account_name: accountName,
+          })
+        : null
+    if (method === 'bank' && hasBankInput && !bank) {
+      return setError(
+        'Choose the bank and enter the account number (5 to 24 letters or digits), or leave all three bank fields empty.',
+      )
     }
 
     const payCents = toCents(basicPay)
@@ -121,6 +157,13 @@ export function EmployeeForm({
       basic_pay_cents: payCents,
       allowances: prepared,
       payment_method: method || null,
+      payment_details: bank
+        ? {
+            bank_code: bank.bankCode,
+            account_number: bank.accountNumber,
+            account_name: bank.accountName ?? fullName.trim(),
+          }
+        : null,
       is_active: isActive,
     })
     setIsSaving(false)
@@ -216,6 +259,36 @@ export function EmployeeForm({
             ]}
           />
         </Field>
+
+        {method === 'bank' ? (
+          <>
+            <Field label="Bank" hint="Needed to pay salaries by bank transfer from the app.">
+              <Select
+                value={bankCode}
+                onChange={(event) => setBankCode(event.target.value)}
+                options={BANK_OPTIONS}
+              />
+            </Field>
+            <Field label="Account number">
+              <Input
+                value={accountNumber}
+                inputMode="numeric"
+                autoComplete="off"
+                onChange={(event) => setAccountNumber(event.target.value)}
+              />
+            </Field>
+            <Field
+              label="Account name"
+              hint="As the bank holds it. Leave empty to use the employee's name."
+            >
+              <Input
+                value={accountName}
+                autoComplete="off"
+                onChange={(event) => setAccountName(event.target.value)}
+              />
+            </Field>
+          </>
+        ) : null}
 
         {allowances.map((allowance, index) => (
           <div key={allowance.key} className="rsk-stack">

@@ -326,6 +326,14 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
   `unknown` means money may have moved and is never retried automatically. The app's
   preview imports the server's own rules from `_shared/mpesa/b2c.js`. Setup:
   `docs/mpesa-setup.md`.
+- **Salaries can also go through IntaSend, to M-Pesa or a bank** (migration
+  `20260929000100`, `_shared/payouts/`). `PAYOUT_PROVIDER` picks the sender;
+  `mpesa-b2c` is the dispatcher for both despite its name. IntaSend's callback
+  is only a hint: a payout is settled from IntaSend's status endpoint, and only
+  when the answer's `batch_reference` is our payout id. `requires_approval` is
+  `NO`, so an IntaSend send that times out is `unknown`, never retried. The
+  payout rules live in `_shared/payouts/rules.js` and are mirrored in
+  `app.prepare_payroll_payout`. Setup: `docs/intasend-setup.md`.
 - **Every account signs in with a company address** (`name@raskosweetscent.com`), and
   there are no mailboxes: `_shared/mailbox/routing.js` creates a Cloudflare Email
   Routing rule forwarding it to the person's own inbox. The invitation therefore goes
