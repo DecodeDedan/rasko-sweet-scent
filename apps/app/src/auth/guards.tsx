@@ -4,7 +4,7 @@ import { ShieldOff } from 'lucide-react'
 import { Button, Card, EmptyState } from '@rasko/ui'
 import type { ReactNode } from 'react'
 
-import { findModule } from '../shell/navigation.js'
+import { SUSPENDED_MODULES, canReach, findModule } from '../shell/navigation.js'
 import type { ModuleId } from '../shell/navigation.js'
 import type { Role } from './session.js'
 
@@ -27,8 +27,21 @@ export function ModuleGuard({
   children: ReactNode
 }) {
   const module = findModule(moduleId)
-  if (module.access[role].canAccess) return <>{children}</>
+  if (canReach(moduleId, role)) return <>{children}</>
+  if (SUSPENDED_MODULES.has(moduleId)) return <Suspended moduleLabel={module.label} />
   return <NoAccess moduleLabel={module.label} />
+}
+
+function Suspended({ moduleLabel }: { moduleLabel: string }) {
+  return (
+    <Card>
+      <EmptyState
+        icon={<ShieldOff size={20} aria-hidden="true" />}
+        title={`${moduleLabel} is switched off`}
+        description={`The owner has paused ${moduleLabel.toLowerCase()} for everyone until further notice.`}
+      />
+    </Card>
+  )
 }
 
 export function NoAccess({ moduleLabel }: { moduleLabel?: string }) {

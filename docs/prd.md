@@ -72,7 +72,9 @@ Rules:
 In scope (v1): modules 5.1–5.9, marketing website, company email, auto-update, backups,
 CSV data import, training.
 
-Out of scope (v1): KRA eTIMS integration [confirm with client's accountant — plan as v2],
+In scope since 2026-09-27 (owner): KRA eTIMS integration via OSCU — see `docs/etims.md`.
+
+Out of scope (v1):
 M-Pesa Daraja API auto-reconciliation (payments recorded manually in v1), SMS
 notifications, iOS, multi-branch, online shop / e-commerce, loyalty programs.
 

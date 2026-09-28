@@ -361,6 +361,9 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
 - **The first-run tour anchors on `data-tour`** attributes (sidebar and bottom
   nav items, `sync`, `help`). Renaming one without updating `onboarding/tour.ts`
   silently turns that stop into a centred dialog.
+- **Payroll is suspended by the owner** (2026-09-27, until further notice).
+  `SUSPENDED_MODULES` in `shell/navigation.ts` hides it from every role and
+  `ModuleGuard` refuses it; the §3.1 matrix is untouched. Remove the id to restore.
 - **The website build fails on purpose while the WhatsApp number is missing.**
   That is `scripts/check-content.mjs`, not a broken build.
 
@@ -477,6 +480,6 @@ danger `#B3261E`.
 
 ## Out of scope for v1
 
-eTIMS integration, M-Pesa Daraja auto-reconciliation (payments are recorded manually), SMS
-notifications, iOS, multi-branch, e-commerce, loyalty programs. Keep the KRA PIN field on
-invoices so eTIMS stays additive later.
+M-Pesa Daraja auto-reconciliation (payments are recorded manually), SMS
+notifications, iOS, multi-branch, e-commerce, loyalty programs. eTIMS came into scope on 2026-09-27
+(OSCU direct, designed in `docs/etims.md`, not yet built).

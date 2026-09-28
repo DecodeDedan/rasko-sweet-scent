@@ -176,8 +176,19 @@ export const MODULES: readonly ModuleDefinition[] = [
   },
 ]
 
+/**
+ * Modules switched off for everyone by the owner, whatever the matrix says
+ * (payroll: owner, 2026-09-27, "until further notice"). Remove an id to bring
+ * the module back; the matrix above is left untouched so nothing else changes.
+ */
+export const SUSPENDED_MODULES: ReadonlySet<ModuleId> = new Set<ModuleId>(['payroll'])
+
+export function canReach(id: ModuleId, role: Role): boolean {
+  return !SUSPENDED_MODULES.has(id) && findModule(id).access[role].canAccess
+}
+
 export function modulesForRole(role: Role): ModuleDefinition[] {
-  return MODULES.filter((module) => module.access[role].canAccess)
+  return MODULES.filter((module) => canReach(module.id, role))
 }
 
 export function findModule(id: ModuleId): ModuleDefinition {

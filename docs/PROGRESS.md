@@ -27,7 +27,7 @@ Supabase (not only a mock).
 | 5.5 | Invoices & payments                            | FR-5.1 – FR-5.8 | **Done**                    |
 | 5.6 | Products & inventory                           | FR-6.1 – FR-6.8 | **Done**                    |
 | 5.7 | Suppliers & purchases                          | FR-7.1 – FR-7.6 | **Done**                    |
-| 5.8 | Employees & payroll                            | FR-8.1 – FR-8.9 | **Done**                    |
+| 5.8 | Employees & payroll                            | FR-8.1 – FR-8.9 | **Done — suspended**        |
 | 5.2 | Dashboard & reports                            | FR-2.1 – FR-2.8 | **Done**                    |
 | 5.9 | Settings, audit & sync UI                      | FR-9.1 – FR-9.6 | **Done**                    |
 | —   | Marketing website                              | §10.3           | **Built** — content pending |
@@ -173,7 +173,7 @@ What remains needs facts only the client has, and cannot be recommended:
 | #   | Question                                | Needed before | Why it cannot be recommended                                                        |
 | --- | --------------------------------------- | ------------- | ----------------------------------------------------------------------------------- |
 | 6   | M-Pesa paybill/till and bank details    | Go-live       | Real account numbers. Invoices currently print demo values on the local stack only. |
-| 7   | eTIMS obligation                        | v2 planning   | Their accountant's call. The KRA PIN is already on documents, so it stays additive. |
+| 7   | eTIMS obligation                        | In scope      | Owner, 2026-09-27: build it, OSCU direct. KRA onboarding and accountant questions E1–E4 in `docs/etims.md`. |
 | 8   | ODPC registration status                | Go-live       | A registration fact, not a design choice. Payroll data is already role-gated.       |
 | 1   | Business model and product range detail | Training      | Copy and seed data only; nothing in the schema waits on it.                         |
 
@@ -298,7 +298,12 @@ the moment two devices received the same purchase offline.
 false. Movements always store `unit_cost_cents`, so valuation is correct either
 way; turning it on lets one odd purchase whipsaw the catalogue cost.
 
-## Employees & payroll (FR-8.1 – FR-8.9) — done
+## Employees & payroll (FR-8.1 – FR-8.9) — done, suspended
+
+**Suspended by the owner on 2026-09-27, until further notice.** `SUSPENDED_MODULES`
+in `shell/navigation.ts` hides Payroll from every role, owner included, and
+`ModuleGuard` refuses the screen. The data, the server functions and the PRD §3.1
+matrix are untouched. To bring it back, remove `'payroll'` from that set.
 
 | Requirement               | Where                                                                                   |
 | ------------------------- | --------------------------------------------------------------------------------------- |

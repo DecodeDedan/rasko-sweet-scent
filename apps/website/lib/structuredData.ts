@@ -17,10 +17,21 @@ function mapUrl(): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.location.mapQuery)}`
 }
 
+/**
+ * The farm's pin as GeoCoordinates, or null when `mapQuery` is a place name
+ * rather than "lat,lng". Local results rank on coordinates, not on the map link.
+ */
+function geo(): JsonLd | null {
+  const match = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/.exec(site.location.mapQuery)
+  if (match === null) return null
+  return { '@type': 'GeoCoordinates', latitude: Number(match[1]), longitude: Number(match[2]) }
+}
+
 export function homeJsonLd(logoPath: string, imagePath: string): JsonLd {
   const { location, contact, url } = site
   const absolute =
     url === null ? null : { url, logo: `${url}${logoPath}`, image: `${url}${imagePath}` }
+  const pin = geo()
 
   const business: JsonLd = {
     '@type': 'LocalBusiness',
@@ -37,6 +48,7 @@ export function homeJsonLd(logoPath: string, imagePath: string): JsonLd {
     },
     areaServed: { '@type': 'Country', name: location.country },
     hasMap: mapUrl(),
+    ...(pin !== null ? { geo: pin } : {}),
     ...(contact.email !== null ? { email: contact.email } : {}),
     ...(contact.phoneDisplay !== null ? { telephone: contact.phoneDisplay } : {}),
     ...(absolute ?? {}),

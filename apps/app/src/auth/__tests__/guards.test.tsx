@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import App from '../../App.js'
 import { createFakeGateway, makeProfile } from '../../test/fakeGateway.js'
-import { MODULES, modulesForRole } from '../../shell/navigation.js'
+import { MODULES, SUSPENDED_MODULES, modulesForRole } from '../../shell/navigation.js'
 import type { ModuleId } from '../../shell/navigation.js'
 import { ModuleGuard } from '../guards.js'
 import { ROLES } from '../session.js'
@@ -63,7 +63,9 @@ describe('navigation is driven by role', () => {
 })
 
 describe('ModuleGuard blocks a forbidden module for every role', () => {
-  const forbidden: Array<[Role, ModuleId]> = MODULES.flatMap((module) =>
+  const forbidden: Array<[Role, ModuleId]> = MODULES.filter(
+    (module) => !SUSPENDED_MODULES.has(module.id),
+  ).flatMap((module) =>
     ROLES.filter((role) => !module.access[role].canAccess).map(
       (role) => [role, module.id] as [Role, ModuleId],
     ),
@@ -84,6 +86,20 @@ describe('ModuleGuard blocks a forbidden module for every role', () => {
 
     expect(screen.getByText('You do not have access to this')).toBeInTheDocument()
     expect(screen.queryByText('secret contents')).not.toBeInTheDocument()
+  })
+
+  it.each(ROLES)('keeps suspended payroll from %s, owner included', (role) => {
+    expect(SUSPENDED_MODULES.has('payroll')).toBe(true)
+    expect(modulesForRole(role).map((m) => m.id)).not.toContain('payroll')
+
+    render(
+      <ModuleGuard moduleId="payroll" role={role}>
+        <p>payroll contents</p>
+      </ModuleGuard>,
+    )
+
+    expect(screen.getByText('Payroll is switched off')).toBeInTheDocument()
+    expect(screen.queryByText('payroll contents')).not.toBeInTheDocument()
   })
 
   it('renders the screen when the role is permitted', () => {
