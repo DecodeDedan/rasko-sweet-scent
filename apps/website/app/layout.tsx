@@ -9,7 +9,6 @@ import './site.css'
 import { SiteFooter } from '../components/SiteFooter'
 import { SiteHeader } from '../components/SiteHeader'
 import { ScrollMotion } from '../components/motion/ScrollMotion'
-import logo from '../../../docs/brand/logo.svg'
 import { photos } from '../content/photos'
 import { site } from '../content/site'
 
@@ -31,7 +30,6 @@ export const metadata: Metadata = {
   description: site.seo.description,
   applicationName: site.name,
   robots: { index: true, follow: true },
-  icons: { icon: { url: logo.src, type: 'image/svg+xml' } },
   openGraph: {
     title: site.seo.title,
     description: site.seo.description,

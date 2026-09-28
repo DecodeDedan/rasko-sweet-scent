@@ -16,7 +16,7 @@
     "android:init": "tauri android init",
     "android:dev": "tauri android dev",
     "android:build": "tauri android build --apk",
-    "icon": "node scripts/logo-square.mjs && tauri icon ../../docs/brand/logo-square.svg",
+    "icon": "node scripts/logo-square.mjs && tauri icon ../../docs/brand/logo-square.svg && node scripts/website-icons.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit"
   },
