@@ -1,0 +1,51 @@
+name: IndexNow
+
+# After every successful Vercel production deploy, tell the IndexNow engines
+# (Bing, Yandex, Seznam, Naver; Bing also feeds ChatGPT and Copilot search)
+# that the sitemap's pages changed, so they recrawl within hours instead of
+# weeks. Google does not take IndexNow; it reads the sitemap in Search Console.
+#
+# The key is public by design: IndexNow proves ownership by fetching
+# apps/website/public/indexnow-key.txt from the live site, not by secrecy.
+
+on:
+  deployment_status:
+
+jobs:
+  ping:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SITE: https://www.raskosweetscent.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Submit sitemap URLs
+        run: |
+          set -euo pipefail
+          key=$(cat apps/website/public/indexnow-key.txt)
+
+          # The live sitemap is the list of public pages; nothing to maintain here.
+          urls=$(curl -fsS --retry 3 --retry-delay 10 "$SITE/sitemap.xml" \
+            | grep -o '<loc>[^<]*</loc>' | sed -e 's#<loc>##' -e 's#</loc>##')
+          if [ -z "$urls" ]; then
+            echo "::error::sitemap.xml listed no URLs"
+            exit 1
+          fi
+
+          body=$(jq -n --arg host "${SITE#https://}" --arg key "$key" \
+            --arg loc "$SITE/indexnow-key.txt" --arg urls "$urls" \
+            '{host: $host, key: $key, keyLocation: $loc, urlList: ($urls | split("\n"))}')
+
+          # 200 and 202 both mean accepted; anything else fails the job so it is visible.
+          status=$(curl -sS --retry 3 --retry-delay 10 -o response.txt -w '%{http_code}' \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            -d "$body" https://api.indexnow.org/indexnow)
+          echo "IndexNow answered $status for $(echo "$urls" | wc -l) URLs"
+          if [ "$status" != 200 ] && [ "$status" != 202 ]; then
+            cat response.txt
+            exit 1
+          fi
