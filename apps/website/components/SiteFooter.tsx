@@ -85,7 +85,12 @@ export function SiteFooter() {
           </a>
           <span>
             Developed by{' '}
-            <a className="rw-link" href="https://okwaretech.com" rel="noopener">
+            <a
+              className="rw-link"
+              href="https://www.okwaretech.com"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               okwaretech
             </a>{' '}
             (okwaretech.com)
