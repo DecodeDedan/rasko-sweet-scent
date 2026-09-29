@@ -1,0 +1,1593 @@
+{
+  "info": {
+    "name": "eTIMS-OSCU-Integrator-Automated-Testing-Sandbox",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": ""
+  },
+  "item": [
+    {
+      "name": "Access Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "test(\"Status code is 200\", function () {",
+              "",
+              "",
+              "    expect(res.getStatus()).to.equal(200);",
+              "",
+              "",
+              "    var jsonData = res.getBody();",
+              "",
+              "",
+              "    bru.setVar(\"apigee-access-token\",jsonData.access_token);",
+              "",
+              "",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "url": {
+          "raw": "https://sbx.kra.go.ke/v1/token/generate?grant_type=client_credentials",
+          "host": [
+            "sbx",
+            "kra",
+            "go",
+            "ke"
+          ],
+          "path": [
+            "v1",
+            "token",
+            "generate"
+          ],
+          "query": [
+            {
+              "key": "grant_type",
+              "value": "client_credentials"
+            }
+          ],
+          "protocol": "https",
+          "variable": []
+        },
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "type": "string",
+              "value": ""
+            },
+            {
+              "key": "username",
+              "type": "string",
+              "value": ""
+            }
+          ]
+        },
+        "header": [],
+        "method": "GET",
+        "description": ""
+      }
+    },
+    {
+      "item": [
+        {
+          "name": "Send branch insurance information",
+          "request": {
+            "url": {
+              "raw": "{{url}}/branchInsuranceInfo",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "branchInsuranceInfo"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"isrccCd\":\"B#56_*y0\", //REQ✅ \n    \"isrccNm\":\"Britam\", //REQ✅ \n    \"isrcRt\":10, //REQ ✅ // cannot be negative✅ \n    \"useYn\":\"Y\", //REQ✅ \n    \"regrNm\":\"Admin\", //REQ✅ \n    \"regrId\":\"Admin\", //REQ✅ \n    \"modrNm\":\"Admin\",\n    \"modrId\":\"Admin\"\n    }  ",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Send branch user account",
+          "request": {
+            "url": {
+              "raw": "{{url}}/branchUserAccount",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "branchUserAccount"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"userId\":\"Zs#*12_&P\", //REQ✅\n    \"userNm\":\"Zs#*12_&P\", //REQ✅\n    \"pwd\":\"Zs#*12_&P\", //REQ✅\n    \"adrs\":null,\n    \"cntc\":null,\n    \"authCd\":null,\n    \"remark\":null,\n    \"useYn\":\"Y\", //REQ✅\n    \"regrNm\":\"Admin\", //REQ✅\n    \"regrId\":\"Admin\", //REQ✅\n    \"modrNm\":\"Admin\",\n    \"modrId\":\"Admin\"\n}  ",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Send customer information",
+          "request": {
+            "url": {
+              "raw": "{{url}}/branchSendCustomerInfo",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "branchSendCustomerInfo"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"custNo\":\"999991113\",\n    \"custTin\":\"A123456789Z\", // Adhere to pin format ✅\n    \"custNm\":\"MTEJA LIMITED\", \n    \"adrs\":null,\n    \"telNo\":null,\n    \"email\":null,\n    \"faxNo\":null,\n    \"useYn\":\"Y\", \n    \"remark\":null,\n    \"regrNm\":\"Admin\", \n    \"regrId\":\"Admin\",\n    \"modrNm\":\"Admin\",\n    \"modrId\":\"Admin\"\n    } ",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              },
+              {
+                "key": "",
+                "type": "default",
+                "value": "",
+                "disabled": true
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        }
+      ],
+      "name": "Branch Information Management"
+    },
+    {
+      "item": [
+        {
+          "name": "Branch List <New Endpoints>",
+          "request": {
+            "url": {
+              "raw": "{{url}}/branchList",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "branchList"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"tin\":\"{{tin}}\",// Meet pin format ✅\n    \"bhfId\":\"{{bhfId}}\",\n    \"lastReqDt\":\"{{lastReqDt}}\" // not future date ✅\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Get Code list",
+          "request": {
+            "url": {
+              "raw": "{{url}}/selectCodeList",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "selectCodeList"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"tin\":\"{{tin}}\",// VALIDATED ✅\n    \"bhfId\": \"{{bhfId}}\",\n    \"lastReqDt\": \"{{lastReqDt}}\"//Not future date ✅\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              },
+              {
+                "key": "{{go_live_app_id_key}}",
+                "type": "default",
+                "value": "{{go_live_app_id}}",
+                "disabled": true
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Get Customer PIN Info",
+          "request": {
+            "url": {
+              "raw": "{{url}}/customerPinInfo",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "customerPinInfo"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"tin\": \"{{tin}}\",// adhere to pin format ✅\n    \"bhfId\": \"{{bhfId}}\",\n    \"lastReqDt\": \"{{lastReqDt}}\" // not future date ✅\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Get Item Classification List",
+          "request": {
+            "url": {
+              "raw": "{{url}}/selectItemClass",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "selectItemClass"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"tin\":\"{{tin}}\", // meet the length standard ✅\n    \"bhfId\": \"{{bhfId}}\",\n    \"lastReqDt\":\"{{lastReqDt}}\" // Not future date ✅\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Get Taxpayer Info",
+          "request": {
+            "url": {
+              "raw": "{{url}}/selectTaxpayerInfo",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "selectTaxpayerInfo"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"tin\":\"{{tin}}\",\n    \"bhfId\": \"{{bhfId}}\",\n    \"lastReqDt\": \"{{lastReqDt}}\"\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Get notice list",
+          "request": {
+            "url": {
+              "raw": "{{url}}/selectNoticeList",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "selectNoticeList"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"tin\":\"{{tin}}\",// should meet the pin fomat ✅\n    \"bhfId\":\"{{bhfId}}\",\n    \"lastReqDt\":\"{{lastReqDt}}\" //should not bemore than 1 hr ago ✅\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        }
+      ],
+      "name": "Data Management"
+    },
+    {
+      "item": [
+        {
+          "name": "Get imported item information",
+          "request": {
+            "url": {
+              "raw": "{{url}}/importedItemInfo",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "importedItemInfo"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"tin\":\"{{tin}}\",\n    \"bhfId\": \"{{bhfId}}\",\n    \"lastReqDt\": \"{{lastReqDt}}\"\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Send (converted) imported item information",
+          "request": {
+            "url": {
+              "raw": "{{url}}/importedItemConvertedInfo",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "importedItemConvertedInfo"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "    {\n    \"taskCd\":\"20230209010498\",\n    \"dclDe\":\"01022023\",\n    \"itemSeq\":1,\n    \"hsCd\":\"63079000\",\n    \"itemClsCd\":\"1010150600\",\n    \"itemCd\":\"UG1NTBA00000002\",\n    \"imptItemSttsCd\":\"3\",\n    \"remark\":\"remark\",\n    \"modrNm\":\"Admin\",\n    \"modrId\":\"Admin\"\n    }",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        }
+      ],
+      "name": "Imports Item Management"
+    },
+    {
+      "item": [
+        {
+          "name": "OSCU initialization",
+          "request": {
+            "url": {
+              "raw": "{{url}}/initialize",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "initialize"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"tin\":\"{{tin}}\",\n    \"bhfId\": \"{{bhfId}}\",\n    \"dvcSrlNo\": \"{{dvcSrlNo}}\"   \n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        }
+      ],
+      "name": "Initialization"
+    },
+    {
+      "item": [
+        {
+          "name": "Get Item Info",
+          "request": {
+            "url": {
+              "raw": "{{url}}/itemInfo",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "itemInfo"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"tin\":\"{{tin}}\",\n    \"bhfId\": \"{{bhfId}}\",\n    \"lastReqDt\": \"{{lastReqDt}}\"\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Send Item Composition",
+          "request": {
+            "url": {
+              "raw": "{{url}}/saveItemComposition",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "saveItemComposition"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"itemCd\": \"AO2NTBA00000005\", //\n    \"cpstItemCd\": \"UG1NTBA00000002\", // should be existing\n    \"cpstQty\": 4000,\n    \"regrId\": \"Admin\",\n    \"regrNm\": \"Admin\"\n}\n\n",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Send/Save Item information",
+          "request": {
+            "url": {
+              "raw": "{{url}}/saveItem",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "saveItem"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "\n    {\n    \"itemCd\":\"AO2NTBA00000005\",//To be validated based on formula\n    \"itemClsCd\":\"1010151700\", //to be among the list of getItemClasification response - ✅  \n    \"itemTyCd\":\"2\",  //posible values 1,2,3\n    \"itemNm\":\"Brand E\", \n    \"itemStdNm\":null,\n    \"orgnNatCd\":\"AO\", // part of basic country code✅ -Currently accepts all african countries\n    \"pkgUnitCd\":\"NT\", \n    \"qtyUnitCd\":\"BA\",\n    \"taxTyCd\":\"B\",\n    \"btchNo\":null,\n    \"bcd\":null,\n    \"dftPrc\":1000, //Should not be negative✅\n    \"grpPrcL1\":0,//Should not be negative✅\n    \"grpPrcL2\":0,//Should not be negative✅\n    \"grpPrcL3\":0,//Should not be negative✅\n    \"grpPrcL4\":0,//Should not be negative✅\n    \"grpPrcL5\":null,\n    \"addInfo\":null,\n    \"sftyQty\":null,\n    \"isrcAplcbYn\":\"N\",\n    \"useYn\":\"Y\",\n    \"regrNm\":\"Admin\",\n    \"regrId\":\"Admin\",\n    \"modrNm\":\"Admin\",\n    \"modrId\":\"Admin\"\n    }\n",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        }
+      ],
+      "name": "Item Management"
+    },
+    {
+      "item": [
+        {
+          "name": "Get purchase transaction information",
+          "request": {
+            "url": {
+              "raw": "{{url}}/getPurchaseTransactionInfo",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "getPurchaseTransactionInfo"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"tin\":\"{{tin}}\",\n    \"bhfId\": \"{{bhfId}}\",\n    \"lastReqDt\": \"{{lastReqDt}}\"\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Send purchase transaction information",
+          "request": {
+            "url": {
+              "raw": "{{url}}/sendPurchaseTransactionInfo",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "sendPurchaseTransactionInfo"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"invcNo\": 1,\n    \"orgInvcNo\": 0,\n    \"spplrTin\":\"P000000000D\",\n    \"spplrBhfId\": \"{{bhfId}}\",\n    \"spplrNm\": \"ISII  051092TEST\",\n    \"spplrInvcNo\": 21,\n    \"regTyCd\": \"M\",\n    \"pchsTyCd\": \"N\",\n    \"rcptTyCd\": \"P\",\n    \"pmtTyCd\": \"01\",\n    \"pchsSttsCd\": \"02\",\n    \"cfmDt\": \"20250819124239\",\n    \"pchsDt\": \"20250819\",\n    \"wrhsDt\": null,\n    \"cnclReqDt\": null,\n    \"cnclDt\": null,\n    \"rfdDt\": null,\n    \"totItemCnt\": 2,\n    \"taxblAmtA\": 0,\n    \"taxblAmtB\": 1453.87,\n    \"taxblAmtC\": 3350.20,\n    \"taxblAmtD\": 0,\n    \"taxblAmtE\": 0,\n    \"taxRtA\": 0,\n    \"taxRtB\": 16,\n    \"taxRtC\": 0,\n    \"taxRtD\": 0,\n    \"taxRtE\": 0,\n    \"taxAmtA\": 0,\n    \"taxAmtB\": 232.62,\n    \"taxAmtC\": 0,\n    \"taxAmtD\": 0,\n    \"taxAmtE\": 0,\n    \"totTaxblAmt\": 4804.07,\n    \"totTaxAmt\": 232.62,\n    \"totAmt\": 5036.69,\n    \"remark\": null,\n    \"regrNm\": \"Admin\",\n    \"regrId\": \"Admin\",\n    \"modrNm\": \"Admin\",\n    \"modrId\": \"Admin\",\n    \"itemList\": [\n        {\n            \"itemSeq\": 1,\n            \"itemCd\": \"KE2NTBA00000001\",\n            \"itemClsCd\": \"1000000000\",\n            \"itemNm\": \"Brand A\",\n            \"bcd\": \"\",\n            \"spplrItemClsCd\":\"5059690800\",\n            \"spplrItemCd\": \"KE1NTXU1000003\",\n            \"spplrItemNm\": \"Product-C-3\",\n            \"pkgUnitCd\": \"NT\",\n            \"pkg\": 1,\n            \"qtyUnitCd\": \"BA\",\n            \"qty\": 1,\n            \"prc\": 3350.2,\n            \"splyAmt\": 3350.2,\n            \"dcRt\": 0,\n            \"dcAmt\": 0,\n            \"taxblAmt\": 3350.2,\n            \"taxTyCd\": \"C\",\n            \"taxAmt\": 0,\n            \"totAmt\": 3350.2,\n            \"itemExprDt\": null\n        },\n        {\n            \"itemSeq\": 2,\n            \"itemCd\": \"BI3NTBA00000004\",\n            \"itemClsCd\": \"1010151700\",\n            \"itemNm\": \"Brand D\",\n            \"bcd\": \"\",\n            \"spplrItemClsCd\":\"5059690800\",\n            \"spplrItemCd\": \"KE1NTXU1000001\",\n            \"spplrItemNm\": \"Product-A-1\",\n            \"pkgUnitCd\": \"NT\",\n            \"pkg\": 1,\n            \"qtyUnitCd\": \"BA\",         \n            \"qty\": 1,\n            \"prc\": 1686.49,\n            \"splyAmt\": 1686.49,\n            \"dcRt\": 0,\n            \"dcAmt\": 0,\n            \"taxblAmt\": 1453.87,\n            \"taxTyCd\": \"B\",\n            \"taxAmt\":  232.62,\n            \"totAmt\": 1686.49,\n            \"itemExprDt\": null\n        }\n    ]\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        }
+      ],
+      "name": "Purchase Management"
+    },
+    {
+      "item": [
+        {
+          "name": "Save sales transaction information",
+          "request": {
+            "url": {
+              "raw": "{{url}}/sendSalesTransaction",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "sendSalesTransaction"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"invcNo\": 4,\n    \"orgInvcNo\": 2,\n    \"custTin\": \"A123456789Z\",\n    \"custNm\": \"Test Customer\",\n    \"salesTyCd\": \"N\",\n    \"rcptTyCd\": \"R\",\n    \"pmtTyCd\": \"01\",\n    \"salesSttsCd\": \"02\",\n    \"cfmDt\": \"20250819110300\",\n    \"salesDt\": \"20250818\",\n    \"stockRlsDt\": \"20250819110300\",\n    \"cnclReqDt\": 20250819120300,\n    \"cnclDt\": 20250819120300,\n    \"rfdDt\": \"20250818110300\",\n    \"rfdRsnCd\": \"06\",\n    \"totItemCnt\": 1,\n    \"taxblAmtA\": 81000,\n    \"taxblAmtB\": 0,\n    \"taxblAmtC\": 0,\n    \"taxblAmtD\": 0,\n    \"taxblAmtE\": 0,\n    \"taxRtA\": 0,\n    \"taxRtB\": 16,\n    \"taxRtC\": 0,\n    \"taxRtD\": 0,\n    \"taxRtE\": 0,\n    \"taxAmtA\": 0,\n    \"taxAmtB\": 0,\n    \"taxAmtC\": 0,\n    \"taxAmtD\": 0,\n    \"taxAmtE\": 0,\n    \"totTaxblAmt\": 81000,\n    \"totTaxAmt\": 0,\n    \"totAmt\": 81000,\n    \"prchrAcptcYn\": \"N\",\n    \"remark\": null,\n    \"regrId\": \"Admin\",\n    \"regrNm\": \"Admin\",\n    \"modrId\": \"Admin\",\n    \"modrNm\": \"Admin\",\n    \"receipt\": {\n        \"custTin\": \"A123456789Z\",\n        \"custMblNo\": null,\n        \"rptNo\": 1,\n        \"rcptPbctDt\": \"20280819120300\",\n        \"trdeNm\": \"\",\n        \"adrs\": \"\",\n        \"topMsg\": \"Shopwithus\",\n        \"btmMsg\": \"Welcome\",\n        \"prchrAcptcYn\": \"N\"\n    },\n    \"itemList\": [\n        {\n            \"itemSeq\": 1,\n            \"itemCd\": \"KE2NTBA00000001\",\n            \"itemClsCd\": \"1000000000\",\n            \"itemNm\": \"Brand A\",\n            \"bcd\": null,\n            \"pkgUnitCd\": \"NT\",\n            \"pkg\": 1,\n            \"qtyUnitCd\": \"BA\",\n            \"qty\": 90,\n            \"prc\": 1000,\n            \"splyAmt\": 81000,\n            \"dcRt\": 10,\n            \"dcAmt\": 9000,\n            \"isr ccCd\": null,\n            \"isrccNm\": null,\n            \"isrcRt\": null,\n            \"isrcAmt\": null,\n            \"taxTyCd\": \"C\",\n            \"taxblAmt\": 81000,\n            \"taxAmt\": 0,\n            \"totAmt\": 81000\n        }\n    ]\n}\n\n\n\n\n\n",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Select Invoice Details",
+          "request": {
+            "url": {
+              "raw": "{{url}}/selectInvoiceDetail",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "selectInvoiceDetail"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"tin\":\"{{tin}}\",\n    \"bhfId\": \"{{bhfId}}\",\n    \"invcNo\": \"1\"\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Select sales transaction",
+          "request": {
+            "url": {
+              "raw": "{{url}}/selectSalesTransactions",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "selectSalesTransactions"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"tin\":\"{{tin}}\",\n    \"bhfId\": \"{{bhfId}}\",\n    \"lastReqDt\": \"20190524000000\"\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "00",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        }
+      ],
+      "name": "Sales Management"
+    },
+    {
+      "item": [
+        {
+          "name": "Send Stock Information",
+          "request": {
+            "url": {
+              "raw": "{{url}}/insert/stockIO",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "insert",
+                "stockIO"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"sarNo\": 11,\n    \"orgSarNo\": 9,\n    \"regTyCd\": \"M\",\n    \"custTin\": null,\n    \"custNm\": null,\n    \"custBhfId\": null,\n    \"sarTyCd\": \"03\", //REFERENCE 4.15 ✅\n    \"ocrnDt\": \"20250904\",\n    \"totItemCnt\": 1, // Should be total size of itemList ✅\n    \"totTaxblAmt\": 89893,\n    \"totTaxAmt\": 0,\n    \"totAmt\": 89893,\n    \"remark\": null,\n    \"regrId\": \"Admin\",\n    \"regrNm\": \"Admin\",\n    \"modrNm\": \"Admin\",\n    \"modrId\": \"Admin\",\n    \"itemList\": [\n        {\n            \"itemSeq\": 1,\n            \"itemCd\": \"KE2NTBA00000001\",\n            \"itemClsCd\": \"1000000000\",\n            \"itemNm\": \"Brand A\",\n            \"bcd\": null,\n            \"pkgUnitCd\": \"NT\",\n            \"pkg\": 1,\n            \"qtyUnitCd\": \"BA\",\n            \"qty\": 90,\n            \"itemExprDt\": null,\n            \"prc\": 1000,\n            \"splyAmt\": 89893,\n            \"totDcAmt\": 107,\n            \"taxblAmt\": 89893,\n            \"taxTyCd\": \"A\",\n            \"taxAmt\": 0,\n            \"totAmt\": 89893\n        }\n    ]\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "Stock Master Save Request",
+          "request": {
+            "url": {
+              "raw": "{{url}}/save/stockMaster",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "save",
+                "stockMaster"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"itemCd\": \"KE2NTBA00000001\",\n    \"rsdQty\": 115,\n    \"regrId\": \"Admin\",\n    \"regrNm\": \"Admin\",\n    \"modrNm\": \"Admin\",\n    \"modrId\": \"Admin\"\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        },
+        {
+          "name": "get MoveList",
+          "request": {
+            "url": {
+              "raw": "{{url}}/selectStockMoveLists",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "selectStockMoveLists"
+              ],
+              "query": [],
+              "protocol": "",
+              "variable": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "type": "string",
+                "value": "{{apigee-access-token}}"
+              }
+            },
+            "body": {
+              "raw": "{\n    \"tin\":\"{{tin}}\",\n    \"bhfId\": \"{{bhfId}}\",\n    \"lastReqDt\": \"20180524000000\"\n}",
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "header": [
+              {
+                "key": "tin",
+                "type": "default",
+                "value": "{{tin}}",
+                "disabled": false
+              },
+              {
+                "key": "bhfId",
+                "type": "default",
+                "value": "{{bhfId}}",
+                "disabled": false
+              },
+              {
+                "key": "cmcKey",
+                "type": "default",
+                "value": "{{cmcKey}}",
+                "disabled": false
+              },
+              {
+                "key": "apigee_app_id",
+                "type": "default",
+                "value": "{{apigee_app_id}}",
+                "disabled": false
+              }
+            ],
+            "method": "POST",
+            "description": ""
+          }
+        }
+      ],
+      "name": "Stock Information Management"
+    }
+  ],
+  "variable": [
+    {
+      "key": "url",
+      "type": "default",
+      "value": "https://sbx.kra.go.ke/etims-oscu/api/v1"
+    },
+    {
+      "key": "apigee_app_id",
+      "type": "default",
+      "value": ""
+    },
+    {
+      "key": "tin",
+      "type": "default",
+      "value": ""
+    },
+    {
+      "key": "bhfId",
+      "type": "default",
+      "value": ""
+    },
+    {
+      "key": "dvcSrlNo",
+      "type": "default",
+      "value": ""
+    },
+    {
+      "key": "cmcKey",
+      "type": "default",
+      "value": ""
+    },
+    {
+      "key": "lastReqDt",
+      "type": "default",
+      "value": ""
+    },
+    {
+      "key": "apigee-access-token",
+      "type": "default",
+      "value": ""
+    },
+    {
+      "key": "go_live_app_id_key",
+      "type": "default",
+      "value": ""
+    },
+    {
+      "key": "go_live_app_id",
+      "type": "default",
+      "value": ""
+    }
+  ]
+}
