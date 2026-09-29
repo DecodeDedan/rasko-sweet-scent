@@ -83,6 +83,13 @@ export function SiteFooter() {
           <a className="rw-link" href="/privacy/">
             Privacy
           </a>
+          <span>
+            Developed by{' '}
+            <a className="rw-link" href="https://okwaretech.com" rel="noopener">
+              okwaretech
+            </a>{' '}
+            (okwaretech.com)
+          </span>
         </div>
       </div>
     </footer>

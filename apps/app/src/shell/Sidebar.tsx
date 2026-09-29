@@ -70,6 +70,7 @@ export function Sidebar({ modules, activeId, onSelect }: SidebarProps) {
       <div className="shell__sidebar-foot">
         <p className="shell__sidebar-slogan">All that nature gives.</p>
         <p className="shell__sidebar-version">Version {__APP_VERSION__}</p>
+        <p className="shell__sidebar-credit">Developed by okwaretech (okwaretech.com)</p>
       </div>
     </aside>
   )
