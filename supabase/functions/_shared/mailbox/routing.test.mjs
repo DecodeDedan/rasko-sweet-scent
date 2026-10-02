@@ -52,6 +52,17 @@ function fakeCloudflare({ destinations = [], rules = [] } = {}) {
     }
     if (pathname.endsWith('/email/routing/rules')) {
       if (init.method === 'GET') return ok(rules, { total_pages: 1 })
+      // Real Cloudflare refuses a rule whose destination is not yet verified.
+      const to = body.actions[0].value[0]
+      if (destinations.some((d) => d.email === to && !d.verified)) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            errors: [{ message: 'Destination address is not verified' }],
+          }),
+          { status: 400 },
+        )
+      }
       const row = { id: `rule-${nextId++}`, ...body }
       rules.push(row)
       return ok(row)
@@ -79,6 +90,28 @@ test('registers a new destination, and reuses one that already exists', async ()
   const created = await client(cf).ensureDestination('new@gmail.com')
   assert.equal(created.isVerified, false)
   assert.equal(cf.destinations.length, 2)
+})
+
+test('forward waits for the inbox to verify instead of asking Cloudflare for a rule it will refuse', async () => {
+  const cf = fakeCloudflare()
+  await assert.rejects(
+    client(cf).forward('jane.kamau@raskosweetscent.com', 'Jane@Gmail.com'),
+    (error) => {
+      assert.ok(error instanceof CloudflareError)
+      assert.equal(error.status, 409)
+      assert.match(error.message, /jane@gmail\.com/)
+      assert.match(error.message, /verification link/)
+      return true
+    },
+  )
+  assert.equal(cf.destinations.length, 1)
+  assert.equal(cf.rules.length, 0)
+
+  // The person clicks the link; the same request now goes through.
+  cf.destinations[0].verified = '2026-10-02T00:00:00Z'
+  await client(cf).forward('jane.kamau@raskosweetscent.com', 'Jane@Gmail.com')
+  assert.equal(cf.destinations.length, 1)
+  assert.deepEqual(cf.rules[0].actions, [{ type: 'forward', value: ['jane@gmail.com'] }])
 })
 
 test('a retried invite converges on one rule, pointing where the last attempt said', async () => {

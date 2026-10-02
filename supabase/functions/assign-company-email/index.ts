@@ -60,16 +60,15 @@ Deno.serve(async (request) => {
   if (taken) return json({ error: `${address.address} is already in use.` }, 409)
 
   try {
-    await mail.routing.ensureDestination(personalEmail)
-    await mail.routing.ensureForwardRule(address.address, personalEmail)
+    await mail.routing.forward(address.address, personalEmail)
   } catch (cause) {
     const reason = cause instanceof Error ? cause.message : String(cause)
     const status = (cause as { status?: number } | null)?.status === 409 ? 409 : 502
     return json({ error: `The company address could not be created. ${reason}` }, status)
   }
 
-  // email_confirm: the owner is vouching for the address, and the person
-  // cannot confirm it by email until Cloudflare's verification is clicked.
+  // email_confirm: the owner is vouching for the address, which forwards to an
+  // inbox Cloudflare has just confirmed is theirs.
   const { error: authError } = await admin.auth.admin.updateUserById(target.id, {
     email: address.address,
     email_confirm: true,

@@ -14,7 +14,10 @@ that forwards to the person's own inbox.
    their **personal email** and role; the company address is suggested from the
    name (`jane.kamau`) and can be edited. `invite-user` then:
    - registers the personal inbox as a Cloudflare destination (Cloudflare emails
-     it a verification link),
+     it a verification link). Cloudflare refuses a rule to an inbox that has not
+     clicked that link, so the **first** attempt for a new inbox stops here and
+     says so: the person clicks the link, and the owner presses the same button
+     again. An inbox Cloudflare already knows goes straight through,
    - creates the rule `jane.kamau@raskosweetscent.com → personal inbox`,
    - creates the account on the company address with a one-time invite link,
    - sends the branded invitation **to the personal inbox** (forwarding does not
@@ -87,10 +90,10 @@ company domain, so a stricter policy would send staff replies to spam.
 
 ## Limits worth knowing
 
-- Mail to a new address bounces until its person clicks Cloudflare's
-  verification email. The invitation says so; if someone reports missing mail,
-  that link is the first thing to check (Cloudflare → Email Routing →
-  Destination addresses shows who is still pending).
+- A company address cannot be created until its person clicks Cloudflare's
+  verification email; inviting or assigning an address asks for that and is
+  then simply repeated. Cloudflare → Email Routing → Destination addresses shows
+  who is still pending.
 - Recipients may see "sent via gmail.com" beside a staff member's name. That is
   the cost of not paying for mailboxes; Google Workspace removes it.
 - The software's own emails (invoices, resets, invitations) still go through

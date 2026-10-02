@@ -2,8 +2,9 @@
 //
 // Every account signs in with a company address (name@raskosweetscent.com).
 // There is no mailbox behind it: Cloudflare Email Routing forwards it to the
-// person's own inbox, and the invitation goes to that inbox directly, because
-// Cloudflare delivers nothing to it until its owner verifies it.
+// person's own inbox, and the invitation goes to that inbox directly. Cloudflare
+// will not forward to an inbox that has not clicked its verification link, so
+// a first invite to a new inbox stops at step 1 and is repeated once it has.
 //
 // Creating an auth user requires the service role key, which must exist only in
 // the Supabase project's function secrets — never in the app or the repository
@@ -71,8 +72,7 @@ Deno.serve(async (request) => {
 
   // ---- 1. Forwarding. Nothing here creates an account yet.
   try {
-    await mail.routing.ensureDestination(personalEmail)
-    await mail.routing.ensureForwardRule(address.address, personalEmail)
+    await mail.routing.forward(address.address, personalEmail)
   } catch (cause) {
     const reason = cause instanceof Error ? cause.message : String(cause)
     const status = (cause as { status?: number } | null)?.status === 409 ? 409 : 502

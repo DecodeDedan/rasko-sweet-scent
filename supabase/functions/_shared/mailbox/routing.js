@@ -182,6 +182,26 @@ export function routingClient(config) {
     },
 
     /**
+     * Forwards the company address to the person's own inbox. Cloudflare
+     * refuses a rule to an inbox that has not clicked its verification link,
+     * so until then this registers the inbox (which sends that link) and
+     * throws a 409 asking for the same request again once it is clicked.
+     * @param {string} address @param {string} personalEmail
+     * @returns {Promise<string>} the rule id
+     */
+    async forward(address, personalEmail) {
+      const inbox = personalEmail.toLowerCase()
+      const destination = await this.ensureDestination(inbox)
+      if (!destination.isVerified) {
+        throw new CloudflareError(
+          `${inbox} has not confirmed it can receive forwarded mail yet. Cloudflare has emailed it a verification link (it may be in spam): once it is clicked, try again.`,
+          409,
+        )
+      }
+      return this.ensureForwardRule(address, inbox)
+    },
+
+    /**
      * Creates, or repoints and re-enables, this software's rule for the
      * address. Safe to run twice: a retry after a half-finished invite
      * converges on one rule. Refuses outright when a rule it did not create

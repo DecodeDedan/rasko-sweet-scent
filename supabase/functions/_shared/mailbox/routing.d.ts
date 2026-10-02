@@ -15,6 +15,7 @@ export class CloudflareError extends Error {
 }
 export interface RoutingClient {
   ensureDestination(email: string): Promise<{ id: string; isVerified: boolean }>
+  forward(address: string, personalEmail: string): Promise<string>
   ensureForwardRule(address: string, forwardTo: string): Promise<string>
   setForwarding(address: string, enabled: boolean): Promise<boolean>
   removeForwarding(address: string): Promise<boolean>
