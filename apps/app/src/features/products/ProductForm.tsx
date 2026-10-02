@@ -10,6 +10,7 @@ import {
   STEM_FORM_HINT,
   STEM_FORM_LABEL,
 } from './types.js'
+import { toCents } from '../invoices/currency.js'
 import type { Category, Product, ProductUnit, StemForm } from './types.js'
 
 /**
@@ -27,12 +28,6 @@ export function suggestSku(varietyName: string, form: StemForm): string {
 
 export function suggestName(varietyName: string, form: StemForm): string {
   return `${varietyName.trim()} ${form === 'spray' ? 'spray' : 'standard'}`
-}
-
-/** Prices are typed in shillings and stored as integer cents (PRD §7). */
-function toCents(value: string): number {
-  const n = Number(value)
-  return Number.isFinite(n) ? Math.round(n * 100) : Number.NaN
 }
 
 export interface ProductFormValues {

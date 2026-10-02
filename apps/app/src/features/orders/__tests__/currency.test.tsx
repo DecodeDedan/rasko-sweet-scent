@@ -119,7 +119,7 @@ describe('order form currency', () => {
 
     await user.selectOptions(screen.getByRole('combobox', { name: 'Product' }), PRODUCT_ROSE)
 
-    expect(screen.getByRole('textbox', { name: 'Unit price in KES cents' })).toHaveValue('6000')
+    expect(screen.getByRole('textbox', { name: 'Unit price in KES' })).toHaveValue('60.00')
   })
 
   it('does not put a shilling catalogue price into a dollar order', async () => {
@@ -129,13 +129,13 @@ describe('order form currency', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: 'Currency' }), 'USD')
     await user.selectOptions(screen.getByRole('combobox', { name: 'Product' }), PRODUCT_ROSE)
 
-    const price = screen.getByRole('textbox', { name: 'Unit price in USD cents' })
+    const price = screen.getByRole('textbox', { name: 'Unit price in USD' })
     expect(price).toHaveValue('0')
     expect(screen.getByText(/Catalogue prices are in shillings/)).toBeInTheDocument()
-    expect(screen.getByLabelText('Order discount in USD cents')).toBeInTheDocument()
+    expect(screen.getByLabelText('Order discount in USD')).toBeInTheDocument()
 
     await user.clear(price)
-    await user.type(price, '150')
+    await user.type(price, '1.50')
     const totals = document.querySelector('.order-totals') as HTMLElement
     expect(within(totals).getAllByText('USD 1.50')).toHaveLength(2)
     expect(within(totals).queryByText(/KES/)).not.toBeInTheDocument()
@@ -156,7 +156,50 @@ describe('order form currency', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: 'Product' }), PRODUCT_ROSE)
     await user.selectOptions(screen.getByRole('combobox', { name: 'Currency' }), 'USD')
 
-    expect(screen.getByRole('textbox', { name: 'Unit price in USD cents' })).toHaveValue('6000')
+    expect(screen.getByRole('textbox', { name: 'Unit price in USD' })).toHaveValue('60.00')
     expect(screen.getByText(/still hold the shilling price/)).toBeInTheDocument()
+  })
+
+  it('takes prices and the discount in whole shillings, as every other money field does', async () => {
+    const user = userEvent.setup()
+    const onSubmit = renderForm()
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Product' }), PRODUCT_ROSE)
+    const quantity = screen.getByRole('textbox', { name: 'Quantity' })
+    await user.clear(quantity)
+    await user.type(quantity, '300')
+    const price = screen.getByRole('textbox', { name: 'Unit price in KES' })
+    await user.clear(price)
+    await user.type(price, '50')
+    const discount = screen.getByLabelText('Order discount in KES')
+    await user.clear(discount)
+    await user.type(discount, '500')
+
+    const totals = document.querySelector('.order-totals') as HTMLElement
+    expect(within(totals).getByText('KES 15,000.00')).toBeInTheDocument()
+    expect(within(totals).getByText('KES 14,500.00')).toBeInTheDocument()
+
+    await user.click(screen.getByLabelText('Walk-in sale, no client record'))
+    await user.click(screen.getByRole('button', { name: 'Create order' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0]![0]).toMatchObject({
+      discountCents: 50000,
+      lines: [expect.objectContaining({ unitPrice: '5000' })],
+    })
+  })
+
+  it('refuses a price that is not an amount', async () => {
+    const user = userEvent.setup()
+    const onSubmit = renderForm()
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Product' }), PRODUCT_ROSE)
+    const price = screen.getByRole('textbox', { name: 'Unit price in KES' })
+    await user.clear(price)
+    await user.type(price, '5O')
+    await user.click(screen.getByLabelText('Walk-in sale, no client record'))
+    await user.click(screen.getByRole('button', { name: 'Create order' }))
+
+    expect(await screen.findByText('Every line needs a valid price.')).toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
   })
 })

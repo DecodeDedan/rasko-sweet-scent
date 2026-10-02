@@ -21,6 +21,16 @@ export const CURRENCY_LABEL: Record<Currency, string> = {
 
 const SYMBOL: Record<string, string> = { KES: 'Ksh', USD: '$', EUR: '€', GBP: '£' }
 
+/**
+ * An amount typed in whole units with decimals ("1,500" is not accepted,
+ * "1500.50" is), as integer cents of that currency (PRD §7). NaN when it is
+ * not a number, so the form can say so instead of saving zero.
+ */
+export function toCents(input: string): number {
+  const value = Number(input)
+  return Number.isFinite(value) ? Math.round(value * 100) : Number.NaN
+}
+
 /** Rows written before the column existed carry no code; they are shillings. */
 export function normaliseCurrency(value: unknown): string {
   const code = typeof value === 'string' ? value.trim().toUpperCase() : ''

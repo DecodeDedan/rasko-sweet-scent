@@ -4,6 +4,7 @@ import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button, Field, Input, Modal, Select, formatKes } from '@rasko/ui'
 
+import { toCents } from '../invoices/currency.js'
 import type { NewPurchaseLine, SupplierSummary } from './types.js'
 
 interface DraftLine {
@@ -30,11 +31,6 @@ function emptyLine(): DraftLine {
 }
 
 /** Costs are typed in shillings, stored as integer cents (PRD §7). */
-function toCents(value: string): number {
-  const n = Number(value)
-  return Number.isFinite(n) ? Math.round(n * 100) : Number.NaN
-}
-
 /** due_date defaults from the supplier's terms — the reason we store them (FR-7.1). */
 function dueDateFor(purchaseDate: string, termsDays: number): string {
   const base = new Date(`${purchaseDate}T00:00:00.000Z`)

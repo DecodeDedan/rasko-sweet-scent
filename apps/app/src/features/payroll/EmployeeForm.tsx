@@ -8,13 +8,9 @@ import {
   KENYA_BANKS,
   bankAccount,
 } from '../../../../../supabase/functions/_shared/payouts/rules.js'
+import { toCents } from '../invoices/currency.js'
 import type { Allowance } from './statutory.js'
 import type { Employee, PaymentMethod, SalaryType } from './types.js'
-
-function toCents(value: string): number {
-  const n = Number(value)
-  return Number.isFinite(n) ? Math.round(n * 100) : Number.NaN
-}
 
 function slugify(label: string): string {
   return label

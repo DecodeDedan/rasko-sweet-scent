@@ -3,18 +3,9 @@
 import { useState } from 'react'
 import { Button, Field, Input, Modal, Select, formatMoney } from '@rasko/ui'
 
+import { toCents } from './currency.js'
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABEL } from './types.js'
 import type { PaymentMethod } from './types.js'
-
-/**
- * FR-5.3. Amounts are entered in the invoice's currency, in whole units with
- * decimals, and stored as integer cents of that currency.
- */
-function toCents(input: string): number {
-  const value = Number(input)
-  if (!Number.isFinite(value)) return Number.NaN
-  return Math.round(value * 100)
-}
 
 export interface PaymentFormProps {
   isOpen: boolean

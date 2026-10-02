@@ -3,13 +3,9 @@
 import { useState } from 'react'
 import { Button, Field, Input, Modal, Select, formatKes } from '@rasko/ui'
 
+import { toCents } from '../invoices/currency.js'
 import { SUPPLIER_PAYMENT_METHODS, SUPPLIER_PAYMENT_METHOD_LABEL } from './types.js'
 import type { PurchaseSummary, SupplierPaymentMethod } from './types.js'
-
-function toCents(value: string): number {
-  const n = Number(value)
-  return Number.isFinite(n) ? Math.round(n * 100) : Number.NaN
-}
 
 export function SupplierPaymentForm({
   isOpen,

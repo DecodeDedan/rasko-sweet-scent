@@ -4,7 +4,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button, Field, Input, Modal, Select, formatMoney } from '@rasko/ui'
 
-import { CURRENCIES, CURRENCY_LABEL, DEFAULT_CURRENCY } from '../invoices/currency.js'
+import { CURRENCIES, CURRENCY_LABEL, DEFAULT_CURRENCY, toCents } from '../invoices/currency.js'
 import type { Currency } from '../invoices/currency.js'
 import type { DraftLine, OrderType, ProductOption } from './types.js'
 
@@ -66,6 +66,9 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
     setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)))
   }
 
+  /** A catalogue price as the form shows it: whole units with two decimals. */
+  const asTyped = (cents: number) => (cents / 100).toFixed(2)
+
   /**
    * Choosing a catalogue product fills the description, and the current price
    * only for a shilling order: catalogue prices are shillings, and there is no
@@ -81,7 +84,7 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
     updateLine(key, {
       productId,
       description: product.name,
-      ...(currency === DEFAULT_CURRENCY ? { unitPrice: String(product.selling_price_cents) } : {}),
+      ...(currency === DEFAULT_CURRENCY ? { unitPrice: asTyped(product.selling_price_cents) } : {}),
     })
   }
 
@@ -95,16 +98,17 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
       return (
         product != null &&
         product.selling_price_cents !== 0 &&
-        line.unitPrice === String(product.selling_price_cents)
+        line.unitPrice === asTyped(product.selling_price_cents)
       )
     })
 
   const subtotal = lines.reduce((sum, line) => {
     const quantity = Number(line.quantity) || 0
-    const price = Number(line.unitPrice) || 0
+    const price = toCents(line.unitPrice) || 0
     return sum + Math.round(quantity * price)
   }, 0)
-  const total = subtotal - (Number(discount) || 0)
+  const discountCents = toCents(discount) || 0
+  const total = subtotal - discountCents
 
   async function handleSubmit() {
     setError(null)
@@ -120,6 +124,15 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
     }
     if (filled.some((line) => (Number(line.quantity) || 0) <= 0)) {
       setError('Every line needs a quantity greater than zero.')
+      return
+    }
+    const priced = filled.map((line) => ({ ...line, unitPrice: String(toCents(line.unitPrice)) }))
+    if (priced.some((line) => !(Number(line.unitPrice) >= 0))) {
+      setError('Every line needs a valid price.')
+      return
+    }
+    if (!(toCents(discount) >= 0)) {
+      setError('Enter a valid discount, or 0.')
       return
     }
     if (orderType === 'event' && !deliveryAt) {
@@ -140,8 +153,9 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
       eventVenue: orderType === 'event' ? eventVenue.trim() || null : null,
       eventSetupNotes: orderType === 'event' ? eventSetupNotes.trim() || null : null,
       notes: notes.trim() || null,
-      discountCents: Number(discount) || 0,
-      lines: filled,
+      discountCents,
+      // The repository takes cents, as it always has.
+      lines: priced,
     })
     setIsSaving(false)
     if (result.error) {
@@ -281,9 +295,9 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
                   onChange={(e) => updateLine(line.key, { quantity: e.target.value })}
                 />
                 <Input
-                  aria-label={`Unit price in ${currency} cents`}
+                  aria-label={`Unit price in ${currency}`}
                   aria-describedby={isForeign ? 'order-price-hint' : undefined}
-                  inputMode="numeric"
+                  inputMode="decimal"
                   isNumeric
                   value={line.unitPrice}
                   onChange={(e) => updateLine(line.key, { unitPrice: e.target.value })}
@@ -313,10 +327,10 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
           </Button>
         </div>
 
-        <Field label={`Order discount in ${currency} cents`}>
+        <Field label={`Order discount in ${currency}`}>
           <Input
             isNumeric
-            inputMode="numeric"
+            inputMode="decimal"
             value={discount}
             onChange={(e) => setDiscount(e.target.value)}
           />
