@@ -169,7 +169,7 @@ describe('T3: concurrent offline payments', () => {
       invoice_number: 'INV-2026-0001',
       status: 'issued',
       issue_date: '2026-09-01',
-      due_date: '2026-10-01',
+      due_date: '2099-12-31', // far off: T3 is about the balance, not the due date
       subtotal_cents: 1000000,
       total_cents: 1000000,
       client_snapshot: {},
