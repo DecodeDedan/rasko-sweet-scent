@@ -36,3 +36,11 @@ supabase/functions/_shared/email/logo.js
 # Tool-written state: a design-tool cache and the Supabase CLI link record.
 .impeccable
 supabase/.temp
+
+# Tool-written agent state; these files are not source code and are regenerated.
+.claude
+.claude-flow
+**/.claude-flow
+
+# Generated architecture export; the authored architecture remains in Markdown.
+docs/architecture/system.arch.json
