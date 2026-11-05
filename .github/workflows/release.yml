@@ -68,6 +68,9 @@ jobs:
             Windows installer and Apple Silicon macOS package. Installed copies
             update themselves on next launch.
 
+            On macOS, install with:
+            curl -fsSL https://raw.githubusercontent.com/DecodeDedan/rasko-sweet-scent/main/scripts/install-macos.sh | bash
+
             Updates never destroy unsynced local data: the device database lives
             outside the install directory, and schema changes are versioned.
           releaseDraft: false
@@ -132,6 +135,9 @@ jobs:
           releaseBody: |
             Windows installer and Apple Silicon macOS package. Installed copies
             update themselves on next launch.
+
+            On macOS, install with:
+            curl -fsSL https://raw.githubusercontent.com/DecodeDedan/rasko-sweet-scent/main/scripts/install-macos.sh | bash
 
             Updates never destroy unsynced local data: the device database lives
             outside the install directory, and schema changes are versioned.

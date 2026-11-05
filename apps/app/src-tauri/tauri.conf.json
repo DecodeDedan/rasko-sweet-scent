@@ -50,6 +50,9 @@
     "android": {
       "minSdkVersion": 26
     },
+    "macOS": {
+      "signingIdentity": "-"
+    },
     "createUpdaterArtifacts": true
   },
   "plugins": {
