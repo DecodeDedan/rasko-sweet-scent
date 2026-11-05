@@ -172,10 +172,7 @@ export function ManualScreen({ scope }: ScreenProps) {
               <p>Follow the sections that apply to your role.</p>
             </div>
           </header>
-          <div
-            className="manual-view__content"
-            dangerouslySetInnerHTML={{ __html: content }}
-          />
+          <div className="manual-view__content" dangerouslySetInnerHTML={{ __html: content }} />
         </article>
       </Card>
     </div>

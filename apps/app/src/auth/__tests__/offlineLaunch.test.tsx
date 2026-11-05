@@ -82,7 +82,14 @@ describe('offline launch after restart', () => {
     const labels = [...sidebar.querySelectorAll('.shell__nav-item')].map((n) => n.textContent)
 
     // Still scoped to sales offline: no suppliers, payroll, settings, users or audit.
-    expect(labels).toEqual(['Dashboard', 'Clients', 'Orders', 'Invoices', 'Products'])
+    expect(labels).toEqual([
+      'Dashboard',
+      'Clients',
+      'Orders',
+      'Invoices',
+      'Products',
+      'User manual',
+    ])
   })
 
   it('asks the user to go online when there is no cache to fall back on', async () => {
