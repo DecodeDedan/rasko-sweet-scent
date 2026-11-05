@@ -52,6 +52,10 @@ const MODULE_COPY: Record<ModuleId, { title: string; body: string }> = {
     title: 'Audit log',
     body: 'Every sensitive change, who made it and when: payments, price changes, role changes, stock adjustments.',
   },
+  manual: {
+    title: 'User manual',
+    body: 'Step-by-step guidance for daily work, including offline use, synchronisation and the most common corrections.',
+  },
 }
 
 const TOUR_ORDER: readonly ModuleId[] = [
@@ -64,6 +68,7 @@ const TOUR_ORDER: readonly ModuleId[] = [
   'settings',
   'users',
   'audit',
+  'manual',
 ]
 
 const ROLE_WELCOME: Record<Role, string> = {

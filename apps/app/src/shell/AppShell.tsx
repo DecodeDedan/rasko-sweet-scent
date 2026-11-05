@@ -12,6 +12,7 @@ import {
   ClientsScreen,
   DashboardScreen,
   InvoicesScreen,
+  ManualScreen,
   OrdersScreen,
   ProductsScreen,
   SettingsScreen,
@@ -38,6 +39,7 @@ const SCREENS: Record<ModuleId, ComponentType<ScreenProps>> = {
   settings: SettingsScreen,
   users: UsersScreen,
   audit: AuditLogScreen,
+  manual: ManualScreen,
 }
 
 /** Only reached when signed in — App gates on auth status before rendering it. */

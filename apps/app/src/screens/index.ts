@@ -1,4 +1,5 @@
 export { AuditLogScreen } from '../features/settings/AuditLogScreen.js'
+export { ManualScreen } from '../manual/userManual.js'
 export { ClientsScreen } from '../features/clients/ClientsScreen.js'
 export { DashboardScreen } from '../features/dashboard/DashboardScreen.js'
 export { InvoicesScreen } from '../features/invoices/InvoicesScreen.js'

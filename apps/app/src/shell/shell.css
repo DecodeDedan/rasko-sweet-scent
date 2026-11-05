@@ -300,6 +300,115 @@
   gap: 2px;
 }
 
+/* -------------------------------------------------------------- User manual */
+
+.manual-scope {
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-12);
+}
+
+.manual-view {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.manual-view__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--rasko-space-3);
+  padding-bottom: var(--rasko-space-5);
+  border-bottom: 4px solid var(--rasko-green);
+  color: var(--rasko-green);
+}
+
+.manual-view__header h2 {
+  margin: 0;
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-24);
+  line-height: var(--rasko-leading-tight);
+}
+
+.manual-view__header p {
+  margin: var(--rasko-space-1) 0 0;
+  color: var(--rasko-text-secondary);
+  font-size: var(--rasko-text-13);
+}
+
+.manual-view__content {
+  padding-top: var(--rasko-space-4);
+  color: var(--rasko-text);
+  font-size: var(--rasko-text-14);
+  line-height: 1.6;
+}
+
+.manual-view__content h2 {
+  margin: var(--rasko-space-7) 0 var(--rasko-space-2);
+  color: var(--rasko-green);
+  font-family: var(--rasko-font-heading);
+  font-size: var(--rasko-text-20);
+}
+
+.manual-view__content h3 {
+  margin: var(--rasko-space-5) 0 var(--rasko-space-2);
+  color: var(--rasko-green-active);
+  font-size: var(--rasko-text-16);
+}
+
+.manual-view__content h4 {
+  margin: var(--rasko-space-4) 0 var(--rasko-space-2);
+  font-size: var(--rasko-text-14);
+}
+
+.manual-view__content p {
+  margin: var(--rasko-space-2) 0;
+}
+
+.manual-view__content ul {
+  padding-left: var(--rasko-space-5);
+}
+
+.manual-view__content li {
+  margin: var(--rasko-space-1) 0;
+}
+
+.manual-view__content hr {
+  margin: var(--rasko-space-5) 0;
+  border: 0;
+  border-top: 1px solid var(--rasko-border);
+}
+
+.manual-view__content code {
+  padding: 2px 4px;
+  border-radius: var(--rasko-radius-sm);
+  background: var(--rasko-green-tint);
+  font-size: 0.92em;
+}
+
+.manual-table-wrap {
+  overflow-x: auto;
+  margin: var(--rasko-space-3) 0 var(--rasko-space-5);
+}
+
+.manual-view__content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--rasko-text-13);
+}
+
+.manual-view__content th,
+.manual-view__content td {
+  padding: var(--rasko-space-2) var(--rasko-space-3);
+  border: 1px solid var(--rasko-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.manual-view__content th {
+  background: var(--rasko-green-tint);
+  color: var(--rasko-green-active);
+  font-weight: var(--rasko-weight-semibold);
+}
+
 /* -------------------------------------------------------------- Sync / user */
 
 .shell__sync {

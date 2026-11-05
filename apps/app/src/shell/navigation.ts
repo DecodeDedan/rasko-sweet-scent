@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Package,
   ScrollText,
+  BookOpen,
   Settings,
   Truck,
   UserCog,
@@ -23,6 +24,7 @@ export type ModuleId =
   | 'settings'
   | 'users'
   | 'audit'
+  | 'manual'
 
 export interface ModuleAccess {
   canAccess: boolean
@@ -158,6 +160,18 @@ export const MODULES: readonly ModuleDefinition[] = [
       manager: all('View'),
       accountant: none(),
       sales: none(),
+    },
+  },
+  {
+    id: 'manual',
+    label: 'User manual',
+    icon: BookOpen,
+    capability: 'User manual',
+    access: {
+      owner: all('Full'),
+      manager: all('Full'),
+      accountant: all('Full'),
+      sales: all('Full'),
     },
   },
 ]

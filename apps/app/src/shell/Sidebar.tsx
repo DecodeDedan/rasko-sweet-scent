@@ -17,7 +17,7 @@ export interface SidebarProps {
 const GROUPS: ReadonlyArray<{ label: string; ids: readonly ModuleId[] }> = [
   { label: 'Sell', ids: ['dashboard', 'clients', 'orders', 'invoices'] },
   { label: 'Stock and supply', ids: ['products', 'suppliers'] },
-  { label: 'Administration', ids: ['settings', 'users', 'audit'] },
+  { label: 'Administration', ids: ['settings', 'users', 'audit', 'manual'] },
 ]
 
 /**
