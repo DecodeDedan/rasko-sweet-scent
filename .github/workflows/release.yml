@@ -7,8 +7,9 @@ name: Release
 # differ. Tauri compares the manifest version against the installed one, so a
 # tag alone updates nothing.
 #
-# tauri-action builds the NSIS installer, signs the updater artifacts with the
-# minisign private key, creates the GitHub Release, and generates the
+# tauri-action builds the Windows NSIS installer and Apple Silicon macOS DMG,
+# signs the updater artifacts with the minisign private key, creates the GitHub
+# Release, and generates the
 # `latest.json` manifest installed copies poll on launch.
 on:
   push:
@@ -64,7 +65,8 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'Rasko Sweet Scent ${{ github.ref_name }}'
           releaseBody: |
-            Windows installer. Installed copies update themselves on next launch.
+            Windows installer and Apple Silicon macOS package. Installed copies
+            update themselves on next launch.
 
             Updates never destroy unsynced local data: the device database lives
             outside the install directory, and schema changes are versioned.
@@ -79,5 +81,71 @@ jobs:
           path: |
             apps/app/src-tauri/target/release/bundle/nsis/*.exe
             apps/app/src-tauri/target/release/bundle/nsis/*.sig
+          if-no-files-found: error
+          retention-days: 90
+
+  macos:
+    name: macOS Apple Silicon package
+    needs: windows
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/app/src-tauri
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Verify before building
+        run: |
+          pnpm typecheck
+          pnpm --filter @rasko/app test
+          pnpm --filter @rasko/ui test
+
+      - name: Build, sign and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          APP_ENV: production
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/app
+          args: --target aarch64-apple-darwin --bundles app dmg
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Rasko Sweet Scent ${{ github.ref_name }}'
+          releaseBody: |
+            Windows installer and Apple Silicon macOS package. Installed copies
+            update themselves on next launch.
+
+            Updates never destroy unsynced local data: the device database lives
+            outside the install directory, and schema changes are versioned.
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: true
+
+      - name: Keep the Apple Silicon package as a build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rasko-macos-apple-silicon
+          path: |
+            apps/app/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+            apps/app/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz
+            apps/app/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.sig
           if-no-files-found: error
           retention-days: 90
