@@ -104,8 +104,9 @@ built. Modules are built one per session against `docs/prd.md` and checked off i
 
 `docs/PROGRESS.md` tracks module status and the definition of done.
 
-Next feature module: Suppliers & purchases (PRD §5.7), then Payroll (§5.8) and the
-Dashboard (§5.2).
+The active business modules are clients, orders, invoices, products, suppliers,
+dashboard, settings, and audit. Payroll (§5.8) is built but not active at the
+owner's request; retain its code and data schema for a future reactivation.
 
 ### Things that will bite you
 

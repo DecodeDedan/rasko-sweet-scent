@@ -249,6 +249,10 @@ rollback;
 **4.4 — Sales cannot soft-delete even its own client.** Expect
 `ERROR: Role sales may not delete from clients`.
 
+**4.5 — Client attribution is server-owned.** As sales, insert a client while
+supplying another user's UUID in `created_by`. Expect the row's `created_by` to
+be the signed-in sales user's UUID.
+
 ```sql
 begin;
   select set_config('request.jwt.claims', '{"sub":"44444444-4444-4444-8444-444444444444"}', true);
@@ -314,6 +318,10 @@ rollback;
 **5.4 — Sales cannot delete an order, ever (FR-4.5).** Expect
 `ERROR: Role sales may not delete from orders`.
 
+**5.5 — Order attribution is server-owned.** As sales, insert an order while
+supplying another user's UUID in `created_by`. Expect the row's `created_by` to
+be the signed-in sales user's UUID.
+
 ```sql
 begin;
   select set_config('request.jwt.claims', '{"sub":"44444444-4444-4444-8444-444444444444"}', true);
@@ -333,6 +341,10 @@ rollback;
 | `invoices_update` | UPDATE  | owner, manager, accountant — **not** sales |
 
 **6.1 — Sales may create an invoice but not edit one.** Expect `INSERT 0 1` then `UPDATE 0`.
+
+**6.4 — Invoice attribution is server-owned.** As sales, insert an invoice
+while supplying another user's UUID in `created_by`. Expect the row's
+`created_by` to be the signed-in sales user's UUID.
 
 ```sql
 begin;
@@ -414,6 +426,10 @@ braces: the rule holds even if someone later adds a policy by mistake. The
 
 **7.2 — Sales cannot reverse a payment (FR-5.5).** Expect
 `ERROR: new row violates row-level security policy for table "reversals"`.
+
+**7.4 — Payment attribution is server-owned.** As sales, insert a payment
+while supplying another user's UUID in `created_by`. Expect the row's
+`created_by` to be the signed-in sales user's UUID.
 
 ```sql
 begin;

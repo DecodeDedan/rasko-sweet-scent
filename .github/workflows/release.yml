@@ -2,9 +2,10 @@ name: Release
 
 # Tag a version to ship it:
 #   git tag v0.1.1 && git push origin v0.1.1
-# Bump the version in apps/app/package.json, apps/app/src-tauri/tauri.conf.json
-# and apps/app/src-tauri/Cargo.toml first — Tauri compares the manifest version
-# against the installed one, so a tag alone updates nothing.
+# Bump the version in apps/app/package.json (tauri.conf.json reads it) and in
+# apps/app/src-tauri/Cargo.toml + Cargo.lock first; CI fails while the two
+# differ. Tauri compares the manifest version against the installed one, so a
+# tag alone updates nothing.
 #
 # tauri-action builds the NSIS installer, signs the updater artifacts with the
 # minisign private key, creates the GitHub Release, and generates the

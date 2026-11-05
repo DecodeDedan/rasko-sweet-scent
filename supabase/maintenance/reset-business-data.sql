@@ -7,9 +7,9 @@
 --        payments and reversals, suppliers and purchases, client emails, the
 --        audit entries about all of those, and the INV-/ORD-/PUR- counters
 --        (numbering restarts at 0001).
--- KEPT   accounts and roles, company profile, tax and statutory settings, the
+-- KEPT   accounts and roles, company profile, tax settings, the
 --        four varieties, email templates and provider health, backups, payroll
---        (suspended, untested) and the audit history of users and settings.
+--        (inactive, untested) and the audit history of users and settings.
 --
 -- Every device notices on its next sync: the server identity changes, so the
 -- engine drops its local copy, outbox included, and pulls the empty one
@@ -33,7 +33,8 @@ begin
     'invoices',  (select count(*) from public.invoices),
     'payments',  (select count(*) from public.payments),
     'suppliers', (select count(*) from public.suppliers),
-    'purchases', (select count(*) from public.purchases)
+    'purchases', (select count(*) from public.purchases),
+    'statutory_rates', (select count(*) from public.statutory_rates)
   ) into removed;
 
   truncate
@@ -53,6 +54,10 @@ begin
     public.clients;
 
   delete from app.document_counters;
+
+  -- Payroll is not active yet, so remove its statutory-rate configuration.
+  -- Keep the table and policies for the future payroll reactivation.
+  delete from public.statutory_rates;
 
   alter table public.audit_log disable trigger audit_log_append_only;
   delete from public.audit_log

@@ -87,13 +87,12 @@ describe('printed invoice', () => {
     )
     const detail = await repo.detail(INVOICE.unpaid)
     const company = await repo.companySettings()
-    const { container } = render(
-      <InvoiceDocument detail={detail!} company={company} onClose={() => {}} />,
-    )
+    render(<InvoiceDocument detail={detail!} company={company} onClose={() => {}} />)
 
     expect(screen.getByText('0700 339 635')).toBeInTheDocument()
     expect(screen.getByText('0101 339 635')).toBeInTheDocument()
-    expect(container.textContent).toContain('email:info@raskosweetscent.com')
+    // The document is mounted on <body>, outside the render container.
+    expect(document.body.textContent).toContain('email:info@raskosweetscent.com')
     expect(screen.queryByText(/^Due$/)).not.toBeInTheDocument()
   })
 

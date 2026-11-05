@@ -3,8 +3,8 @@ import type { ModuleId } from '../shell/navigation.js'
 
 /**
  * The first-run tour. Pure data, built from what this role can actually reach,
- * so a sales user is never walked to Payroll and the tour never points at a
- * button that is not on their screen.
+ * so the tour never points at a button that is not on the active product
+ * surface.
  */
 
 export interface TourStep {
@@ -40,10 +40,6 @@ const MODULE_COPY: Record<ModuleId, { title: string; body: string }> = {
     title: 'Suppliers',
     body: 'Purchases, stock received into the shed, and what you owe each supplier.',
   },
-  payroll: {
-    title: 'Payroll',
-    body: 'Monthly runs with PAYE, NSSF, SHIF and the Housing Levy worked out from the rates in Settings, and a payslip for everyone.',
-  },
   settings: {
     title: 'Settings',
     body: 'The company details printed on every document, the wording of client emails, tax and statutory rates.',
@@ -65,7 +61,6 @@ const TOUR_ORDER: readonly ModuleId[] = [
   'invoices',
   'products',
   'suppliers',
-  'payroll',
   'settings',
   'users',
   'audit',
@@ -73,11 +68,11 @@ const TOUR_ORDER: readonly ModuleId[] = [
 
 const ROLE_WELCOME: Record<Role, string> = {
   owner:
-    'This is the whole business in one place: clients, orders, invoices, stock, suppliers and payroll. A minute here shows you where everything lives.',
+    'This is the whole business in one place: clients, orders, invoices, stock and suppliers. A minute here shows you where everything lives.',
   manager:
     'You run the day to day from here: clients, orders, invoices, stock and suppliers. A minute here shows you where everything lives.',
   accountant:
-    'Invoices, payments, supplier bills and payroll are all here, with the figures worked out from the records. A minute here shows you around.',
+    'Invoices, payments and supplier bills are all here, with the figures worked out from the records. A minute here shows you around.',
   sales:
     'Your clients, their orders and their invoices are all here, and they work without signal. A minute here shows you around.',
 }

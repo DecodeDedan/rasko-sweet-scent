@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
-import { Button, formatDate, formatQuantity } from '@rasko/ui'
+import { formatDate, formatQuantity } from '@rasko/ui'
+
+import { DocumentOverlay } from '../../shell/DocumentOverlay.js'
 
 import type { ProductStock } from './types.js'
 
@@ -21,23 +22,10 @@ export function StockCountSheet({
   companyName: string
   onClose: () => void
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   const today = new Date().toISOString().slice(0, 10)
 
   return (
-    <div className="doc-overlay">
-      <div className="doc-toolbar rsk-no-print">
-        <Button onClick={onClose}>Close</Button>
-        <Button variant="primary" onClick={() => window.print()}>
-          Print or save as PDF
-        </Button>
-      </div>
-
+    <DocumentOverlay onClose={onClose}>
       <article className="doc-page">
         <header className="doc-header">
           <div>
@@ -102,6 +90,6 @@ export function StockCountSheet({
           </div>
         </footer>
       </article>
-    </div>
+    </DocumentOverlay>
   )
 }

@@ -793,6 +793,20 @@
   margin: var(--rasko-space-4) 0;
   border-collapse: collapse;
   font-size: var(--rasko-text-13);
+  break-inside: auto;
+}
+
+.doc-table thead {
+  display: table-header-group;
+}
+
+.doc-table tfoot {
+  display: table-row-group;
+}
+
+.doc-table tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .doc-table th {
@@ -822,9 +836,20 @@
   margin-top: var(--rasko-space-6);
   padding-top: var(--rasko-space-3);
   border-top: 1px solid var(--rasko-border);
+  break-inside: avoid;
 }
 
 @media print {
+  /*
+   * Every document is laid out for A4. Left to the dialog, the paper and
+   * margins vary by printer and region (a US-region Mac picks Letter), and the
+   * invoice's last footer line fell onto a second page.
+   */
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
   .doc-overlay {
     position: static;
     padding: 0;
@@ -837,11 +862,28 @@
     margin: 0;
     padding: 0;
     border: 0;
+    break-after: auto;
   }
 
-  /* Only the document prints — the app behind it must not. */
-  .shell {
+  /*
+   * A document is mounted on <body> beside the app (DocumentOverlay), so the
+   * app frame can be hidden without hiding the document with it.
+   */
+  body:has(> .doc-overlay) .shell {
     display: none !important;
+  }
+
+  /* With no document open (the dashboard report), print the page, not the frame. */
+  .shell__sidebar,
+  .shell__topbar,
+  .shell__bottom-nav,
+  .shell__offline-notice {
+    display: none !important;
+  }
+
+  .doc-table {
+    margin-top: 5mm;
+    margin-bottom: 5mm;
   }
 }
 

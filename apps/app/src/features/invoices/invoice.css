@@ -291,6 +291,20 @@
   border-collapse: collapse;
   table-layout: fixed;
   font-size: 14px;
+  break-inside: auto;
+}
+
+.inv-ledger thead {
+  display: table-header-group;
+}
+
+.inv-ledger tfoot {
+  display: table-row-group;
+}
+
+.inv-ledger tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .inv-ledger th,
@@ -396,6 +410,7 @@
   font-size: 16px;
   font-style: italic;
   font-weight: 700;
+  break-inside: avoid;
 }
 
 .inv-foot p {

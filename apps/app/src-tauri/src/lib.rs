@@ -1,7 +1,24 @@
 //! Rasko Sweet Scent — application shell.
 //!
 //! Feature modules are added one per session against `docs/prd.md`. This file
-//! registers platform plugins only.
+//! registers platform plugins, and the one command the webview cannot do itself.
+
+/// Opens the print dialog for the page, where WebKit ignores `window.print()`
+/// inside an app (macOS). Answers false elsewhere, and the page then calls
+/// `window.print()`, which WebView2 honours. See apps/app/src/shell/print.ts.
+#[tauri::command]
+fn print_page(webview: tauri::Webview) -> Result<bool, String> {
+    #[cfg(target_os = "macos")]
+    {
+        webview.print().map_err(|e| e.to_string())?;
+        Ok(true)
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = webview;
+        Ok(false)
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -9,7 +26,8 @@ pub fn run() {
         // Local-first store. Every device holds a full SQLite mirror; the schema
         // is applied from TypeScript (data/sqlite/schema.ts) so the DDL and the
         // value codec stay generated from one table spec.
-        .plugin(tauri_plugin_sql::Builder::default().build());
+        .plugin(tauri_plugin_sql::Builder::default().build())
+        .invoke_handler(tauri::generate_handler![print_page]);
 
     // Desktop auto-update (PRD §7), signed against the minisign public key in
     // tauri.conf.json. Not built for mobile: an APK cannot replace itself, so

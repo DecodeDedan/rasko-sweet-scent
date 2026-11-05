@@ -26,12 +26,12 @@ never into chat, the repo or the app.
 
 ## 2. Questions for the accountant (recorded in PROGRESS.md for sign-off)
 
-| #  | Question | Recommended default, reversible from Settings |
-| -- | -------- | --------------------------------------------- |
-| E1 | Tax type per product: A exempt, B 16%, C zero-rated, D non-VAT, E 8% (§4.1) | **D** while `is_vat_registered` is off; B when it is on. A, C and D all show zero tax but land in different boxes of the VAT return, so they are not interchangeable. |
-| E2 | Export sales | **C** (zero-rated) for a client outside Kenya, once VAT-registered. |
-| E3 | Foreign-currency invoices. The sales payload (§3.3.6.1) has **no currency field**, so every figure goes to KRA in shillings. Which rate? | CBK mean rate on the invoice's issue date, entered on the invoice and stored with it, never re-fetched. |
-| E4 | Item classification (`itemClsCd`, 10 digits) for eucalyptus foliage | Picked from KRA's own list (`/selectItemClsList`); it cannot be invented. |
+| #   | Question                                                                                                                                 | Recommended default, reversible from Settings                                                                                                                         |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| E1  | Tax type per product: A exempt, B 16%, C zero-rated, D non-VAT, E 8% (§4.1)                                                              | **D** while `is_vat_registered` is off; B when it is on. A, C and D all show zero tax but land in different boxes of the VAT return, so they are not interchangeable. |
+| E2  | Export sales                                                                                                                             | **C** (zero-rated) for a client outside Kenya, once VAT-registered.                                                                                                   |
+| E3  | Foreign-currency invoices. The sales payload (§3.3.6.1) has **no currency field**, so every figure goes to KRA in shillings. Which rate? | CBK mean rate on the invoice's issue date, entered on the invoice and stored with it, never re-fetched.                                                               |
+| E4  | Item classification (`itemClsCd`, 10 digits) for eucalyptus foliage                                                                      | Picked from KRA's own list (`/selectItemClsList`); it cannot be invented.                                                                                             |
 
 ## 3. Design
 

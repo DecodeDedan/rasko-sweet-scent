@@ -1,0 +1,14 @@
+{
+  "entries": {
+    "cmd-1791421645241": {
+      "key": "cmd-1791421645241",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/apps/app/src-tauri && sed -i '' '3s/^version = \\\"0.1.0\\\"$/version = \\\"0.1.8\\\"/' Cargo.toml && python3 - <<'EOF'\\np='Cargo.lock'; s=open(p).read()\\nold='name = \\\"rss-management-system\\\"\\\\nversion = \\\"0.1.0\\\"'\\nassert s.count(old)==1\\nopen(p,'w').write(s.replace(old,'name = \\\"rss-management-system\\\"\\\\nversion = \\\"0.1.8\\\"'))\\nEOF\\nsed -n 3p Cargo.toml; grep -n -A1 'name = \\\"rss-management-system\\\"' Cargo.lock; which cargo && cargo metadata --locked --offline --format-version 1 --no-deps >/dev/null && echo LOCK-CONSISTENT\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T01:07:25.241Z",
+      "lastAccessed": "2026-10-08T01:07:25.241Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T01:07:25.241Z"
+    }
+  },
+  "version": "3.0.0"
+}

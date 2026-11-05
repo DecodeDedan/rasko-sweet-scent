@@ -26,6 +26,10 @@ pnpm --filter @rasko/website build
 cd apps/app/src-tauri && cargo check     # also validates tauri.conf.json
 ```
 
+The app version lives in `apps/app/package.json` (`tauri.conf.json` reads it). Bump
+`apps/app/src-tauri/Cargo.toml` and `Cargo.lock` in the same change; the CI step
+"App versions agree" fails otherwise.
+
 Android (requires ANDROID_HOME + NDK_HOME, neither is set on this machine):
 
 ```bash
@@ -292,8 +296,11 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
   filter to one currency, and the server views group by it (migration `20260930000300`).
   Catalogue prices are shillings, so a non-KES order never prefills them.
 - **Printed documents are HTML, not a PDF library.** `OrderSummaryDocument` is an A4
-  print view; both WebViews save a print job as PDF. `@media print` hides `.shell`, so
-  only the document prints.
+  print view; both WebViews save a print job as PDF. Every document goes through
+  `shell/DocumentOverlay.tsx`, which mounts it on `<body>` outside `.shell`; `@media print`
+  hides `.shell` only while one is open. Print with `printPage()` (`shell/print.ts`), never
+  `window.print()`: macOS WebKit ignores it inside an app, so there the Rust command
+  `print_page` prints the webview. A document drawn inside `.shell` prints blank.
 - **In tests, both the desktop table and the mobile cards render.** jsdom loads no
   stylesheet, so `rsk-desktop-only` / `rsk-mobile-only` hide nothing. Scope queries to
   one container or a document-wide `getByText` matches twice.
@@ -347,6 +354,9 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
   `NO`, so an IntaSend send that times out is `unknown`, never retried. The
   payout rules live in `_shared/payouts/rules.js` and are mirrored in
   `app.prepare_payroll_payout`. Setup: `docs/intasend-setup.md`.
+- **Payout callbacks (Daraja, IntaSend) reach `payout-result` through the
+  `hooks.raskosweetscent.com` Cloudflare Worker**, not a Vercel rewrite. Keep the
+  trailing slash in callback URLs.
 - **The Pay salaries dialog polls while payouts are in flight** (`syncNow` every
   15 s, only while open) and reads the IntaSend balance through `payout-wallet`
   via `AuthGateway.payoutWallet()`. The balance is advisory: it blocks sending
@@ -361,9 +371,9 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
 - **The first-run tour anchors on `data-tour`** attributes (sidebar and bottom
   nav items, `sync`, `help`). Renaming one without updating `onboarding/tour.ts`
   silently turns that stop into a centred dialog.
-- **Payroll is suspended by the owner** (2026-09-27, until further notice).
-  `SUSPENDED_MODULES` in `shell/navigation.ts` hides it from every role and
-  `ModuleGuard` refuses it; the §3.1 matrix is untouched. Remove the id to restore.
+- **Payroll is not active for now** at the owner's request. Its feature code,
+  data tables, and server policies remain retained for deliberate future reactivation;
+  it is not in the active navigation, onboarding tour, or screen registry.
 - **The website build fails on purpose while the WhatsApp number is missing.**
   That is `scripts/check-content.mjs`, not a broken build.
 

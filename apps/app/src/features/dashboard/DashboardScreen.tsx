@@ -17,6 +17,8 @@ import {
   useToast,
 } from '@rasko/ui'
 
+import { printPage } from '../../shell/print.js'
+
 import { useIdentity } from '../../auth/AuthProvider.js'
 import { useSync } from '../../data/sync/SyncProvider.js'
 import { useSyncedEffect } from '../../data/sync/useSyncedEffect.js'
@@ -189,7 +191,7 @@ export function DashboardScreen({ role, scope }: ScreenProps) {
             >
               Export sales
             </Button>
-            <Button variant="primary" onClick={() => window.print()} disabled={!data}>
+            <Button variant="primary" onClick={() => void printPage()} disabled={!data}>
               Print or save as PDF
             </Button>
           </>

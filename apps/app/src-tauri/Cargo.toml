@@ -1,6 +1,6 @@
 [package]
 name = "rss-management-system"
-version = "0.1.0"
+version = "0.1.8"
 description = "RSS Management System for Rasko Sweet Scent"
 authors = ["Rasko Sweet Scent"]
 edition = "2021"

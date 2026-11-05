@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
-import { Button, formatDateTime, formatMoney } from '@rasko/ui'
+import { formatDateTime, formatMoney } from '@rasko/ui'
+
+import { DocumentOverlay } from '../../shell/DocumentOverlay.js'
 
 import { PAYMENT_METHOD_LABEL } from './types.js'
 import type { CompanySettings, InvoiceDetail, PaymentRecord } from './types.js'
@@ -24,24 +25,11 @@ export function ReceiptDocument({
   company: CompanySettings | null
   onClose: () => void
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   const { invoice } = detail
   const net = payment.amount_cents - payment.reversedCents
 
   return (
-    <div className="doc-overlay">
-      <div className="doc-toolbar rsk-no-print">
-        <Button onClick={onClose}>Close</Button>
-        <Button variant="primary" onClick={() => window.print()}>
-          Print or save as PDF
-        </Button>
-      </div>
-
+    <DocumentOverlay onClose={onClose}>
       <article className="doc-page">
         <header className="doc-header">
           <div>
@@ -107,6 +95,6 @@ export function ReceiptDocument({
           </p>
         </footer>
       </article>
-    </div>
+    </DocumentOverlay>
   )
 }

@@ -273,43 +273,48 @@ export class OrdersRepository {
     }
 
     const { subtotal, prepared } = this.lineTotals(input.lines)
+    if (input.discountCents < 0 || input.discountCents > subtotal) {
+      throw new OrderRuleError('The discount must be between zero and the order subtotal.')
+    }
     const total = subtotal - input.discountCents
 
-    await this.orders.insert({
-      id: input.id,
-      client_id: input.clientId,
-      is_walk_in: input.isWalkIn,
-      status: 'draft',
-      order_type: input.orderType,
-      subtotal_cents: subtotal,
-      discount_cents: input.discountCents,
-      total_cents: total,
-      delivery_at: input.deliveryAt,
-      delivery_address: input.deliveryAddress,
-      delivery_number: input.deliveryNumber ?? null,
-      currency: normaliseCurrency(input.currency),
-      event_date: input.eventDate,
-      event_venue: input.eventVenue,
-      event_setup_notes: input.eventSetupNotes,
-      notes: input.notes,
-      taken_by: input.takenBy,
-    } as never)
-
-    let position = 0
-    for (const { line, quantity, unitPrice, total: lineTotal } of prepared) {
-      position += 1
-      await this.items.insert({
-        id: line.key,
-        order_id: input.id,
-        product_id: line.productId,
-        description: line.description,
-        quantity,
-        unit_price_cents: unitPrice,
-        discount_cents: 0,
-        line_total_cents: lineTotal,
-        position,
+    await this.db.transaction(async () => {
+      await this.orders.insert({
+        id: input.id,
+        client_id: input.clientId,
+        is_walk_in: input.isWalkIn,
+        status: 'draft',
+        order_type: input.orderType,
+        subtotal_cents: subtotal,
+        discount_cents: input.discountCents,
+        total_cents: total,
+        delivery_at: input.deliveryAt,
+        delivery_address: input.deliveryAddress,
+        delivery_number: input.deliveryNumber ?? null,
+        currency: normaliseCurrency(input.currency),
+        event_date: input.eventDate,
+        event_venue: input.eventVenue,
+        event_setup_notes: input.eventSetupNotes,
+        notes: input.notes,
+        taken_by: input.takenBy,
       } as never)
-    }
+
+      let position = 0
+      for (const { line, quantity, unitPrice, total: lineTotal } of prepared) {
+        position += 1
+        await this.items.insert({
+          id: line.key,
+          order_id: input.id,
+          product_id: line.productId,
+          description: line.description,
+          quantity,
+          unit_price_cents: unitPrice,
+          discount_cents: 0,
+          line_total_cents: lineTotal,
+          position,
+        } as never)
+      }
+    })
 
     const created = await this.findSummary(input.id)
     if (!created) throw new OrderRuleError('The order could not be read back after saving.')
@@ -371,11 +376,8 @@ export class OrdersRepository {
     if (detail.invoiceId) {
       throw new OrderRuleError('This order already has an invoice.')
     }
-    if (detail.order.status === 'draft') {
-      throw new OrderRuleError('Confirm the order before invoicing it.')
-    }
-    if (detail.order.status === 'cancelled') {
-      throw new OrderRuleError('A cancelled order cannot be invoiced.')
+    if (detail.order.status !== 'confirmed') {
+      throw new OrderRuleError('Only a confirmed order can be invoiced.')
     }
 
     const client = detail.order.client_id
@@ -408,8 +410,14 @@ export class OrdersRepository {
       detail.order.discount_cents,
     )
 
+    const companyRows = await this.db.select<Record<string, unknown>>(
+      `SELECT company_name, address, phone, email, kra_pin, logo_url,
+              mpesa_paybill, mpesa_till, bank_details
+       FROM company_settings LIMIT 1`,
+    )
+    const company = companyRows[0]
     const terms = Number(client?.['credit_terms_days'] ?? 0)
-    const issue = new Date()
+    const issue = new Date(this.context.now?.() ?? new Date().toISOString())
     const due = new Date(issue.getTime() + terms * 24 * 60 * 60 * 1000)
     const asDate = (d: Date) => d.toISOString().slice(0, 10)
 
@@ -426,7 +434,19 @@ export class OrdersRepository {
             kra_pin: client['kra_pin'],
           }
         : { name: 'Walk-in' },
-      company_snapshot: {},
+      company_snapshot: company
+        ? {
+            company_name: company['company_name'],
+            address: company['address'],
+            phone: company['phone'],
+            email: company['email'],
+            kra_pin: company['kra_pin'],
+            logo_url: company['logo_url'],
+            mpesa_paybill: company['mpesa_paybill'],
+            mpesa_till: company['mpesa_till'],
+            bank_details: company['bank_details'],
+          }
+        : {},
       status: 'draft',
       issue_date: asDate(issue),
       due_date: asDate(due),

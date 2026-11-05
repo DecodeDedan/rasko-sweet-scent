@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
-import { Button, formatDate, formatKes } from '@rasko/ui'
+import { formatDate, formatKes } from '@rasko/ui'
+
+import { DocumentOverlay } from '../../shell/DocumentOverlay.js'
 
 import type { CompanySettings } from '../invoices/types.js'
 import type { PayrollItem, PayrollRun } from './types.js'
@@ -47,12 +48,6 @@ export function PayslipDocument({
   company: CompanySettings | null
   onClose: () => void
 }) {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => event.key === 'Escape' && onClose()
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   const employee = item.employee_snapshot
   const statutory = item.paye_cents + item.nssf_cents + item.shif_cents + item.housing_levy_cents
   const otherDeductions = item.other_deductions.reduce(
@@ -61,14 +56,7 @@ export function PayslipDocument({
   )
 
   return (
-    <div className="doc-overlay">
-      <div className="doc-toolbar rsk-no-print">
-        <Button onClick={onClose}>Close</Button>
-        <Button variant="primary" onClick={() => window.print()}>
-          Print or save as PDF
-        </Button>
-      </div>
-
+    <DocumentOverlay onClose={onClose}>
       <article className="doc-page">
         <header className="doc-header">
           <div>
@@ -204,6 +192,6 @@ export function PayslipDocument({
           ) : null}
         </section>
       </article>
-    </div>
+    </DocumentOverlay>
   )
 }

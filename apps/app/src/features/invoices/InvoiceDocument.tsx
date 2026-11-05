@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { Mail, MapPin, Phone } from 'lucide-react'
-import { Button, formatDate, formatQuantity } from '@rasko/ui'
+import { formatDate, formatQuantity } from '@rasko/ui'
+
+import { DocumentOverlay } from '../../shell/DocumentOverlay.js'
 
 import { BrandMark } from '../../shell/BrandMark.js'
 import { InvoiceStamp } from './InvoiceStamp.js'
@@ -159,12 +160,6 @@ export interface InvoiceDocumentProps {
 }
 
 export function InvoiceDocument({ detail, company, onClose }: InvoiceDocumentProps) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   const { invoice, lines } = detail
   const snapshot = (invoice.client_snapshot ?? {}) as Record<string, unknown>
   const clientName = String(snapshot['name'] ?? invoice.clientName)
@@ -194,14 +189,7 @@ export function InvoiceDocument({ detail, company, onClose }: InvoiceDocumentPro
   const blankRows = Math.max(0, MIN_LEDGER_ROWS - printed.length - written)
 
   return (
-    <div className="doc-overlay">
-      <div className="doc-toolbar rsk-no-print">
-        <Button onClick={onClose}>Close</Button>
-        <Button variant="primary" onClick={() => window.print()}>
-          Print or save as PDF
-        </Button>
-      </div>
-
+    <DocumentOverlay onClose={onClose}>
       <article className="doc-page inv">
         <header className="inv-head">
           <BrandMark height={96} className="inv-mark" />
@@ -387,6 +375,6 @@ export function InvoiceDocument({ detail, company, onClose }: InvoiceDocumentPro
           ) : null}
         </footer>
       </article>
-    </div>
+    </DocumentOverlay>
   )
 }

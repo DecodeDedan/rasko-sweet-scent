@@ -113,5 +113,5 @@ export function canDelete(role: Role): boolean {
 
 /** FR-4.4: only a confirmed order becomes an invoice. */
 export function canConvertToInvoice(status: OrderStatus): boolean {
-  return status !== 'draft' && status !== 'cancelled'
+  return status === 'confirmed'
 }

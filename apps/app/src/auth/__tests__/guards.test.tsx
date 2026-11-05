@@ -42,14 +42,14 @@ describe('navigation is driven by role', () => {
     expect(rendered).toEqual(modulesForRole(role).map((m) => m.label))
   })
 
-  it('hides suppliers, payroll, settings, users and audit from sales', async () => {
+  it('hides suppliers, settings, users and audit from sales', async () => {
     render(<App gateway={signedInAs('sales')} />)
     await screen.findByRole('heading', { name: 'Dashboard', level: 1 })
 
     const sidebar = document.querySelector('.shell__sidebar') as HTMLElement
     const labels = [...sidebar.querySelectorAll('.shell__nav-item')].map((n) => n.textContent)
 
-    for (const hidden of ['Suppliers', 'Payroll', 'Settings', 'Users', 'Audit log']) {
+    for (const hidden of ['Suppliers', 'Settings', 'Users', 'Audit log']) {
       expect(labels).not.toContain(hidden)
     }
   })
@@ -86,20 +86,6 @@ describe('ModuleGuard blocks a forbidden module for every role', () => {
 
     expect(screen.getByText('You do not have access to this')).toBeInTheDocument()
     expect(screen.queryByText('secret contents')).not.toBeInTheDocument()
-  })
-
-  it.each(ROLES)('keeps suspended payroll from %s, owner included', (role) => {
-    expect(SUSPENDED_MODULES.has('payroll')).toBe(true)
-    expect(modulesForRole(role).map((m) => m.id)).not.toContain('payroll')
-
-    render(
-      <ModuleGuard moduleId="payroll" role={role}>
-        <p>payroll contents</p>
-      </ModuleGuard>,
-    )
-
-    expect(screen.getByText('Payroll is switched off')).toBeInTheDocument()
-    expect(screen.queryByText('payroll contents')).not.toBeInTheDocument()
   })
 
   it('renders the screen when the role is permitted', () => {

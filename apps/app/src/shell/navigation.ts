@@ -8,7 +8,6 @@ import {
   Truck,
   UserCog,
   Users,
-  Wallet,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -21,7 +20,6 @@ export type ModuleId =
   | 'invoices'
   | 'products'
   | 'suppliers'
-  | 'payroll'
   | 'settings'
   | 'users'
   | 'audit'
@@ -125,18 +123,6 @@ export const MODULES: readonly ModuleDefinition[] = [
     },
   },
   {
-    id: 'payroll',
-    label: 'Payroll',
-    icon: Wallet,
-    capability: 'Payroll',
-    access: {
-      owner: all('Full'),
-      manager: all('View only'),
-      accountant: all('Prepare only'),
-      sales: none(),
-    },
-  },
-  {
     id: 'settings',
     label: 'Settings',
     icon: Settings,
@@ -176,12 +162,8 @@ export const MODULES: readonly ModuleDefinition[] = [
   },
 ]
 
-/**
- * Modules switched off for everyone by the owner, whatever the matrix says
- * (payroll: owner, 2026-09-27, "until further notice"). Remove an id to bring
- * the module back; the matrix above is left untouched so nothing else changes.
- */
-export const SUSPENDED_MODULES: ReadonlySet<ModuleId> = new Set<ModuleId>(['payroll'])
+/** Modules temporarily excluded from the active product surface. */
+export const SUSPENDED_MODULES: ReadonlySet<ModuleId> = new Set<ModuleId>()
 
 export function canReach(id: ModuleId, role: Role): boolean {
   return !SUSPENDED_MODULES.has(id) && findModule(id).access[role].canAccess

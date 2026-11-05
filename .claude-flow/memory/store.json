@@ -1,0 +1,374 @@
+{
+  "entries": {
+    "cmd-1791419962136": {
+      "key": "cmd-1791419962136",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent && ls -a; git ls-files 2>/dev/null | grep -v -E \\\"^(public|assets)/\\\" | head -150; git ls-files 2>/dev/null | wc -l\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:39:22.136Z",
+      "lastAccessed": "2026-10-08T00:39:22.136Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:39:22.136Z"
+    },
+    "cmd-1791419980296": {
+      "key": "cmd-1791419980296",
+      "value": "{\"command\":\"ls -a && cat pnpm-workspace.yaml && ls apps packages supabase scripts .github/workflows; for p in apps/*/package.json packages/*/package.json; do echo \\\"== $p\\\"; grep -E '\\\"(name|main|module|version)\\\"' $p | head -4; done\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:39:40.296Z",
+      "lastAccessed": "2026-10-08T00:39:40.296Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:39:40.296Z"
+    },
+    "cmd-1791419985184": {
+      "key": "cmd-1791419985184",
+      "value": "{\"command\":\"for p in apps/app/package.json apps/website/package.json packages/ui/package.json; do echo \\\"== $p\\\"; cat $p; done; cat package.json; cat .env.example\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:39:45.184Z",
+      "lastAccessed": "2026-10-08T00:39:45.184Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:39:45.184Z"
+    },
+    "cmd-1791419986816": {
+      "key": "cmd-1791419986816",
+      "value": "{\"command\":\"find apps packages supabase scripts -type f -not -path '*/node_modules/*' -not -path '*/target/*' -not -path '*/dist/*' -not -path '*/.next/*' -not -path '*/gen/*' -not -name '*.png' -not -name '*.ico' -not -name '*.icns' -not -name '*.svg' -not -name '*.webp' | grep -v -E '\\\\.(test|spec)\\\\.' | sort | head -400\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:39:46.816Z",
+      "lastAccessed": "2026-10-08T00:39:46.816Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:39:46.816Z"
+    },
+    "cmd-1791419992292": {
+      "key": "cmd-1791419992292",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/apps/app/src && wc -l data/*.ts data/sqlite/*.ts data/sync/*.ts data/repositories/*.ts auth/*.ts main.tsx App.tsx env.ts; cat data/bootstrap.ts | head -120\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:39:52.292Z",
+      "lastAccessed": "2026-10-08T00:39:52.292Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:39:52.292Z"
+    },
+    "cmd-1791419992536": {
+      "key": "cmd-1791419992536",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/apps/app/src && cat data/sync/scheduler.ts; grep -n -E \\\"export|online|setInterval|INTERVAL|ms|visibility\\\" data/sync/SyncProvider.tsx | head -60\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:39:52.536Z",
+      "lastAccessed": "2026-10-08T00:39:52.536Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:39:52.536Z"
+    },
+    "cmd-1791419997823": {
+      "key": "cmd-1791419997823",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/apps/app/src && cat data/sync/supabaseRemote.ts data/sync/remote.ts; grep -n -E \\\"^export|^async function|^function|push|pull|cursor|conflict|LWW|server_clock|updated_at\\\" data/sync/engine.ts | head -60\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:39:57.823Z",
+      "lastAccessed": "2026-10-08T00:39:57.823Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:39:57.823Z"
+    },
+    "cmd-1791419998236": {
+      "key": "cmd-1791419998236",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/apps/app/src && sed -n 1,60p data/sync/outbox.ts; cat data/sync/cursors.ts | head -43; head -40 data/sqlite/tauriDatabase.ts; grep -n -E \\\"import|sql.js|wasm|better-sqlite|node:sqlite\\\" data/sqlite/browserDatabase.ts data/sqlite/nodeDatabase.ts\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:39:58.236Z",
+      "lastAccessed": "2026-10-08T00:39:58.236Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:39:58.236Z"
+    },
+    "cmd-1791420003656": {
+      "key": "cmd-1791420003656",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/apps/app/src && sed -n 1,60p data/repositories/repository.ts; grep -n -E \\\"enqueue|notifyLocalWrite|transaction\\\" data/repositories/repository.ts | head\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:03.656Z",
+      "lastAccessed": "2026-10-08T00:40:03.656Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:03.656Z"
+    },
+    "cmd-1791420003760": {
+      "key": "cmd-1791420003760",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/apps/app/src && grep -n -E \\\"name: '|appendOnly|pushInsertOnly|pullOnly|push: false|pull: false|localOnly\\\" data/sqlite/tables.ts | head -80; grep -n \\\"CREATE TABLE\\\" data/sqlite/schema.ts\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:03.760Z",
+      "lastAccessed": "2026-10-08T00:40:03.760Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:03.760Z"
+    },
+    "cmd-1791420010001": {
+      "key": "cmd-1791420010001",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/apps/app/src && grep -n -E \\\"new Repository|onLocalWrite|notifyLocalWrite|new SyncScheduler|openDeviceSync|wipeReplica\\\" -r . --include=*.ts --include=*.tsx | grep -v __tests__ | head -40; grep -n -E \\\"createInvoice|async create|saveInvoice\\\" features/invoices/invoicesRepository.ts | head\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:10.001Z",
+      "lastAccessed": "2026-10-08T00:40:10.001Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:10.001Z"
+    },
+    "cmd-1791420010336": {
+      "key": "cmd-1791420010336",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/apps/app/src && cat env.ts | sed -n 1,103p | grep -v '^ \\\\*' ; grep -n -E \\\"createClient|signInWith|functions.invoke|resetPasswordForEmail|updateUser|rpc\\\\(|from\\\\('|storage|signOut|onAuthStateChange|persistSession|storage:\\\" auth/*.ts\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:10.336Z",
+      "lastAccessed": "2026-10-08T00:40:10.336Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:10.336Z"
+    },
+    "cmd-1791420014334": {
+      "key": "cmd-1791420014334",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/apps/app/src && grep -rn -E \\\"new Repository|onLocalWrite|notifyLocalWrite|new SyncScheduler|openDeviceSync|wipeReplica\\\" . | grep -v __tests__ | head -40; grep -n -E \\\"functions.invoke|enqueue|Repository\\\\(\\\" features/email/*.ts features/payroll/*.ts features/invoices/invoicesRepository.ts | head -30\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:14.334Z",
+      "lastAccessed": "2026-10-08T00:40:14.334Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:14.334Z"
+    },
+    "cmd-1791420020851": {
+      "key": "cmd-1791420020851",
+      "value": "{\"command\":\"sed -n 1,50p apps/app/src/features/email/emailRepository.ts | grep -v '^import'; grep -n -E \\\"invoke|send-email|status|queued\\\" apps/app/src/features/email/emailRepository.ts | head -20; grep -n -E \\\"net\\\\.http_post|pg_net|pg_cron|cron\\\\.|webhook|send-email|functions/v1|trigger|CREATE TABLE|CREATE OR REPLACE FUNCTION\\\" supabase/migrations/20260925000100_email.sql supabase/migrations/20260926000200_email_provider_health.sql | head -40\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:20.851Z",
+      "lastAccessed": "2026-10-08T00:40:20.851Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:20.851Z"
+    },
+    "cmd-1791420021202": {
+      "key": "cmd-1791420021202",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/supabase/functions && grep -n -E \\\"Deno.env.get|fetch\\\\(|https://|from\\\\(|rpc\\\\(|import \\\" send-email/index.ts _shared/email/deliver.ts _shared/email/transport.js | head -60\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:21.202Z",
+      "lastAccessed": "2026-10-08T00:40:21.202Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:21.202Z"
+    },
+    "cmd-1791420025368": {
+      "key": "cmd-1791420025368",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/supabase && sed -n 185,280p migrations/20260925000100_email.sql; grep -n -E \\\"SMTP|host|name:|PROVIDER|Brevo|brevo|zoho|Zoho|gmail|resend|sendgrid|mailgun|ses|postmark|env\\\\(\\\" functions/_shared/email/transport.js | head -40\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:25.368Z",
+      "lastAccessed": "2026-10-08T00:40:25.368Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:25.368Z"
+    },
+    "cmd-1791420032505": {
+      "key": "cmd-1791420032505",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/supabase/functions && for f in */index.ts _shared/mailbox/*.ts _shared/mailbox/routing.js _shared/mpesa/b2c.js _shared/payouts/intasend.js _shared/payouts/intasendClient.ts _shared/owner.ts _shared/email/auth.js _shared/email/staff.js; do echo \\\"=== $f\\\"; grep -n -E \\\"Deno.env.get\\\\('[A-Z_]+'|https?://[a-zA-Z0-9.\\\\-]+|\\\\.from\\\\('[a-z_]+'\\\\)|rpc\\\\('[a-z_]+'|auth\\\\.admin\\\\.[a-zA-Z]+|functions\\\\.invoke|deliver\\\\(|sendWithFailover|webhook|verify_jwt|standardwebhooks|Webhook\\\" $f | sed -E 's/^([0-9]+:).{0,0}/\\\\1/' | cut -c1-160 | head -25; done\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:32.505Z",
+      "lastAccessed": "2026-10-08T00:40:32.505Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:32.505Z"
+    },
+    "cmd-1791420037827": {
+      "key": "cmd-1791420037827",
+      "value": "{\"command\":\"grep -n -E \\\"routing|cloudflare|Cloudflare|CLOUDFLARE|mailbox\\\" supabase/functions/assign-company-email/index.ts supabase/functions/_shared/mailbox/config.ts | head -12; sed -n 30,50p supabase/functions/mpesa-b2c/index.ts; grep -n -E \\\"trigger|net.http_post|cron.schedule|mpesa|function_url\\\" supabase/migrations/20260927000100_mpesa_b2c.sql supabase/migrations/20260929000100_intasend_payouts.sql | head -20; grep -n -E \\\"^\\\\[|verify_jwt|hook|send_email|enabled|uri|bucket|site_url\\\" supabase/config.toml | head -60\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:37.827Z",
+      "lastAccessed": "2026-10-08T00:40:37.827Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:37.827Z"
+    },
+    "cmd-1791420042947": {
+      "key": "cmd-1791420042947",
+      "value": "{\"command\":\"ls -a apps/website; sed -n 295,400p supabase/config.toml | grep -v -E '^\\\\s*#|^\\\\s*$'; grep -n -E \\\"net.http_post|cron.schedule|create trigger .*dispatch|function_url|payout_dispatch\\\" supabase/migrations/*.sql | head -20\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:42.947Z",
+      "lastAccessed": "2026-10-08T00:40:42.947Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:42.947Z"
+    },
+    "cmd-1791420047335": {
+      "key": "cmd-1791420047335",
+      "value": "{\"command\":\"grep -n -A2 -E \\\"^\\\\[functions|^\\\\[edge_runtime\\\" supabase/config.toml | head -50; grep -rn -E \\\"vercel|netlify|cloudflare pages|github pages|gh-pages\\\" apps/website/next.config.mjs .github/workflows docs 2>/dev/null | head -10\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:47.335Z",
+      "lastAccessed": "2026-10-08T00:40:47.335Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:47.335Z"
+    },
+    "cmd-1791420051741": {
+      "key": "cmd-1791420051741",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/.github/workflows && cat backup.yml\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:51.741Z",
+      "lastAccessed": "2026-10-08T00:40:51.741Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:51.741Z"
+    },
+    "cmd-1791420052159": {
+      "key": "cmd-1791420052159",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/.github/workflows && cat indexnow.yml; grep -n -E \\\"^on:|^  [a-z_]+:|runs-on|uses:|run:|name:|tags|branches|cron\\\" ci.yml release.yml | head -80\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:52.159Z",
+      "lastAccessed": "2026-10-08T00:40:52.159Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:52.159Z"
+    },
+    "cmd-1791420057155": {
+      "key": "cmd-1791420057155",
+      "value": "{\"command\":\"sed -n 1,12p .github/workflows/release.yml; sed -n 50,90p .github/workflows/release.yml; grep -n -E \\\"updater|endpoints|pubkey|identifier|productName|\\\\\\\"version\\\\\\\"|frontendDist|devUrl|createUpdaterArtifacts|csp|connect-src\\\" apps/app/src-tauri/tauri.conf.json | cut -c1-220; grep -n -E \\\"^tauri|plugin|^name|^version\\\" apps/app/src-tauri/Cargo.toml; grep -n -E \\\"plugin|Builder|migration\\\" apps/app/src-tauri/src/lib.rs | head; cat apps/app/src-tauri/capabilities/default.json | head -40\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:40:57.155Z",
+      "lastAccessed": "2026-10-08T00:40:57.155Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:40:57.155Z"
+    },
+    "cmd-1791420061790": {
+      "key": "cmd-1791420061790",
+      "value": "{\"command\":\"sed -n 27p apps/app/src-tauri/tauri.conf.json | grep -o \\\"connect-src[^;]*\\\"; sed -n 56,64p apps/app/src-tauri/tauri.conf.json; sed -n 1,60p apps/app/src-tauri/src/lib.rs | grep -v '^\\\\s*$' | head -60; grep -n -E \\\"check\\\\(|downloadAndInstall|relaunch\\\" apps/app/src/shell/useAppUpdate.ts\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:41:01.790Z",
+      "lastAccessed": "2026-10-08T00:41:01.790Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:41:01.790Z"
+    },
+    "cmd-1791420070113": {
+      "key": "cmd-1791420070113",
+      "value": "{\"command\":\"grep -rnoh -E \\\"https?://[a-zA-Z0-9.\\\\-]+[a-zA-Z0-9/_.\\\\-]*\\\" apps/app/src apps/website/app apps/website/components apps/website/lib apps/website/content apps/website/next.config.mjs packages/ui/src scripts apps/app/index.html 2>/dev/null | grep -v -E \\\"w3.org|schema.org|localhost|127.0.0.1|example\\\" | sort | uniq -c | sort -rn | head -40\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:41:10.113Z",
+      "lastAccessed": "2026-10-08T00:41:10.113Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:41:10.113Z"
+    },
+    "cmd-1791420070493": {
+      "key": "cmd-1791420070493",
+      "value": "{\"command\":\"grep -rn -E \\\"^import .* from '[^.@/][^']*'|^import .* from '@[^r][^']*'\\\" apps/app/src apps/website/app apps/website/components apps/website/lib packages/ui/src scripts 2>/dev/null | grep -v __tests__ | grep -v -E \\\"\\\\.test\\\\.\\\" | sed -E \\\"s/.*from '([^']+)'.*/\\\\1/\\\" | sort | uniq -c | sort -rn; grep -rln -E \\\"sentry|posthog|gtag|plausible|umami|analytics|stripe|paystack|flutterwave|exchangerate|openexchangerates|jspdf|pdfmake|html2canvas|@vercel\\\" apps/app/src apps/website/app apps/website/components apps/website/lib packages/ui/src 2>/dev/null\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:41:10.493Z",
+      "lastAccessed": "2026-10-08T00:41:10.493Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:41:10.493Z"
+    },
+    "cmd-1791420076292": {
+      "key": "cmd-1791420076292",
+      "value": "{\"command\":\"grep -rln \\\"@supabase/supabase-js\\\" apps/website scripts --include=*.tsx --include=*.ts --include=*.mjs 2>/dev/null | grep -v node_modules | grep -v /out/; grep -n -E \\\"createClient|auth\\\\.|verifyOtp|exchangeCode|updateUser|NEXT_PUBLIC|process.env\\\" apps/website/components/SetPasswordForm.tsx apps/website/app/reset-password/page.tsx | head -15; grep -n -E \\\"output|basePath|env|rewrites|redirects|images\\\" apps/website/next.config.mjs; grep -n -E \\\"wa\\\\.me|mailto|fetch\\\\(|action=\\\" apps/website/components/Enquiry.tsx apps/website/lib/whatsapp.ts | head; grep -n -E \\\"analytics|Vercel|cookies\\\" apps/website/app/privacy/page.tsx | head -5\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:41:16.292Z",
+      "lastAccessed": "2026-10-08T00:41:16.292Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:41:16.292Z"
+    },
+    "cmd-1791420083874": {
+      "key": "cmd-1791420083874",
+      "value": "{\"command\":\"grep -rn -E \\\"\\\\.rpc\\\\(|functions\\\\.invoke|\\\\.channel\\\\(|storage\\\\.from\\\" apps/app/src | grep -v __tests__; sed -n 20,70p apps/app/src/App.tsx; grep -n -E \\\"process.env|SUPABASE|auth.admin|from\\\\('|fetch|readFile|writeFile|templates\\\" scripts/*.mjs | head -20\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:41:23.874Z",
+      "lastAccessed": "2026-10-08T00:41:23.874Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:41:23.874Z"
+    },
+    "cmd-1791420089796": {
+      "key": "cmd-1791420089796",
+      "value": "{\"command\":\"sed -n 95,135p apps/app/src/auth/supabaseGateway.ts; grep -n -E \\\"export|offline|cache\\\" apps/app/src/auth/AuthProvider.tsx | head -15; grep -rn -E \\\"storage\\\\.buckets|storage\\\\.objects|realtime|supabase_realtime\\\" supabase/migrations | head; sed -n 1,25p supabase/functions/payout-result/index.ts\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:41:29.796Z",
+      "lastAccessed": "2026-10-08T00:41:29.796Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:41:29.796Z"
+    },
+    "cmd-1791420095274": {
+      "key": "cmd-1791420095274",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/supabase/migrations && grep -h -o -i -E \\\"create (table|view|or replace view|materialized view) (if not exists )?[a-z_.]+\\\" *.sql | sort -u | tr '\\\\n' ';'; echo; grep -h -o -E \\\"create or replace function [a-z_.]+\\\" *.sql | sort -u | tr '\\\\n' ';'; echo; head -12 20260901001100_sync_and_website.sql\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:41:35.274Z",
+      "lastAccessed": "2026-10-08T00:41:35.274Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:41:35.274Z"
+    },
+    "cmd-1791420102228": {
+      "key": "cmd-1791420102228",
+      "value": "{\"command\":\"grep -rn \\\"fetch(\\\" apps/app/src apps/website/components apps/website/app apps/website/lib | grep -v __tests__ | head; sed -n 1,15p apps/app/src/features/invoices/currency.ts | grep -E \\\"^\\\\s*(\\\\*|//)\\\" ; grep -n -E \\\"invoke\\\\(|print\\\" apps/app/src/shell/print.ts | head -5; grep -n -E \\\"enqueue|status: 'queued'|insert\\\" apps/app/src/features/payroll/mpesaPayouts.ts | head -5; grep -n -E \\\"callback|RESULT_FUNCTION|MPESA_CALLBACK_BASE_URL\\\" supabase/functions/mpesa-b2c/index.ts | head -6\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:41:42.228Z",
+      "lastAccessed": "2026-10-08T00:41:42.228Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:41:42.228Z"
+    },
+    "cmd-1791420191532": {
+      "key": "cmd-1791420191532",
+      "value": "{\"command\":\"grep -n \\\"5 \\\\* 60\\\\|2_000\\\\|2000\\\\|'online'\\\" apps/app/src/data/sync/scheduler.ts | head -5; grep -n \\\"outbound_emails_dispatch\\\\|net.http_post\\\\|cron.schedule\\\" supabase/migrations/20260925000100_email.sql | head -5; grep -n \\\"endpoints\\\\|releases\\\" apps/app/src-tauri/tauri.conf.json; grep -n \\\"brevo\\\\|resend\\\\|gmail\\\" supabase/functions/_shared/email/transport.js | head -4; ls docs\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:43:11.532Z",
+      "lastAccessed": "2026-10-08T00:43:11.532Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:43:11.532Z"
+    },
+    "cmd-1791420301542": {
+      "key": "cmd-1791420301542",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent/docs/architecture && exec python3 -m http.server 8766 --bind 127.0.0.1\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T00:45:01.542Z",
+      "lastAccessed": "2026-10-08T00:45:01.542Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T00:45:01.542Z"
+    },
+    "cmd-1791421581332": {
+      "key": "cmd-1791421581332",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent && sed -n 25,110p supabase/functions/mpesa-b2c/index.ts; echo ----; sed -n 1,40p supabase/functions/payout-result/index.ts; echo ----; cat apps/website/next.config.mjs; ls apps/website; git log --oneline -5 -- apps/website/vercel.json; grep -rn \\\"vercel\\\\|/hooks\\\\|PAYOUT_CALLBACK\\\\|CALLBACK_BASE\\\" --include=*.md --include=*.ts --include=*.js --include=*.mjs --include=*.json --include=*.toml --include=*.example . 2>/dev/null | grep -v node_modules | grep -v \\\"\\\\.next/\\\" | head -30\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T01:06:21.332Z",
+      "lastAccessed": "2026-10-08T01:06:21.332Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T01:06:21.332Z"
+    },
+    "cmd-1791421588039": {
+      "key": "cmd-1791421588039",
+      "value": "{\"command\":\"git log --all --oneline -- 'apps/website/vercel.json' | head; grep -rn -i \\\"vercel\\\\|/hooks\\\\|CALLBACK_BASE\\\\|rewrite\\\" docs/*.md README.md CLAUDE.md AGENTS.md .env.example 2>/dev/null | head -30; grep -rn \\\"supabase.co\\\" docs/*.md apps/app/src-tauri/tauri.conf.json .github/workflows/*.yml 2>/dev/null | head -5\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T01:06:28.039Z",
+      "lastAccessed": "2026-10-08T01:06:28.039Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T01:06:28.039Z"
+    },
+    "cmd-1791421603220": {
+      "key": "cmd-1791421603220",
+      "value": "{\"command\":\"grep -rn \\\"raskosweetscent.com/hooks\\\\|/hooks\\\\b\\\\|hooks.raskosweetscent\\\\|vercel\\\" --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=out --exclude-dir=.git . | grep -v \\\"\\\\.git/\\\" | head; sed -n 75,105p supabase/functions/_shared/payouts/intasendClient.ts | grep -n \\\"callback\\\\|CALLBACK\\\" ; grep -rn \\\"CALLBACK_BASE\\\" supabase/functions --include=*.ts --include=*.js | head\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T01:06:43.220Z",
+      "lastAccessed": "2026-10-08T01:06:43.220Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T01:06:43.220Z"
+    },
+    "cmd-1791421613271": {
+      "key": "cmd-1791421613271",
+      "value": "{\"command\":\"grep -n \\\"^version\\\\|^name\\\" apps/app/src-tauri/Cargo.toml; grep -n '\\\"version\\\"\\\\|\\\"productName\\\"' apps/app/src-tauri/tauri.conf.json apps/app/package.json package.json; grep -n -A2 'name = \\\"rasko\\\\|name = \\\"app' apps/app/src-tauri/Cargo.lock | head -6; grep -n \\\"cargo\\\\|locked\\\\|version\\\" .github/workflows/ci.yml .github/workflows/release.yml | head -20; grep -rn \\\"version\\\" scripts/*.mjs package.json | head\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T01:06:53.271Z",
+      "lastAccessed": "2026-10-08T01:06:53.271Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T01:06:53.271Z"
+    },
+    "cmd-1791421622714": {
+      "key": "cmd-1791421622714",
+      "value": "{\"command\":\"sed -n 1,15p .github/workflows/release.yml; echo ----; sed -n 1,70p .github/workflows/ci.yml; echo ----; grep -n -B1 -A1 'name = \\\"rss-management-system\\\"' apps/app/src-tauri/Cargo.lock; git status --short | head\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T01:07:02.714Z",
+      "lastAccessed": "2026-10-08T01:07:02.714Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T01:07:02.714Z"
+    },
+    "cmd-1791421627304": {
+      "key": "cmd-1791421627304",
+      "value": "{\"command\":\"git diff apps/app/package.json; git tag --sort=-v:refname | head -3; git log --oneline -3\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T01:07:07.304Z",
+      "lastAccessed": "2026-10-08T01:07:07.304Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T01:07:07.304Z"
+    },
+    "cmd-1791421675678": {
+      "key": "cmd-1791421675678",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent && python3 -c \\\"import yaml,sys; [yaml.safe_load(open(f)) for f in ['.github/workflows/ci.yml','.github/workflows/release.yml']]; print('YAML-OK')\\\" && python3 - <<'EOF' > /private/tmp/claude-501/-Users-okwared-Softwares-my-mods/b1cc6841-36dd-4eaa-8d42-765012bc6152/scratchpad/guard.js\\nimport yaml\\nsteps = yaml.safe_load(open('.github/workflows/ci.yml'))['jobs']['checks']['steps']\\nrun = next(s['run'] for s in steps if s.get('name') == 'App versions agree')\\nprint(run.split('node -e \\\"',1)[1].rsplit('\\\"',1)[0].replace('\\\\\\\\\\\"','\\\"'))\\nEOF\\nG=/private/tmp/claude-501/-Users-okwared-Softwares-my-mods/b1cc6841-36dd-4eaa-8d42-765012bc6152/scratchpad/guard.js; node $G && echo \\\"GUARD PASS on real repo (0.1.8 = 0.1.8)\\\"; T=$(mktemp -d /private/tmp/claude-501/-Users-okwared-Softwares-my-mods/b1cc6841-36dd-4eaa-8d42-765012bc6152/scratchpad/mm.XXXX); mkdir -p $T/apps/app/src-tauri && echo '{\\\"version\\\":\\\"0.1.8\\\"}' > $T/apps/app/package.json && printf '[package]\\\\nname = \\\"x\\\"\\\\nversion = \\\"0.1.0\\\"\\\\n' > $T/apps/app/src-tauri/Cargo.toml && (cd $T && node $G; echo \\\"exit=$?\\\"); bash -c 'cd /Users/okwared/Softwares/Tonui/rasko-sweetscent && npx prettier --check .github/workflows/ci.yml .github/workflows/release.yml supabase/functions/mpesa-b2c/index.ts 2>&1 | tail -3'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T01:07:55.678Z",
+      "lastAccessed": "2026-10-08T01:07:55.678Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T01:07:55.678Z"
+    },
+    "cmd-1791422653928": {
+      "key": "cmd-1791422653928",
+      "value": "{\"command\":\"cd /Users/okwared/Softwares/Tonui/rasko-sweetscent && grep -n -i \\\"updater\\\\|desktop\\\\|mobile\\\" apps/app/src-tauri/src/lib.rs | head; grep -n \\\"tauri-plugin-updater\\\" apps/app/src-tauri/Cargo.toml\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-08T01:24:13.928Z",
+      "lastAccessed": "2026-10-08T01:24:13.928Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-07T01:24:13.928Z"
+    }
+  },
+  "version": "3.0.0"
+}

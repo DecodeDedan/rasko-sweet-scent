@@ -376,7 +376,7 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
             empty={
               <EmptyState
                 title="No statutory rates"
-                description="Payroll cannot run until PAYE, NSSF, SHIF and the Housing Levy are configured."
+                description="Tax settings are used when invoices are created."
               />
             }
             columns={[

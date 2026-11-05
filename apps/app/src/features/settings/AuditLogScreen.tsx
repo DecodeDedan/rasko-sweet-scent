@@ -21,7 +21,7 @@ import type { AuditEntry } from './settingsRepository.js'
 import { useSettingsRepository } from './useSettings.js'
 
 /** Actions that change money or access are the ones worth spotting in a list. */
-const SENSITIVE = new Set(['delete', 'void', 'reversal', 'role_change', 'payroll_approval'])
+const SENSITIVE = new Set(['delete', 'void', 'reversal', 'role_change'])
 
 export function AuditLogScreen({ role, scope }: ScreenProps) {
   const repo = useSettingsRepository()
@@ -130,7 +130,7 @@ export function AuditLogScreen({ role, scope }: ScreenProps) {
             <EmptyState
               icon={<ScrollText size={20} aria-hidden="true" />}
               title="Nothing recorded yet"
-              description="Deletions, voided invoices, payment reversals, role changes and payroll approvals appear here."
+              description="Deletions, voided invoices, payment reversals and role changes appear here."
             />
           }
           columns={[

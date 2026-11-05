@@ -204,6 +204,34 @@ describe('orders repository', () => {
     ).rejects.toThrow(/at least one line/i)
   })
 
+  it('refuses a discount greater than the subtotal', async () => {
+    await expect(
+      asSales.create({
+        id: 'aa000000-0000-4000-8000-000000000003',
+        clientId: CLIENT,
+        isWalkIn: false,
+        orderType: 'standard',
+        deliveryAt: null,
+        deliveryAddress: null,
+        eventDate: null,
+        eventVenue: null,
+        eventSetupNotes: null,
+        notes: null,
+        takenBy: SALES,
+        discountCents: 100001,
+        lines: [
+          {
+            key: 'ab000000-0000-4000-8000-000000000004',
+            productId: PRODUCT_ROSE,
+            description: 'Red Naomi Rose',
+            quantity: '1',
+            unitPrice: '1000',
+          },
+        ],
+      }),
+    ).rejects.toThrow(/discount must be between zero and the order subtotal/i)
+  })
+
   // ------------------------------------------------------ FR-4.7 deliveries
 
   it('groups upcoming deliveries by day and excludes finished orders', async () => {
@@ -292,14 +320,19 @@ describe('orders repository', () => {
     expect(Number(rows[0]?.['total_cents'])).toBe(100000 + 19200)
   })
 
-  it('refuses to invoice a draft or a cancelled order', async () => {
+  it('refuses to invoice anything except a confirmed order', async () => {
     await expect(
       asOwner.convertToInvoice(ORDER.draftBySales, 'ac000000-0000-4000-8000-000000000002'),
-    ).rejects.toThrow(/confirm the order/i)
+    ).rejects.toThrow(/only a confirmed order can be invoiced/i)
 
     await expect(
       asOwner.convertToInvoice(ORDER.cancelled, 'ac000000-0000-4000-8000-000000000003'),
-    ).rejects.toThrow(/cancelled order cannot be invoiced/i)
+    ).rejects.toThrow(/only a confirmed order can be invoiced/i)
+
+    await asOwner.transition(ORDER.confirmed, 'in_production')
+    await expect(
+      asOwner.convertToInvoice(ORDER.confirmed, 'ac000000-0000-4000-8000-000000000007'),
+    ).rejects.toThrow(/only a confirmed order can be invoiced/i)
   })
 
   it('reports the invoice on the order as soon as it exists', async () => {

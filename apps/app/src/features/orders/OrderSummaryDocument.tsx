@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
-import { Button, formatDate, formatDateTime, formatMoney, formatQuantity } from '@rasko/ui'
+import { formatDate, formatDateTime, formatMoney, formatQuantity } from '@rasko/ui'
+
+import { DocumentOverlay } from '../../shell/DocumentOverlay.js'
 
 import { ORDER_STATUS_LABEL } from './statusPipeline.js'
 import type { OrderDetail } from './types.js'
@@ -28,25 +29,10 @@ export function OrderSummaryDocument({
   onClose: () => void
 }) {
   // Esc closes the preview, matching every other overlay in the app.
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   const { order, items } = detail
 
   return (
-    <div className="doc-overlay">
-      <div className="doc-toolbar rsk-no-print">
-        <Button onClick={onClose}>Close</Button>
-        <Button variant="primary" onClick={() => window.print()}>
-          Print or save as PDF
-        </Button>
-      </div>
-
+    <DocumentOverlay onClose={onClose}>
       <article className="doc-page">
         <header className="doc-header">
           <div>
@@ -143,6 +129,6 @@ export function OrderSummaryDocument({
           </p>
         </footer>
       </article>
-    </div>
+    </DocumentOverlay>
   )
 }

@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architecture</title>
+<style>
+  :root {
+    --bg: #f7f8fa; --surface: #ffffff; --border: #d5dbe3; --text: #0f172a; --muted: #475569;
+    --compute: #1d4ed8; --data: #0f766e; --external: #64748b; --lane: #eef1f5;
+    --radius: 8px; --s1: 4px; --s2: 8px; --s3: 16px; --s4: 24px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); min-height: 100vh; display: flex; flex-direction: column; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0; }
+  h2 { font-size: 16px; font-weight: 600; margin: 0 0 var(--s2); }
+  p { margin: 0; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: var(--s3) 0 var(--s2); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  button, .btn { font: inherit; font-size: 14px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--s1) 12px; min-height: 32px; cursor: pointer; display: inline-flex; align-items: center; transition: background-color 150ms; }
+  button:hover, .btn:hover { background: var(--lane); }
+  button[aria-pressed="true"] { background: var(--compute); border-color: var(--compute); color: #fff; }
+  :focus-visible { outline: 2px solid var(--compute); outline-offset: 2px; }
+  input[type="search"] { font: inherit; font-size: 14px; width: 100%; padding: var(--s2); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+  .bar { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; justify-content: space-between; padding: 12px var(--s3); background: var(--surface); border-bottom: 1px solid var(--border); }
+  .tools { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+  .seg { display: inline-flex; }
+  .seg button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+  .seg button:last-child { border-radius: 0 var(--radius) var(--radius) 0; border-left: 0; }
+  #banner { padding: var(--s2) var(--s3); background: #fff7e6; border-bottom: 1px solid #e9c46a; color: #5c3d00; font-size: 14px; }
+  .layout { flex: 1; display: grid; grid-template-columns: 240px 1fr 280px; min-height: 0; }
+  .side, .inspector { background: var(--surface); padding: 0 var(--s3) var(--s3); overflow: auto; min-height: 0; }
+  .side { border-right: 1px solid var(--border); }
+  .inspector { border-left: 1px solid var(--border); padding-top: var(--s3); }
+  .side ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s1); }
+  .side h3 { font-size: 12px; font-weight: 600; color: var(--muted); margin: 12px 0 var(--s1); }
+  .item { width: 100%; justify-content: flex-start; gap: var(--s2); border-color: transparent; text-align: left; }
+  .item[aria-current="true"] { border-color: var(--compute); }
+  .kind { font-size: 12px; color: var(--muted); }
+  .stage { position: relative; min-height: 420px; overflow: hidden; }
+  #view { position: absolute; inset: 0; }
+  #view svg { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  .overlay { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: var(--s4); }
+  .overlay[hidden] { display: none; }
+  .drop { border: 2px dashed var(--border); border-radius: var(--radius); padding: var(--s4); max-width: 420px; background: var(--surface); }
+  .stage.dragging .drop { border-color: var(--compute); }
+  .tag { font-size: 12px; line-height: 1.3; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,.92); border: 1px solid var(--border); white-space: nowrap; text-align: center; }
+  .tag b { font-weight: 600; font-size: 13px; display: block; }
+  .tag.layer { font-weight: 600; color: var(--muted); background: transparent; border: 0; }
+  .tag.dim { opacity: .3; }
+  .conn { display: grid; gap: var(--s1); padding: 0; margin: 0 0 var(--s3); list-style: none; }
+  .conn button { width: 100%; justify-content: space-between; gap: var(--s2); }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: var(--s1) 12px; font-size: 14px; margin: 0 0 var(--s3); }
+  dt { color: var(--muted); }
+  dd { margin: 0; }
+  .flowbar { display: flex; gap: var(--s2); align-items: center; padding: var(--s2) var(--s3); background: var(--surface); border-top: 1px solid var(--border); }
+  .flowbar[hidden] { display: none; }
+  #narration { font-size: 14px; flex: 1; min-width: 0; }
+  @media (min-width: 961px) { body { height: 100vh; } .layout { overflow: hidden; } }
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: 1fr; }
+    .stage { min-height: 60vh; order: -1; }
+    .side, .inspector { border: 0; border-top: 1px solid var(--border); }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<header class="bar">
+  <div>
+    <h1 id="name">Architecture</h1>
+    <p id="desc" class="muted"></p>
+  </div>
+  <div class="tools" role="toolbar" aria-label="Diagram tools">
+    <div class="seg" role="group" aria-label="View mode">
+      <button id="mode-3d" type="button" aria-pressed="false">3D</button>
+      <button id="mode-2d" type="button" aria-pressed="false">2D</button>
+    </div>
+    <button id="fit" type="button">Fit</button>
+    <button id="download" type="button">Download SVG</button>
+    <label class="btn" for="file">Open .arch.json</label>
+    <input id="file" class="sr-only" type="file" accept=".json,application/json">
+  </div>
+</header>
+<div id="banner" role="status" hidden></div>
+<main class="layout">
+  <nav class="side" aria-label="Components and flows">
+    <label class="label" for="filter">Find a component</label>
+    <input id="filter" type="search" placeholder="Name, kind or tech" autocomplete="off">
+    <div id="node-list"></div>
+    <h2 class="label">Request flows</h2>
+    <ul id="flow-list"></ul>
+  </nav>
+  <section class="stage" id="stage" aria-label="Diagram">
+    <div id="view"></div>
+    <div class="overlay" id="loading" hidden><p class="muted">Loading the 3D engine…</p></div>
+    <div class="overlay" id="empty" hidden>
+      <div class="drop">
+        <h2>No architecture model loaded</h2>
+        <p class="muted">Drop a <code>.arch.json</code> file here, use “Open .arch.json”, or ask Claude to run the archviz skill in your project.</p>
+      </div>
+    </div>
+  </section>
+  <aside class="inspector" id="inspector" aria-live="polite">
+    <p class="muted">Select a component to see what it calls and what calls it.</p>
+  </aside>
+</main>
+<footer class="flowbar" id="flowbar" hidden>
+  <button id="prev" type="button" aria-label="Previous step">‹</button>
+  <button id="play" type="button">Play</button>
+  <button id="next" type="button" aria-label="Next step">›</button>
+  <p id="narration" aria-live="polite"></p>
+</footer>
+
+<script id="arch-model" type="application/json">{"name":"Rasko Sweet Scent","description":"Offline-first business system: a Tauri app with an on-device SQLite replica that syncs to Supabase, plus edge functions for email and M-Pesa payouts","layers":[{"id":"clients","label":"Clients"},{"id":"device","label":"On device"},{"id":"edge","label":"Supabase APIs"},{"id":"core","label":"Supabase core"},{"id":"functions","label":"Edge functions"},{"id":"ops","label":"Automation"},{"id":"ext","label":"Third parties"}],"nodes":[{"id":"app","label":"Rasko app","kind":"client","layer":"clients","tech":"Tauri 2 · React 18","notes":"Windows + Android. apps/app (entry src/main.tsx, Rust shell src-tauri/src/lib.rs). CSP allows only *.supabase.co and GitHub."},{"id":"website","label":"Website","kind":"client","layer":"clients","tech":"Next.js 15 static","notes":"Marketing site + /reset-password. apps/website. Hosting on Vercel is inferred from .github/workflows/indexnow.yml."},{"id":"repos","label":"Repositories","kind":"service","layer":"device","tech":"TypeScript","notes":"Repository\u003cT> + feature repositories; never touch the network. apps/app/src/data/repositories/repository.ts, src/features/*/*Repository.ts"},{"id":"sqlite","label":"Device SQLite","kind":"database","layer":"device","tech":"tauri-plugin-sql","notes":"sqlite:rasko.db mirrors server tables plus sync_state cursors. apps/app/src/data/sqlite/tauriDatabase.ts, schema.ts, tables.ts"},{"id":"outbox","label":"Outbox","kind":"queue","layer":"device","tech":"SQLite table","notes":"Ordered write journal, written in the same transaction as the row; rejects go to outbox_dead. apps/app/src/data/sync/outbox.ts"},{"id":"sync","label":"Sync engine","kind":"service","layer":"device","tech":"single-flight scheduler","notes":"Push then pull, keyset cursors. Triggers: launch, write (2 s debounce), every 5 min, online event, manual. apps/app/src/data/sync/engine.ts, scheduler.ts"},{"id":"auth","label":"Supabase Auth","kind":"gateway","layer":"edge","tech":"GoTrue","notes":"Password sign-in, reset, admin API; Send Email hook to send-auth-email. supabase/config.toml, apps/app/src/auth/supabaseGateway.ts"},{"id":"rest","label":"PostgREST","kind":"gateway","layer":"edge","tech":"supabase-js 2","notes":"upsert/select with RLS, rpc('server_instance_id'). apps/app/src/data/sync/supabaseRemote.ts"},{"id":"db","label":"Postgres","kind":"database","layer":"core","tech":"Postgres 17 · RLS · pg_net","notes":"30 public tables, app.* triggers (invoice numbering, email + payout dispatch), views. supabase/migrations/*.sql"},{"id":"cron","label":"pg_cron sweeps","kind":"queue","layer":"core","tech":"pg_cron","notes":"Every minute: sweep-outbound-emails, sweep-payroll-payouts (retry, unstick, fail after 5 attempts). supabase/migrations/20260925000100_email.sql, 20260927000100_mpesa_b2c.sql"},{"id":"fn-email","label":"send-email","kind":"function","layer":"functions","tech":"Deno · nodemailer","notes":"Composes invoice emails from templates and settings, delivers with SMTP failover. supabase/functions/send-email/index.ts"},{"id":"fn-auth-email","label":"send-auth-email","kind":"function","layer":"functions","tech":"Deno · Standard Webhooks","notes":"Auth Send Email hook. supabase/functions/send-auth-email/index.ts"},{"id":"fn-admin","label":"User admin functions","kind":"function","layer":"functions","tech":"Deno","notes":"invite-user, delete-user, set-user-active, assign-company-email, payout-wallet. supabase/functions/*"},{"id":"fn-payout","label":"mpesa-b2c","kind":"function","layer":"functions","tech":"Deno","notes":"Salary payout dispatcher; PAYOUT_PROVIDER daraja (default) or intasend. supabase/functions/mpesa-b2c/index.ts"},{"id":"fn-result","label":"payout-result","kind":"function","layer":"functions","tech":"Deno","notes":"Provider callback, token in path; settles payroll_payouts. supabase/functions/payout-result/index.ts"},{"id":"gha-backup","label":"Nightly backup","kind":"service","layer":"ops","tech":"GitHub Actions","notes":"cron 30 1 * * *: pg_dump, verify 12 core tables, upload, record backup_runs, issue on failure. .github/workflows/backup.yml"},{"id":"gha-release","label":"Release","kind":"service","layer":"ops","tech":"tauri-action","notes":"Tag v*: signed NSIS installer + latest.json (Windows only). .github/workflows/release.yml"},{"id":"smtp","label":"SMTP providers","kind":"external","layer":"ext","tech":"Brevo → Resend → Gmail","notes":"Tried in EMAIL_PROVIDERS order with health tracking (email_provider_health). supabase/functions/_shared/email/transport.js"},{"id":"cloudflare","label":"Cloudflare Email Routing","kind":"external","layer":"ext","tech":"REST","notes":"Company mailbox forwarding. supabase/functions/_shared/mailbox/routing.js"},{"id":"daraja","label":"Safaricom Daraja","kind":"external","layer":"ext","tech":"M-Pesa B2C","notes":"supabase/functions/_shared/mpesa/b2c.js"},{"id":"intasend","label":"IntaSend","kind":"external","layer":"ext","tech":"Payouts API","notes":"supabase/functions/_shared/payouts/intasend.js"},{"id":"r2","label":"Cloudflare R2","kind":"storage","layer":"ext","tech":"S3 API","notes":"daily/ kept 30 days, monthly/ kept 12 months. .github/workflows/backup.yml"},{"id":"releases","label":"GitHub Releases","kind":"storage","layer":"ext","tech":"installer + latest.json","notes":"Updater endpoint in apps/app/src-tauri/tauri.conf.json"}],"edges":[{"id":"app-repos","from":"app","to":"repos","mode":"sync","label":"feature hooks"},{"id":"repos-sqlite","from":"repos","to":"sqlite","mode":"sync","protocol":"Tauri IPC"},{"id":"repos-outbox","from":"repos","to":"outbox","mode":"sync","label":"same transaction"},{"id":"repos-sync","from":"repos","to":"sync","mode":"async","label":"notifyLocalWrite"},{"id":"sync-outbox","from":"sync","to":"outbox","mode":"sync","label":"drain batch"},{"id":"sync-rest","from":"sync","to":"rest","mode":"async","label":"push upsert / pull keyset","protocol":"HTTPS"},{"id":"sync-sqlite","from":"sync","to":"sqlite","mode":"sync","label":"apply pulled rows"},{"id":"rest-db","from":"rest","to":"db","mode":"sync","protocol":"SQL + RLS"},{"id":"app-auth","from":"app","to":"auth","mode":"sync","label":"sign in","protocol":"HTTPS"},{"id":"app-fn-admin","from":"app","to":"fn-admin","mode":"sync","protocol":"functions.invoke"},{"id":"website-auth","from":"website","to":"auth","mode":"sync","label":"verifyOtp + updateUser","protocol":"HTTPS"},{"id":"auth-fn-auth-email","from":"auth","to":"fn-auth-email","mode":"sync","label":"Send Email hook","protocol":"webhook"},{"id":"fn-auth-email-smtp","from":"fn-auth-email","to":"smtp","mode":"sync","protocol":"SMTP"},{"id":"db-fn-email","from":"db","to":"fn-email","mode":"async","label":"outbound_emails insert","protocol":"pg_net"},{"id":"cron-fn-email","from":"cron","to":"fn-email","mode":"async","label":"retry sweep","protocol":"pg_net"},{"id":"fn-email-db","from":"fn-email","to":"db","mode":"sync","label":"compose + status","protocol":"service role"},{"id":"fn-email-smtp","from":"fn-email","to":"smtp","mode":"sync","label":"failover","protocol":"SMTP"},{"id":"fn-admin-auth","from":"fn-admin","to":"auth","mode":"sync","protocol":"admin API"},{"id":"fn-admin-smtp","from":"fn-admin","to":"smtp","mode":"sync","label":"invites","protocol":"SMTP"},{"id":"fn-admin-cloudflare","from":"fn-admin","to":"cloudflare","mode":"sync","label":"mail forwarding","protocol":"HTTPS"},{"id":"db-fn-payout","from":"db","to":"fn-payout","mode":"async","label":"payroll_payouts insert","protocol":"pg_net"},{"id":"cron-fn-payout","from":"cron","to":"fn-payout","mode":"async","label":"retry sweep","protocol":"pg_net"},{"id":"fn-payout-daraja","from":"fn-payout","to":"daraja","mode":"sync","label":"B2C","protocol":"HTTPS"},{"id":"fn-payout-intasend","from":"fn-payout","to":"intasend","mode":"sync","protocol":"HTTPS"},{"id":"daraja-result","from":"daraja","to":"fn-result","mode":"async","protocol":"HTTPS callback"},{"id":"intasend-result","from":"intasend","to":"fn-result","mode":"async","protocol":"HTTPS callback"},{"id":"fn-result-db","from":"fn-result","to":"db","mode":"sync","label":"settle payout","protocol":"service role"},{"id":"backup-db","from":"gha-backup","to":"db","mode":"async","protocol":"pg_dump"},{"id":"backup-r2","from":"gha-backup","to":"r2","mode":"async","protocol":"S3"},{"id":"release-releases","from":"gha-release","to":"releases","mode":"async","label":"signed installer"},{"id":"app-releases","from":"app","to":"releases","mode":"async","label":"update check","protocol":"HTTPS"}],"flows":[{"id":"offline-invoice","label":"Create invoice offline, then sync","steps":[{"edge":"app-repos","note":"InvoicesScreen → useInvoices → InvoicesRepository.insert"},{"edge":"repos-sqlite","note":"Write the invoice row locally; the UI never waits on the network"},{"edge":"repos-outbox","note":"enqueue('invoices', id, 'insert') in the same SQLite transaction"},{"edge":"repos-sync","note":"notifyLocalWrite starts a 2 s debounce"},{"edge":"sync-rest","note":"rpc server_instance_id: if the server DB was replaced, wipe the replica"},{"edge":"sync-outbox","note":"Drain the outbox in batches of 200"},{"edge":"sync-rest","note":"upsert onConflict id"},{"edge":"rest-db","note":"RLS applies; app.assign_invoice_number sets the number"},{"edge":"sync-rest","note":"Pull: keyset pages of 500 from the sync_state cursor"},{"edge":"sync-sqlite","note":"Apply rows and advance the cursor in one transaction; the invoice number arrives"}]},{"id":"invoice-email","label":"Send invoice email","steps":[{"edge":"app-repos","note":"SendEmailDialog → EmailRepository"},{"edge":"repos-outbox","note":"outbound_emails row, status queued"},{"edge":"sync-rest","note":"Push is insert-only for outbound_emails"},{"edge":"rest-db","note":"force_outbound_email_defaults trigger"},{"edge":"db-fn-email","note":"AFTER INSERT outbound_emails_dispatch → net.http_post({ id })"},{"edge":"fn-email-db","note":"Read the invoice, items, settings and template with the service role"},{"edge":"fn-email-smtp","note":"Brevo → Resend → Gmail failover; email_provider_health is recorded"},{"edge":"cron-fn-email","note":"If delivery failed: retried every minute, up to 5 attempts"},{"edge":"sync-sqlite","note":"Next pull brings sent/failed back to EmailActivity"}]},{"id":"password-reset","label":"Password reset","steps":[{"edge":"app-auth","note":"resetPasswordForEmail, redirect to the website /reset-password"},{"edge":"auth-fn-auth-email","note":"Standard Webhooks signature checked"},{"edge":"fn-auth-email-smtp","note":"Branded email through the SMTP failover"},{"edge":"website-auth","note":"SetPasswordForm: verifyOtp, then updateUser"}]},{"id":"salary-payout","label":"M-Pesa salary payout","steps":[{"edge":"app-repos","note":"PayMpesaDialog → mpesaPayouts"},{"edge":"repos-outbox","note":"payroll_payouts row, status queued"},{"edge":"sync-rest","note":"Push the payout row"},{"edge":"rest-db","note":"prepare_payroll_payout trigger"},{"edge":"db-fn-payout","note":"dispatch_new_payout via pg_net"},{"edge":"fn-payout-daraja","note":"B2C request (or IntaSend when PAYOUT_PROVIDER=intasend)"},{"edge":"daraja-result","note":"Provider calls back with the result"},{"edge":"fn-result-db","note":"settle_payroll_payout; the payslip is marked paid"},{"edge":"sync-sqlite","note":"The result is pulled back to the device"}]},{"id":"nightly-backup","label":"Nightly backup","steps":[{"edge":"backup-db","note":"04:30 Nairobi: pg_dump --format=custom through the session pooler; verify 12 core tables"},{"edge":"backup-r2","note":"daily/ copy (monthly/ on the 1st); prune old copies"},{"edge":"backup-db","note":"insert into backup_runs; it syncs down to the System screen"}]},{"id":"release-update","label":"Release and auto-update","steps":[{"edge":"release-releases","note":"Tag v* → signed NSIS installer + latest.json"},{"edge":"app-releases","note":"On launch: check, downloadAndInstall, relaunch (Windows only)"}]}]}</script>
+<script type="module">
+const KINDS = {
+  client: { group: 'compute', name: 'Client', glyph: 'M3 4h14v9H3z M8 16h4 M10 13v3' },
+  gateway: { group: 'compute', name: 'Gateway', glyph: 'M10 2l7 4v8l-7 4-7-4V6z' },
+  service: { group: 'compute', name: 'Service', glyph: 'M4 4h12v12H4z' },
+  function: { group: 'compute', name: 'Function', glyph: 'M6 16l4-8 M10 8L8.5 4H6 M10 8l4 8' },
+  ml: { group: 'compute', name: 'Model', glyph: 'M5 15L10 5l5 10z M10 5v10' },
+  database: { group: 'data', name: 'Database', glyph: 'M4 5c0-1.7 12-1.7 12 0v10c0 1.7-12 1.7-12 0z M4 5c0 1.7 12 1.7 12 0' },
+  cache: { group: 'data', name: 'Cache', glyph: 'M4 8c0-1.7 12-1.7 12 0v4c0 1.7-12 1.7-12 0z M4 8c0 1.7 12 1.7 12 0' },
+  queue: { group: 'data', name: 'Queue', glyph: 'M2 7h4v6H2z M8 7h4v6H8z M14 7h4v6h-4z' },
+  storage: { group: 'data', name: 'Storage', glyph: 'M3 6h14l-2 10H5z' },
+  external: { group: 'external', name: 'External', glyph: 'M10 3a7 7 0 1 0 .01 0z' },
+}
+const COLOR = { compute: '#1d4ed8', data: '#0f766e', external: '#64748b' }
+const STEP_MS = 1800
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
+const byId = id => document.getElementById(id)
+
+// ---------- model ----------
+
+function normalize(raw) {
+  const warnings = []
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.nodes)) throw new Error('the file has no "nodes" array')
+  const layers = Array.isArray(raw.layers) ? raw.layers.filter(l => l && l.id) : []
+  const layerIds = new Set(layers.map(l => l.id))
+  const nodes = raw.nodes.filter(n => n && n.id).map(n => {
+    const kind = KINDS[n.kind] ? n.kind : 'service'
+    if (kind !== n.kind) warnings.push(`node "${n.id}" has unknown kind "${n.kind}", drawn as service`)
+    return { ...n, kind, label: n.label || n.id, layer: layerIds.has(n.layer) ? n.layer : '__unassigned' }
+  })
+  const allLayers = nodes.some(n => n.layer === '__unassigned')
+    ? [...layers, { id: '__unassigned', label: 'Unassigned' }]
+    : layers
+  const nodeIds = new Set(nodes.map(n => n.id))
+  const edges = (Array.isArray(raw.edges) ? raw.edges : []).filter(e => {
+    const isDrawable = e && nodeIds.has(e.from) && nodeIds.has(e.to) && e.from !== e.to
+    if (!isDrawable) warnings.push(`edge "${e?.id ?? '?'}" skipped: unknown or identical endpoints`)
+    return isDrawable
+  }).map((e, i) => ({ ...e, id: e.id || `edge-${i}`, mode: e.mode === 'async' ? 'async' : 'sync' }))
+  const edgeIds = new Set(edges.map(e => e.id))
+  const flows = (Array.isArray(raw.flows) ? raw.flows : []).filter(f => f && Array.isArray(f.steps)).map(f => ({
+    ...f, label: f.label || f.id, steps: f.steps.filter(s => s && edgeIds.has(s.edge)),
+  })).filter(f => f.steps.length > 0)
+  return { model: { name: raw.name || 'Architecture', description: raw.description || '', layers: allLayers, nodes, edges, flows }, warnings }
+}
+
+// Barycentric ordering: a few sweeps that pull each node toward the mean
+// slot of its neighbours, which removes most edge crossings in layered graphs.
+function layout(model) {
+  const layerOf = new Map(model.nodes.map(n => [n.id, model.layers.findIndex(l => l.id === n.layer)]))
+  const neighbours = new Map(model.nodes.map(n => [n.id, []]))
+  for (const e of model.edges) {
+    neighbours.get(e.from).push(e.to)
+    neighbours.get(e.to).push(e.from)
+  }
+  let rows = model.layers.map(l => model.nodes.filter(n => n.layer === l.id).map(n => n.id))
+  const slots = () => new Map(rows.flatMap(row => row.map((id, i) => [id, i - (row.length - 1) / 2])))
+  let slot = slots()
+  for (let sweep = 0; sweep < 6; sweep++) {
+    rows = rows.map(row => row
+      .map(id => {
+        const across = neighbours.get(id).filter(n => layerOf.get(n) !== layerOf.get(id))
+        const centre = across.length ? across.reduce((sum, n) => sum + slot.get(n), 0) / across.length : slot.get(id)
+        return [id, centre]
+      })
+      .sort((a, b) => a[1] - b[1])
+      .map(([id]) => id))
+    slot = slots()
+  }
+  const widest = Math.max(1, ...rows.map(r => r.length))
+  return { rows, widest, slot: id => slot.get(id), layer: id => layerOf.get(id) }
+}
+
+// ---------- DOM helpers (text always through textContent) ----------
+
+const SVG = 'http://www.w3.org/2000/svg'
+function make(ns, tag, attrs = {}, ...children) {
+  const node = ns ? document.createElementNS(ns, tag) : document.createElement(tag)
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v === undefined || v === null || v === false) continue
+    if (k === 'text') node.textContent = v
+    else if (k.startsWith('on')) node.addEventListener(k.slice(2), v)
+    else node.setAttribute(k, v === true ? '' : String(v))
+  }
+  node.append(...children.filter(c => c !== null && c !== undefined))
+  return node
+}
+const s = (tag, attrs, ...c) => make(SVG, tag, attrs, ...c)
+const d = (tag, attrs, ...c) => make(null, tag, attrs, ...c)
+const clip = (text, max) => text.length > max ? `${text.slice(0, max - 1)}…` : text
+function banner(text) {
+  const el = byId('banner')
+  el.textContent = text
+  el.hidden = !text
+}
+
+// ---------- 2D view ----------
+
+const NODE_W = 176, NODE_H = 56, GAP_X = 40, LANE_H = 150, LABEL_W = 132, PAD = 24
+const SVG_STYLE = `
+  .lane { fill: #eef1f5 } .lane-label { font: 600 12px system-ui, sans-serif; fill: #334155 }
+  .node { cursor: pointer; transition: opacity 150ms }
+  .node .box { fill: #fff; stroke-width: 1.5 } .node .ring { fill: none; stroke: none }
+  .node:focus { outline: none } .node:focus-visible .ring, .node.sel .ring { stroke: #0f172a; stroke-width: 2 }
+  .node .title { font: 600 13px system-ui, sans-serif; fill: #0f172a }
+  .node .sub { font: 400 11px system-ui, sans-serif; fill: #475569 }
+  .node .glyph { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round }
+  .compute .box, .compute .glyph { stroke: ${COLOR.compute} } .data .box, .data .glyph { stroke: ${COLOR.data} }
+  .external .box, .external .glyph { stroke: ${COLOR.external} } .external .box { stroke-dasharray: 5 4 }
+  .edge { fill: none; stroke: #94a3b8; stroke-width: 1.5; transition: opacity 150ms } .edge.async { stroke-dasharray: 6 5 }
+  .edge-label { font: 400 11px system-ui, sans-serif; fill: #334155; paint-order: stroke; stroke: #f7f8fa; stroke-width: 4; transition: opacity 150ms }
+  .dot { fill: ${COLOR.compute} } .pulse { fill: ${COLOR.data} }
+  .focused .node, .focused .edge, .focused .edge-label { opacity: .22 }
+  .focused .on { opacity: 1 } .edge.on { stroke: ${COLOR.compute}; stroke-width: 2.5 } .edge.lit { stroke: ${COLOR.data}; stroke-width: 3; opacity: 1 }`
+
+function buildSvg(model, lay, { isAnimated }) {
+  const width = LABEL_W + lay.widest * (NODE_W + GAP_X) + GAP_X
+  const height = PAD * 2 + model.layers.length * LANE_H
+  const centreX = LABEL_W + (width - LABEL_W) / 2
+  const at = id => ({ x: centreX + lay.slot(id) * (NODE_W + GAP_X), y: PAD + lay.layer(id) * LANE_H + LANE_H / 2 })
+  const root = s('svg', { xmlns: SVG, viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': `${model.name} architecture diagram` },
+    s('style', { text: SVG_STYLE }))
+
+  model.layers.forEach((layer, i) => {
+    root.append(
+      s('rect', { class: 'lane', x: 8, y: PAD + i * LANE_H + 8, width: width - 16, height: LANE_H - 16, rx: 8 }),
+      s('text', { class: 'lane-label', x: 24, y: PAD + i * LANE_H + LANE_H / 2 + 4, text: clip(layer.label, 16) }))
+  })
+
+  const edgeEls = new Map()
+  model.edges.forEach((e, i) => {
+    const a = at(e.from), b = at(e.to)
+    let path
+    if (lay.layer(e.from) === lay.layer(e.to)) {
+      const lift = 40 + Math.abs(a.x - b.x) * 0.12
+      path = `M${a.x} ${a.y - NODE_H / 2} C${a.x} ${a.y - NODE_H / 2 - lift} ${b.x} ${b.y - NODE_H / 2 - lift} ${b.x} ${b.y - NODE_H / 2}`
+    } else {
+      const down = b.y > a.y ? 1 : -1
+      const y1 = a.y + down * NODE_H / 2, y2 = b.y - down * NODE_H / 2, mid = (y1 + y2) / 2
+      path = `M${a.x} ${y1} C${a.x} ${mid} ${b.x} ${mid} ${b.x} ${y2}`
+    }
+    const line = s('path', { id: `e${i}`, class: `edge ${e.mode}`, d: path, 'marker-end': 'url(#arrow)' })
+    const text = e.label || e.protocol
+    const label = text ? s('text', { class: 'edge-label', x: (a.x + b.x) / 2 + 6, y: (a.y + b.y) / 2, text: clip(text, 22) }) : null
+    root.append(line)
+    if (label) root.append(label)
+    if (isAnimated && !reducedMotion) {
+      const dur = e.mode === 'async' ? 3.6 : 2.2
+      root.append(s('circle', { class: 'dot', r: 3 },
+        s('animateMotion', { dur: `${dur}s`, repeatCount: 'indefinite' }, s('mpath', { href: `#e${i}` }))))
+    }
+    edgeEls.set(e.id, { line, label, from: e.from, to: e.to, index: i })
+  })
+  root.prepend(s('defs', {}, s('marker', { id: 'arrow', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' },
+    s('path', { d: 'M0 0L10 5L0 10z', fill: '#64748b' }))))
+
+  const nodeEls = new Map()
+  for (const n of model.nodes) {
+    const { x, y } = at(n.id)
+    const kind = KINDS[n.kind]
+    const sub = [kind.name, n.tech].filter(Boolean).join(' · ')
+    const g = s('g', { class: `node ${kind.group}`, tabindex: 0, role: 'button', 'aria-label': `${n.label}, ${sub}`, transform: `translate(${x - NODE_W / 2} ${y - NODE_H / 2})` },
+      s('title', { text: `${n.label}\n${sub}` }),
+      s('rect', { class: 'ring', x: -4, y: -4, width: NODE_W + 8, height: NODE_H + 8, rx: 10 }),
+      s('rect', { class: 'box', width: NODE_W, height: NODE_H, rx: 8 }),
+      s('path', { class: 'glyph', d: kind.glyph, transform: 'translate(10 18)' }),
+      s('text', { class: 'title', x: 38, y: 24, text: clip(n.label, 19) }),
+      s('text', { class: 'sub', x: 38, y: 41, text: clip(sub, 24) }))
+    root.append(g)
+    nodeEls.set(n.id, g)
+  }
+  return { root, nodeEls, edgeEls, width, height }
+}
+
+function mount2D(container, model, lay, api) {
+  const built = buildSvg(model, lay, { isAnimated: true })
+  const { root, nodeEls, edgeEls } = built
+  container.replaceChildren(root)
+  let box = { x: 0, y: 0, w: built.width, h: built.height }
+  const apply = () => root.setAttribute('viewBox', `${box.x} ${box.y} ${box.w} ${box.h}`)
+
+  for (const [id, g] of nodeEls) {
+    g.addEventListener('click', () => api.select(id))
+    g.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); api.select(id) } })
+  }
+  root.addEventListener('wheel', ev => {
+    ev.preventDefault()
+    const r = root.getBoundingClientRect()
+    const fx = (ev.clientX - r.left) / r.width, fy = (ev.clientY - r.top) / r.height
+    const k = Math.min(4, Math.max(0.25, Math.exp(ev.deltaY * 0.0015)))
+    const w = Math.min(built.width * 4, Math.max(120, box.w * k)), h = box.h * (w / box.w)
+    box = { x: box.x + (box.w - w) * fx, y: box.y + (box.h - h) * fy, w, h }
+    apply()
+  }, { passive: false })
+  let drag = null
+  root.addEventListener('pointerdown', ev => {
+    if (ev.target.closest('.node')) return
+    drag = { x: ev.clientX, y: ev.clientY, box }
+    root.setPointerCapture(ev.pointerId)
+  })
+  root.addEventListener('pointermove', ev => {
+    if (!drag) return
+    const r = root.getBoundingClientRect(), scale = box.w / r.width
+    box = { ...drag.box, x: drag.box.x - (ev.clientX - drag.x) * scale, y: drag.box.y - (ev.clientY - drag.y) * scale }
+    apply()
+  })
+  root.addEventListener('pointerup', () => { drag = null })
+
+  function paint(selected, litEdge) {
+    root.classList.toggle('focused', selected !== null || litEdge !== null)
+    for (const g of nodeEls.values()) g.classList.remove('on', 'sel')
+    for (const e of edgeEls.values()) { e.line.classList.remove('on', 'lit'); e.label?.classList.remove('on') }
+    if (selected !== null) {
+      nodeEls.get(selected)?.classList.add('on', 'sel')
+      for (const e of edgeEls.values()) {
+        if (e.from !== selected && e.to !== selected) continue
+        e.line.classList.add('on'); e.label?.classList.add('on')
+        nodeEls.get(e.from).classList.add('on'); nodeEls.get(e.to).classList.add('on')
+      }
+    }
+    const lit = litEdge === null ? undefined : edgeEls.get(litEdge)
+    root.querySelector('.pulse')?.remove()
+    if (lit) {
+      lit.line.classList.add('on', 'lit'); lit.label?.classList.add('on')
+      nodeEls.get(lit.from).classList.add('on'); nodeEls.get(lit.to).classList.add('on')
+      if (!reducedMotion) {
+        const motion = s('animateMotion', { dur: `${STEP_MS * 0.7}ms`, begin: 'indefinite', fill: 'freeze' }, s('mpath', { href: `#e${lit.index}` }))
+        root.append(s('circle', { class: 'pulse', r: 6 }, motion))
+        motion.beginElement()
+      }
+    }
+  }
+  let state = { selected: null, lit: null }
+  return {
+    select(id) { state = { ...state, selected: id }; paint(state.selected, state.lit) },
+    showStep(edgeId) { state = { ...state, lit: edgeId }; paint(state.selected, state.lit) },
+    fit() { box = { x: 0, y: 0, w: built.width, h: built.height }; apply() },
+    dispose() { container.replaceChildren() },
+  }
+}
+
+// ---------- 3D view ----------
+
+async function mount3D(container, model, lay, api) {
+  const THREE = await import('three')
+  const { OrbitControls } = await import('three/addons/controls/OrbitControls.js')
+  const { CSS2DRenderer, CSS2DObject } = await import('three/addons/renderers/CSS2DRenderer.js')
+
+  const SPACING = 4.6, LAYER_GAP = 5.6
+  const renderer = new THREE.WebGLRenderer({ antialias: true })
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
+  renderer.setClearColor(0xf7f8fa)
+  const labels = new CSS2DRenderer()
+  labels.domElement.style.cssText = 'position:absolute;inset:0;pointer-events:none'
+  renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:none'
+  container.replaceChildren(renderer.domElement, labels.domElement)
+
+  const scene = new THREE.Scene()
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xdbe2ea, 1.2))
+  const sun = new THREE.DirectionalLight(0xffffff, 1.1)
+  sun.position.set(8, 20, 12)
+  scene.add(sun)
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 500)
+  const controls = new OrbitControls(camera, renderer.domElement)
+  controls.enableDamping = !reducedMotion
+
+  const owned = [] // every geometry and material: the GC never reaches into the GPU
+  const own = x => { owned.push(x); return x }
+  const pos = id => new THREE.Vector3(lay.slot(id) * SPACING, -lay.layer(id) * LAYER_GAP, 0)
+  const slabW = lay.widest * SPACING + 2.4
+
+  const slabGeo = own(new THREE.BoxGeometry(slabW, 0.14, 4.6))
+  const slabMat = own(new THREE.MeshStandardMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.7 }))
+  const slabEdge = own(new THREE.EdgesGeometry(slabGeo))
+  const slabLine = own(new THREE.LineBasicMaterial({ color: 0xc3ccd8 }))
+  const slabs = model.layers.map((layer, i) => {
+    const slab = new THREE.Mesh(slabGeo, slabMat)
+    slab.position.set(0, -i * LAYER_GAP - 0.62, 0)
+    slab.add(new THREE.LineSegments(slabEdge, slabLine))
+    scene.add(slab)
+    const tag = new CSS2DObject(d('div', { class: 'tag layer', text: layer.label }))
+    tag.position.set(-slabW / 2 - 0.4, -i * LAYER_GAP - 0.4, 0)
+    tag.center.set(1, 0.5)
+    scene.add(tag)
+    return slab
+  })
+
+  const shapes = {
+    client: () => new THREE.BoxGeometry(1.5, 1, 0.16),
+    gateway: () => new THREE.CylinderGeometry(0.9, 0.9, 0.9, 6),
+    service: () => new THREE.BoxGeometry(1.5, 0.9, 1.5),
+    function: () => new THREE.BoxGeometry(0.9, 0.7, 0.9),
+    ml: () => new THREE.IcosahedronGeometry(0.75, 0),
+    database: () => new THREE.CylinderGeometry(0.75, 0.75, 1.1, 40),
+    cache: () => new THREE.CylinderGeometry(0.8, 0.8, 0.45, 40),
+    queue: () => new THREE.CapsuleGeometry(0.32, 1.5, 4, 16).rotateZ(Math.PI / 2),
+    storage: () => new THREE.CylinderGeometry(0.95, 0.65, 0.8, 4, 1).rotateY(Math.PI / 4),
+    external: () => new THREE.DodecahedronGeometry(0.7, 0),
+  }
+  const geometries = Object.fromEntries(Object.entries(shapes).map(([k, f]) => [k, own(f())]))
+  const meshes = new Map(), tags = new Map()
+  for (const n of model.nodes) {
+    const group = KINDS[n.kind].group
+    const isExternal = group === 'external'
+    const mat = own(new THREE.MeshStandardMaterial({ color: COLOR[group], roughness: 0.45, metalness: 0.05, transparent: isExternal, opacity: isExternal ? 0.55 : 1 }))
+    const mesh = new THREE.Mesh(geometries[n.kind], mat)
+    mesh.position.copy(pos(n.id))
+    mesh.userData = { id: n.id, color: COLOR[group] }
+    scene.add(mesh)
+    meshes.set(n.id, mesh)
+    const tag = new CSS2DObject(d('div', { class: 'tag', title: [KINDS[n.kind].name, n.tech].filter(Boolean).join(' · ') }, d('b', { text: clip(n.label, 22) })))
+    tag.position.copy(pos(n.id)).add(new THREE.Vector3(0, 1.15, 0))
+    tag.center.set(0.5, 1)
+    scene.add(tag)
+    tags.set(n.id, tag)
+  }
+
+  const curves = model.edges.map(e => {
+    const a = pos(e.from), b = pos(e.to)
+    if (lay.layer(e.from) === lay.layer(e.to)) {
+      const lift = 1.6 + a.distanceTo(b) * 0.15
+      return new THREE.CubicBezierCurve3(a.clone().setY(a.y + 0.5), a.clone().setY(a.y + lift), b.clone().setY(b.y + lift), b.clone().setY(b.y + 0.5))
+    }
+    const down = b.y < a.y ? -1 : 1
+    const start = a.clone().setY(a.y + down * 0.55), end = b.clone().setY(b.y - down * 0.55)
+    const bow = 1.4
+    return new THREE.CubicBezierCurve3(start, start.clone().add(new THREE.Vector3(0, down * LAYER_GAP * 0.35, bow)), end.clone().add(new THREE.Vector3(0, -down * LAYER_GAP * 0.35, bow)), end)
+  })
+  const syncMat = own(new THREE.MeshBasicMaterial({ color: 0x94a3b8 }))
+  const asyncMat = own(new THREE.LineDashedMaterial({ color: 0x64748b, dashSize: 0.25, gapSize: 0.18 }))
+  const litMesh = own(new THREE.MeshBasicMaterial({ color: COLOR.data }))
+  const litLine = own(new THREE.LineDashedMaterial({ color: COLOR.data, dashSize: 0.25, gapSize: 0.18 }))
+  // ponytail: one draw call per edge; merge geometries if a model passes ~500 edges
+  const edgeObjs = model.edges.map((e, i) => {
+    let obj
+    if (e.mode === 'async') {
+      obj = new THREE.Line(own(new THREE.BufferGeometry().setFromPoints(curves[i].getPoints(48))), asyncMat)
+      obj.computeLineDistances()
+    } else {
+      obj = new THREE.Mesh(own(new THREE.TubeGeometry(curves[i], 40, 0.035, 6)), syncMat)
+    }
+    scene.add(obj)
+    return obj
+  })
+
+  const count = Math.max(1, model.edges.length)
+  const cones = new THREE.InstancedMesh(own(new THREE.ConeGeometry(0.13, 0.34, 12)), own(new THREE.MeshBasicMaterial({ color: 0x64748b })), count)
+  const dots = new THREE.InstancedMesh(own(new THREE.SphereGeometry(0.085, 12, 12)), own(new THREE.MeshBasicMaterial({ color: COLOR.compute })), count * 2)
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1)
+  curves.forEach((c, i) => {
+    q.setFromUnitVectors(up, c.getTangentAt(0.93).normalize())
+    cones.setMatrixAt(i, m.compose(c.getPointAt(0.93), q, one))
+  })
+  cones.count = model.edges.length
+  dots.count = reducedMotion ? 0 : model.edges.length * 2
+  scene.add(cones, dots)
+  const pulse = new THREE.Mesh(own(new THREE.SphereGeometry(0.2, 16, 16)), own(new THREE.MeshBasicMaterial({ color: COLOR.data })))
+  pulse.visible = false
+  scene.add(pulse)
+
+  const target = new THREE.Vector3()
+  let wanted = null, lit = null, litAt = 0, paused = false, frameId = 0, hasUserMoved = false
+  controls.addEventListener('start', () => { hasUserMoved = true })
+  function draw() {
+    renderer.render(scene, camera)
+    labels.render(scene, camera)
+  }
+  function fit() {
+    const box = new THREE.Box3()
+    for (const obj of [...slabs, ...meshes.values()]) box.expandByObject(obj)
+    if (box.isEmpty()) box.set(new THREE.Vector3(-2, -2, -2), new THREE.Vector3(2, 2, 2))
+    // Layer labels hang off the left edge of the slabs.
+    box.min.x -= 2.5
+    box.getCenter(target)
+    const corners = [0, 1, 2, 3, 4, 5, 6, 7].map(i => new THREE.Vector3(
+      i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z))
+    const view = new THREE.Vector3(0.3, 0.55, 1).normalize()
+    // Project the box and scale the distance until its widest extent fills
+    // 90% of the stage; three passes converge for any aspect ratio.
+    let dist = box.getSize(new THREE.Vector3()).length()
+    for (let pass = 0; pass < 3; pass++) {
+      camera.position.copy(target).addScaledVector(view, dist)
+      camera.lookAt(target)
+      camera.updateMatrixWorld()
+      const reach = Math.max(...corners.map(c => { const p = c.clone().project(camera); return Math.max(Math.abs(p.x), Math.abs(p.y)) }))
+      dist *= reach / 0.9
+    }
+    camera.position.copy(target).addScaledVector(view, dist)
+    controls.target.copy(target)
+    controls.update()
+    wanted = null
+    hasUserMoved = false
+    draw()
+  }
+  function resize() {
+    const { clientWidth: w, clientHeight: h } = container
+    if (!w || !h) return
+    renderer.setSize(w, h, false)
+    labels.setSize(w, h)
+    camera.aspect = w / h
+    camera.updateProjectionMatrix()
+    // Keep the whole system framed until the person takes the camera.
+    if (hasUserMoved) draw()
+    else fit()
+  }
+  function tick(now) {
+    frameId = 0
+    if (paused) return
+    if (wanted) {
+      controls.target.lerp(wanted, 0.12)
+      if (controls.target.distanceTo(wanted) < 0.01) wanted = null
+    }
+    controls.update()
+    const t = now / 1000
+    model.edges.forEach((e, i) => {
+      const speed = e.mode === 'async' ? 0.22 : 0.42
+      for (let k = 0; k < 2; k++) {
+        m.makeTranslation(curves[i].getPointAt((t * speed + k / 2 + i * 0.137) % 1))
+        dots.setMatrixAt(i * 2 + k, m)
+      }
+    })
+    dots.instanceMatrix.needsUpdate = true
+    if (lit !== null) pulse.position.copy(curves[lit].getPointAt(Math.min(1, (now - litAt) / (STEP_MS * 0.7))))
+    draw()
+    frameId = requestAnimationFrame(tick)
+  }
+  const resume = () => { if (!reducedMotion && !paused && !frameId) frameId = requestAnimationFrame(tick) }
+
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2()
+  let downAt = null
+  const onDown = ev => { downAt = { x: ev.clientX, y: ev.clientY } }
+  const onUp = ev => {
+    if (!downAt || Math.hypot(ev.clientX - downAt.x, ev.clientY - downAt.y) > 4) return
+    const r = renderer.domElement.getBoundingClientRect()
+    ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1)
+    ray.setFromCamera(ndc, camera)
+    const hit = ray.intersectObjects([...meshes.values()])[0]
+    api.select(hit ? hit.object.userData.id : null)
+  }
+  renderer.domElement.addEventListener('pointerdown', onDown)
+  renderer.domElement.addEventListener('pointerup', onUp)
+  if (reducedMotion) controls.addEventListener('change', draw)
+  const onVisibility = () => { paused = document.hidden; resume() }
+  document.addEventListener('visibilitychange', onVisibility)
+  const seen = new IntersectionObserver(([entry]) => { paused = !entry.isIntersecting || document.hidden; resume() })
+  seen.observe(container)
+  const sized = new ResizeObserver(resize)
+  sized.observe(container)
+  resize()
+  fit()
+  resume()
+
+  let selected = null
+  function paint() {
+    const near = new Set()
+    if (selected) {
+      near.add(selected)
+      for (const e of model.edges) if (e.from === selected || e.to === selected) { near.add(e.from); near.add(e.to) }
+    }
+    for (const [id, mesh] of meshes) {
+      const isSel = id === selected
+      mesh.material.emissive.set(isSel ? mesh.userData.color : 0x000000)
+      mesh.material.emissiveIntensity = isSel ? 0.45 : 0
+      mesh.scale.setScalar(isSel ? 1.15 : 1)
+      tags.get(id).element.classList.toggle('dim', selected !== null && !near.has(id))
+    }
+    edgeObjs.forEach((obj, i) => {
+      const isLit = i === lit
+      obj.material = obj.isLine ? (isLit ? litLine : asyncMat) : (isLit ? litMesh : syncMat)
+    })
+    pulse.visible = lit !== null && !reducedMotion
+    draw()
+  }
+  return {
+    select(id) {
+      selected = id
+      const spot = id ? meshes.get(id).position.clone() : null
+      const onScreen = spot !== null && (p => Math.abs(p.x) < 0.85 && Math.abs(p.y) < 0.85)(spot.clone().project(camera))
+      if (spot && !onScreen) {
+        wanted = spot
+        if (reducedMotion) { controls.target.copy(wanted); controls.update(); wanted = null }
+      }
+      paint()
+    },
+    showStep(edgeId) {
+      const i = edgeId === null ? -1 : model.edges.findIndex(e => e.id === edgeId)
+      lit = i < 0 ? null : i
+      litAt = performance.now()
+      paint()
+    },
+    fit,
+    dispose() {
+      paused = true
+      if (frameId) cancelAnimationFrame(frameId)
+      seen.disconnect(); sized.disconnect()
+      document.removeEventListener('visibilitychange', onVisibility)
+      controls.dispose()
+      cones.dispose(); dots.dispose()
+      for (const x of owned) x.dispose()
+      renderer.dispose()
+      container.replaceChildren()
+    },
+  }
+}
+
+// ---------- app ----------
+
+const app = { model: null, lay: null, view: null, mode: null, token: 0, selected: null, flow: null, step: 0, timer: 0 }
+
+function renderLists() {
+  const { model } = app
+  byId('node-list').replaceChildren(...model.layers.map(layer => {
+    const items = model.nodes.filter(n => n.layer === layer.id).map(n => d('li', { 'data-search': `${n.label} ${n.kind} ${n.tech ?? ''}`.toLowerCase() },
+      d('button', { type: 'button', class: 'item', 'data-id': n.id, onclick: () => select(n.id) },
+        d('span', { text: n.label }), d('span', { class: 'kind', text: KINDS[n.kind].name }))))
+    return d('section', {}, d('h3', { text: layer.label }), d('ul', {}, ...items))
+  }))
+  byId('flow-list').replaceChildren(...(model.flows.length
+    ? model.flows.map(f => d('li', {}, d('button', { type: 'button', class: 'item', 'data-flow': f.id, onclick: () => startFlow(f.id) },
+      d('span', { text: f.label }), d('span', { class: 'kind', text: `${f.steps.length} steps` }))))
+    : [d('li', { class: 'muted', text: 'No flows in this model.' })]))
+}
+
+function renderInspector() {
+  const panel = byId('inspector')
+  const n = app.model.nodes.find(x => x.id === app.selected)
+  if (!n) {
+    panel.replaceChildren(d('p', { class: 'muted', text: 'Select a component to see what it calls and what calls it.' }))
+    return
+  }
+  const name = id => app.model.nodes.find(x => x.id === id)?.label ?? id
+  const link = (id, e) => d('li', {}, d('button', { type: 'button', onclick: () => select(id) },
+    d('span', { text: name(id) }), d('span', { class: 'kind', text: [e.protocol, e.mode].filter(Boolean).join(' · ') })))
+  const calls = app.model.edges.filter(e => e.from === n.id)
+  const callers = app.model.edges.filter(e => e.to === n.id)
+  panel.replaceChildren(
+    d('h2', { text: n.label }),
+    d('dl', {},
+      d('dt', { text: 'Kind' }), d('dd', { text: KINDS[n.kind].name }),
+      d('dt', { text: 'Layer' }), d('dd', { text: app.model.layers.find(l => l.id === n.layer)?.label ?? '' }),
+      n.tech ? d('dt', { text: 'Tech' }) : null, n.tech ? d('dd', { text: n.tech }) : null),
+    n.notes ? d('p', { class: 'muted', style: 'margin-bottom:16px', text: n.notes }) : null,
+    d('h3', { class: 'label', text: `Calls (${calls.length})` }),
+    d('ul', { class: 'conn' }, ...calls.map(e => link(e.to, e))),
+    d('h3', { class: 'label', text: `Called by (${callers.length})` }),
+    d('ul', { class: 'conn' }, ...callers.map(e => link(e.from, e))))
+}
+
+function select(id) {
+  app.selected = id
+  app.view?.select(id)
+  for (const b of document.querySelectorAll('[data-id]')) b.setAttribute('aria-current', String(b.dataset.id === id))
+  renderInspector()
+}
+
+function showStep() {
+  const flow = app.model.flows.find(f => f.id === app.flow)
+  if (!flow) {
+    byId('flowbar').hidden = true
+    app.view?.showStep(null)
+    return
+  }
+  const step = flow.steps[app.step]
+  const edge = app.model.edges.find(e => e.id === step.edge)
+  const name = id => app.model.nodes.find(n => n.id === id)?.label ?? id
+  byId('flowbar').hidden = false
+  byId('narration').textContent = `${flow.label} · step ${app.step + 1} of ${flow.steps.length}: ${name(edge.from)} → ${name(edge.to)}`
+    + `${edge.protocol ? ` over ${edge.protocol}` : ''}${edge.mode === 'async' ? ' (async)' : ''}${step.note ? `. ${step.note}` : ''}`
+  app.view?.showStep(edge.id)
+}
+
+function stopPlaying() {
+  clearInterval(app.timer)
+  app.timer = 0
+  byId('play').textContent = 'Play'
+}
+
+function startFlow(id) {
+  stopPlaying()
+  app.flow = app.flow === id ? null : id
+  app.step = 0
+  for (const b of document.querySelectorAll('[data-flow]')) b.setAttribute('aria-current', String(b.dataset.flow === app.flow))
+  showStep()
+}
+
+function stepBy(delta) {
+  const flow = app.model.flows.find(f => f.id === app.flow)
+  if (!flow) return
+  const next = app.step + delta
+  if (next < 0 || next >= flow.steps.length) { stopPlaying(); return }
+  app.step = next
+  showStep()
+}
+
+async function setMode(mode) {
+  const token = ++app.token
+  app.view?.dispose()
+  app.view = null
+  app.mode = mode
+  byId('mode-3d').setAttribute('aria-pressed', String(mode === '3d'))
+  byId('mode-2d').setAttribute('aria-pressed', String(mode === '2d'))
+  const container = byId('view')
+  const api = { select }
+  if (mode === '2d') {
+    app.view = mount2D(container, app.model, app.lay, api)
+  } else {
+    byId('loading').hidden = false
+    try {
+      const view = await mount3D(container, app.model, app.lay, api)
+      if (token !== app.token) { view.dispose(); return }
+      app.view = view
+    } catch (err) {
+      if (token !== app.token) return
+      byId('loading').hidden = true
+      banner(`3D view unavailable (${err instanceof Error ? err.message : 'unknown error'}). Showing the 2D view, which works offline.`)
+      return setMode('2d')
+    }
+    byId('loading').hidden = true
+  }
+  if (app.selected) app.view.select(app.selected)
+  showStep()
+}
+
+function load(raw) {
+  const { model, warnings } = normalize(raw)
+  stopPlaying()
+  Object.assign(app, { model, lay: layout(model), selected: null, flow: null, step: 0 })
+  document.title = `${model.name} · Architecture`
+  byId('name').textContent = model.name
+  byId('desc').textContent = model.description
+  byId('empty').hidden = model.nodes.length > 0
+  banner(warnings.length ? `Loaded with ${warnings.length} warning(s): ${warnings.slice(0, 3).join('; ')}` : '')
+  renderLists()
+  renderInspector()
+  const canWebGL = (() => { try { return !!document.createElement('canvas').getContext('webgl2') } catch { return false } })()
+  return setMode(app.mode ?? (canWebGL ? '3d' : '2d'))
+}
+
+function readFile(file) {
+  file.text().then(text => load(JSON.parse(text))).catch(err => banner(`Could not open ${file.name}: ${err.message}`))
+}
+
+function download() {
+  if (!app.model) return
+  const { root } = buildSvg(app.model, app.lay, { isAnimated: false })
+  const blob = new Blob([new XMLSerializer().serializeToString(root)], { type: 'image/svg+xml' })
+  const a = d('a', { href: URL.createObjectURL(blob), download: `${app.model.name.replace(/[^\w-]+/g, '-').toLowerCase()}.svg` })
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+}
+
+byId('mode-3d').addEventListener('click', () => app.model && setMode('3d'))
+byId('mode-2d').addEventListener('click', () => app.model && setMode('2d'))
+byId('fit').addEventListener('click', () => app.view?.fit())
+byId('download').addEventListener('click', download)
+byId('file').addEventListener('change', ev => ev.target.files[0] && readFile(ev.target.files[0]))
+byId('prev').addEventListener('click', () => { stopPlaying(); stepBy(-1) })
+byId('next').addEventListener('click', () => { stopPlaying(); stepBy(1) })
+byId('play').addEventListener('click', () => {
+  if (app.timer) return stopPlaying()
+  byId('play').textContent = 'Pause'
+  app.timer = setInterval(() => stepBy(1), STEP_MS)
+})
+byId('filter').addEventListener('input', ev => {
+  const q = ev.target.value.trim().toLowerCase()
+  for (const li of document.querySelectorAll('[data-search]')) li.hidden = q !== '' && !li.dataset.search.includes(q)
+})
+document.addEventListener('keydown', ev => {
+  if (ev.target.matches('input, textarea') || !app.flow) return
+  if (ev.key === 'ArrowRight') { stopPlaying(); stepBy(1) }
+  if (ev.key === 'ArrowLeft') { stopPlaying(); stepBy(-1) }
+  if (ev.key === 'Escape') startFlow(app.flow)
+})
+const stage = byId('stage')
+stage.addEventListener('dragover', ev => { ev.preventDefault(); stage.classList.add('dragging') })
+stage.addEventListener('dragleave', () => stage.classList.remove('dragging'))
+stage.addEventListener('drop', ev => {
+  ev.preventDefault()
+  stage.classList.remove('dragging')
+  const file = ev.dataTransfer.files[0]
+  if (file) readFile(file)
+})
+
+const embedded = byId('arch-model').textContent.trim()
+if (embedded.startsWith('/*')) {
+  byId('empty').hidden = false
+} else {
+  try { load(JSON.parse(embedded)) } catch (err) { byId('empty').hidden = false; banner(`The embedded model could not be read: ${err.message}`) }
+}
+</script>
+</body>
+</html>

@@ -12,6 +12,9 @@ out
 # Vendored font binaries and their upstream licence text.
 packages/ui/fonts
 
+# KRA's own Postman collection, kept exactly as downloaded.
+docs/kra
+
 # Authored prose: the client-facing source of truth. Do not let tooling reflow it.
 docs/prd.md
 docs/brand.md

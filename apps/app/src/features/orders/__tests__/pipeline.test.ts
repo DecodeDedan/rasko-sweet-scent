@@ -119,7 +119,10 @@ describe('order status pipeline', () => {
     expect(canConvertToInvoice('draft')).toBe(false)
     expect(canConvertToInvoice('cancelled')).toBe(false)
     expect(canConvertToInvoice('confirmed')).toBe(true)
-    expect(canConvertToInvoice('delivered')).toBe(true)
+    expect(canConvertToInvoice('in_production')).toBe(false)
+    expect(canConvertToInvoice('ready')).toBe(false)
+    expect(canConvertToInvoice('delivered')).toBe(false)
+    expect(canConvertToInvoice('closed')).toBe(false)
   })
 
   it('gives a usable reason for every refusal', () => {

@@ -35,9 +35,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 // "safaricom": it accepts the payment and silently never reports the result.
 // So the receiving function is named without them.
 const RESULT_FUNCTION = 'payout-result'
-// The trailing slash matters when MPESA_CALLBACK_BASE_URL is the company
-// website (https://www.raskosweetscent.com/hooks, forwarded by
-// apps/website/vercel.json): the site 308-redirects any path without one, and
+// In production MPESA_CALLBACK_BASE_URL is https://hooks.raskosweetscent.com,
+// a Cloudflare Worker that forwards POST /payout-result/... to this project
+// (docs/mpesa-setup.md). Keep the trailing slash: a base that redirects paths
+// without one (the website exports with trailingSlash) answers 308, and
 // Safaricom does not follow a redirect with its result.
 const TOKEN_TIMEOUT_MS = 10_000
 const REQUEST_TIMEOUT_MS = 20_000

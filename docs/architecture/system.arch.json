@@ -1,0 +1,122 @@
+{
+  "name": "Rasko Sweet Scent",
+  "description": "Offline-first business system: a Tauri app with an on-device SQLite replica that syncs to Supabase, plus edge functions for email and M-Pesa payouts",
+  "layers": [
+    { "id": "clients", "label": "Clients" },
+    { "id": "device", "label": "On device" },
+    { "id": "edge", "label": "Supabase APIs" },
+    { "id": "core", "label": "Supabase core" },
+    { "id": "functions", "label": "Edge functions" },
+    { "id": "ops", "label": "Automation" },
+    { "id": "ext", "label": "Third parties" }
+  ],
+  "nodes": [
+    { "id": "app", "label": "Rasko app", "kind": "client", "layer": "clients", "tech": "Tauri 2 · React 18", "notes": "Windows + Android. apps/app (entry src/main.tsx, Rust shell src-tauri/src/lib.rs). CSP allows only *.supabase.co and GitHub." },
+    { "id": "website", "label": "Website", "kind": "client", "layer": "clients", "tech": "Next.js 15 static", "notes": "Marketing site + /reset-password. apps/website. Hosting on Vercel is inferred from .github/workflows/indexnow.yml." },
+    { "id": "repos", "label": "Repositories", "kind": "service", "layer": "device", "tech": "TypeScript", "notes": "Repository<T> + feature repositories; never touch the network. apps/app/src/data/repositories/repository.ts, src/features/*/*Repository.ts" },
+    { "id": "sqlite", "label": "Device SQLite", "kind": "database", "layer": "device", "tech": "tauri-plugin-sql", "notes": "sqlite:rasko.db mirrors server tables plus sync_state cursors. apps/app/src/data/sqlite/tauriDatabase.ts, schema.ts, tables.ts" },
+    { "id": "outbox", "label": "Outbox", "kind": "queue", "layer": "device", "tech": "SQLite table", "notes": "Ordered write journal, written in the same transaction as the row; rejects go to outbox_dead. apps/app/src/data/sync/outbox.ts" },
+    { "id": "sync", "label": "Sync engine", "kind": "service", "layer": "device", "tech": "single-flight scheduler", "notes": "Push then pull, keyset cursors. Triggers: launch, write (2 s debounce), every 5 min, online event, manual. apps/app/src/data/sync/engine.ts, scheduler.ts" },
+    { "id": "auth", "label": "Supabase Auth", "kind": "gateway", "layer": "edge", "tech": "GoTrue", "notes": "Password sign-in, reset, admin API; Send Email hook to send-auth-email. supabase/config.toml, apps/app/src/auth/supabaseGateway.ts" },
+    { "id": "rest", "label": "PostgREST", "kind": "gateway", "layer": "edge", "tech": "supabase-js 2", "notes": "upsert/select with RLS, rpc('server_instance_id'). apps/app/src/data/sync/supabaseRemote.ts" },
+    { "id": "db", "label": "Postgres", "kind": "database", "layer": "core", "tech": "Postgres 17 · RLS · pg_net", "notes": "30 public tables, app.* triggers (invoice numbering, email + payout dispatch), views. supabase/migrations/*.sql" },
+    { "id": "cron", "label": "pg_cron sweeps", "kind": "queue", "layer": "core", "tech": "pg_cron", "notes": "Every minute: sweep-outbound-emails, sweep-payroll-payouts (retry, unstick, fail after 5 attempts). supabase/migrations/20260925000100_email.sql, 20260927000100_mpesa_b2c.sql" },
+    { "id": "fn-email", "label": "send-email", "kind": "function", "layer": "functions", "tech": "Deno · nodemailer", "notes": "Composes invoice emails from templates and settings, delivers with SMTP failover. supabase/functions/send-email/index.ts" },
+    { "id": "fn-auth-email", "label": "send-auth-email", "kind": "function", "layer": "functions", "tech": "Deno · Standard Webhooks", "notes": "Auth Send Email hook. supabase/functions/send-auth-email/index.ts" },
+    { "id": "fn-admin", "label": "User admin functions", "kind": "function", "layer": "functions", "tech": "Deno", "notes": "invite-user, delete-user, set-user-active, assign-company-email, payout-wallet. supabase/functions/*" },
+    { "id": "fn-payout", "label": "mpesa-b2c", "kind": "function", "layer": "functions", "tech": "Deno", "notes": "Salary payout dispatcher; PAYOUT_PROVIDER daraja (default) or intasend. supabase/functions/mpesa-b2c/index.ts" },
+    { "id": "fn-result", "label": "payout-result", "kind": "function", "layer": "functions", "tech": "Deno", "notes": "Provider callback, token in path; settles payroll_payouts. supabase/functions/payout-result/index.ts" },
+    { "id": "gha-backup", "label": "Nightly backup", "kind": "service", "layer": "ops", "tech": "GitHub Actions", "notes": "cron 30 1 * * *: pg_dump, verify 12 core tables, upload, record backup_runs, issue on failure. .github/workflows/backup.yml" },
+    { "id": "gha-release", "label": "Release", "kind": "service", "layer": "ops", "tech": "tauri-action", "notes": "Tag v*: signed NSIS installer + latest.json (Windows only). .github/workflows/release.yml" },
+    { "id": "smtp", "label": "SMTP providers", "kind": "external", "layer": "ext", "tech": "Brevo → Resend → Gmail", "notes": "Tried in EMAIL_PROVIDERS order with health tracking (email_provider_health). supabase/functions/_shared/email/transport.js" },
+    { "id": "cloudflare", "label": "Cloudflare Email Routing", "kind": "external", "layer": "ext", "tech": "REST", "notes": "Company mailbox forwarding. supabase/functions/_shared/mailbox/routing.js" },
+    { "id": "daraja", "label": "Safaricom Daraja", "kind": "external", "layer": "ext", "tech": "M-Pesa B2C", "notes": "supabase/functions/_shared/mpesa/b2c.js" },
+    { "id": "intasend", "label": "IntaSend", "kind": "external", "layer": "ext", "tech": "Payouts API", "notes": "supabase/functions/_shared/payouts/intasend.js" },
+    { "id": "r2", "label": "Cloudflare R2", "kind": "storage", "layer": "ext", "tech": "S3 API", "notes": "daily/ kept 30 days, monthly/ kept 12 months. .github/workflows/backup.yml" },
+    { "id": "releases", "label": "GitHub Releases", "kind": "storage", "layer": "ext", "tech": "installer + latest.json", "notes": "Updater endpoint in apps/app/src-tauri/tauri.conf.json" }
+  ],
+  "edges": [
+    { "id": "app-repos", "from": "app", "to": "repos", "label": "feature hooks", "mode": "sync" },
+    { "id": "repos-sqlite", "from": "repos", "to": "sqlite", "protocol": "Tauri IPC", "mode": "sync" },
+    { "id": "repos-outbox", "from": "repos", "to": "outbox", "label": "same transaction", "mode": "sync" },
+    { "id": "repos-sync", "from": "repos", "to": "sync", "label": "notifyLocalWrite", "mode": "async" },
+    { "id": "sync-outbox", "from": "sync", "to": "outbox", "label": "drain batch", "mode": "sync" },
+    { "id": "sync-rest", "from": "sync", "to": "rest", "protocol": "HTTPS", "label": "push upsert / pull keyset", "mode": "async" },
+    { "id": "sync-sqlite", "from": "sync", "to": "sqlite", "label": "apply pulled rows", "mode": "sync" },
+    { "id": "rest-db", "from": "rest", "to": "db", "protocol": "SQL + RLS", "mode": "sync" },
+    { "id": "app-auth", "from": "app", "to": "auth", "protocol": "HTTPS", "label": "sign in", "mode": "sync" },
+    { "id": "app-fn-admin", "from": "app", "to": "fn-admin", "protocol": "functions.invoke", "mode": "sync" },
+    { "id": "website-auth", "from": "website", "to": "auth", "protocol": "HTTPS", "label": "verifyOtp + updateUser", "mode": "sync" },
+    { "id": "auth-fn-auth-email", "from": "auth", "to": "fn-auth-email", "protocol": "webhook", "label": "Send Email hook", "mode": "sync" },
+    { "id": "fn-auth-email-smtp", "from": "fn-auth-email", "to": "smtp", "protocol": "SMTP", "mode": "sync" },
+    { "id": "db-fn-email", "from": "db", "to": "fn-email", "protocol": "pg_net", "label": "outbound_emails insert", "mode": "async" },
+    { "id": "cron-fn-email", "from": "cron", "to": "fn-email", "protocol": "pg_net", "label": "retry sweep", "mode": "async" },
+    { "id": "fn-email-db", "from": "fn-email", "to": "db", "protocol": "service role", "label": "compose + status", "mode": "sync" },
+    { "id": "fn-email-smtp", "from": "fn-email", "to": "smtp", "protocol": "SMTP", "label": "failover", "mode": "sync" },
+    { "id": "fn-admin-auth", "from": "fn-admin", "to": "auth", "protocol": "admin API", "mode": "sync" },
+    { "id": "fn-admin-smtp", "from": "fn-admin", "to": "smtp", "protocol": "SMTP", "label": "invites", "mode": "sync" },
+    { "id": "fn-admin-cloudflare", "from": "fn-admin", "to": "cloudflare", "protocol": "HTTPS", "label": "mail forwarding", "mode": "sync" },
+    { "id": "db-fn-payout", "from": "db", "to": "fn-payout", "protocol": "pg_net", "label": "payroll_payouts insert", "mode": "async" },
+    { "id": "cron-fn-payout", "from": "cron", "to": "fn-payout", "protocol": "pg_net", "label": "retry sweep", "mode": "async" },
+    { "id": "fn-payout-daraja", "from": "fn-payout", "to": "daraja", "protocol": "HTTPS", "label": "B2C", "mode": "sync" },
+    { "id": "fn-payout-intasend", "from": "fn-payout", "to": "intasend", "protocol": "HTTPS", "mode": "sync" },
+    { "id": "daraja-result", "from": "daraja", "to": "fn-result", "protocol": "HTTPS callback", "mode": "async" },
+    { "id": "intasend-result", "from": "intasend", "to": "fn-result", "protocol": "HTTPS callback", "mode": "async" },
+    { "id": "fn-result-db", "from": "fn-result", "to": "db", "protocol": "service role", "label": "settle payout", "mode": "sync" },
+    { "id": "backup-db", "from": "gha-backup", "to": "db", "protocol": "pg_dump", "mode": "async" },
+    { "id": "backup-r2", "from": "gha-backup", "to": "r2", "protocol": "S3", "mode": "async" },
+    { "id": "release-releases", "from": "gha-release", "to": "releases", "label": "signed installer", "mode": "async" },
+    { "id": "app-releases", "from": "app", "to": "releases", "protocol": "HTTPS", "label": "update check", "mode": "async" }
+  ],
+  "flows": [
+    { "id": "offline-invoice", "label": "Create invoice offline, then sync", "steps": [
+      { "edge": "app-repos", "note": "InvoicesScreen → useInvoices → InvoicesRepository.insert" },
+      { "edge": "repos-sqlite", "note": "Write the invoice row locally; the UI never waits on the network" },
+      { "edge": "repos-outbox", "note": "enqueue('invoices', id, 'insert') in the same SQLite transaction" },
+      { "edge": "repos-sync", "note": "notifyLocalWrite starts a 2 s debounce" },
+      { "edge": "sync-rest", "note": "rpc server_instance_id: if the server DB was replaced, wipe the replica" },
+      { "edge": "sync-outbox", "note": "Drain the outbox in batches of 200" },
+      { "edge": "sync-rest", "note": "upsert onConflict id" },
+      { "edge": "rest-db", "note": "RLS applies; app.assign_invoice_number sets the number" },
+      { "edge": "sync-rest", "note": "Pull: keyset pages of 500 from the sync_state cursor" },
+      { "edge": "sync-sqlite", "note": "Apply rows and advance the cursor in one transaction; the invoice number arrives" }
+    ] },
+    { "id": "invoice-email", "label": "Send invoice email", "steps": [
+      { "edge": "app-repos", "note": "SendEmailDialog → EmailRepository" },
+      { "edge": "repos-outbox", "note": "outbound_emails row, status queued" },
+      { "edge": "sync-rest", "note": "Push is insert-only for outbound_emails" },
+      { "edge": "rest-db", "note": "force_outbound_email_defaults trigger" },
+      { "edge": "db-fn-email", "note": "AFTER INSERT outbound_emails_dispatch → net.http_post({ id })" },
+      { "edge": "fn-email-db", "note": "Read the invoice, items, settings and template with the service role" },
+      { "edge": "fn-email-smtp", "note": "Brevo → Resend → Gmail failover; email_provider_health is recorded" },
+      { "edge": "cron-fn-email", "note": "If delivery failed: retried every minute, up to 5 attempts" },
+      { "edge": "sync-sqlite", "note": "Next pull brings sent/failed back to EmailActivity" }
+    ] },
+    { "id": "password-reset", "label": "Password reset", "steps": [
+      { "edge": "app-auth", "note": "resetPasswordForEmail, redirect to the website /reset-password" },
+      { "edge": "auth-fn-auth-email", "note": "Standard Webhooks signature checked" },
+      { "edge": "fn-auth-email-smtp", "note": "Branded email through the SMTP failover" },
+      { "edge": "website-auth", "note": "SetPasswordForm: verifyOtp, then updateUser" }
+    ] },
+    { "id": "salary-payout", "label": "M-Pesa salary payout", "steps": [
+      { "edge": "app-repos", "note": "PayMpesaDialog → mpesaPayouts" },
+      { "edge": "repos-outbox", "note": "payroll_payouts row, status queued" },
+      { "edge": "sync-rest", "note": "Push the payout row" },
+      { "edge": "rest-db", "note": "prepare_payroll_payout trigger" },
+      { "edge": "db-fn-payout", "note": "dispatch_new_payout via pg_net" },
+      { "edge": "fn-payout-daraja", "note": "B2C request (or IntaSend when PAYOUT_PROVIDER=intasend)" },
+      { "edge": "daraja-result", "note": "Provider calls back with the result" },
+      { "edge": "fn-result-db", "note": "settle_payroll_payout; the payslip is marked paid" },
+      { "edge": "sync-sqlite", "note": "The result is pulled back to the device" }
+    ] },
+    { "id": "nightly-backup", "label": "Nightly backup", "steps": [
+      { "edge": "backup-db", "note": "04:30 Nairobi: pg_dump --format=custom through the session pooler; verify 12 core tables" },
+      { "edge": "backup-r2", "note": "daily/ copy (monthly/ on the 1st); prune old copies" },
+      { "edge": "backup-db", "note": "insert into backup_runs; it syncs down to the System screen" }
+    ] },
+    { "id": "release-update", "label": "Release and auto-update", "steps": [
+      { "edge": "release-releases", "note": "Tag v* → signed NSIS installer + latest.json" },
+      { "edge": "app-releases", "note": "On launch: check, downloadAndInstall, relaunch (Windows only)" }
+    ] }
+  ]
+}

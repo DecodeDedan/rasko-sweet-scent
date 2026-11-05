@@ -27,6 +27,16 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The installer ships package.json's version; Cargo.toml drifted from it
+      # once already because nothing compared them.
+      - name: App versions agree
+        run: |
+          node -e "
+            const app = require('./apps/app/package.json').version
+            const cargo = /^version = \"([^\"]+)\"/m.exec(require('fs').readFileSync('apps/app/src-tauri/Cargo.toml', 'utf8'))?.[1]
+            if (app !== cargo) { console.error('apps/app/package.json is ' + app + ' but src-tauri/Cargo.toml is ' + cargo); process.exit(1) }
+          "
+
       - name: Typecheck
         run: pnpm typecheck
 
