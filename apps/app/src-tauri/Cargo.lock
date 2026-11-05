@@ -3185,7 +3185,7 @@ dependencies = [
 
 [[package]]
 name = "rss-management-system"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "serde",
  "serde_json",
