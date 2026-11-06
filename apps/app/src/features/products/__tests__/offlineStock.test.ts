@@ -86,6 +86,7 @@ describe('stock moves through sync', () => {
       ],
     })
     await repo.transition(orderId, 'confirmed')
+    await repo.convertToInvoice(orderId, 'ad000000-0000-4000-8000-000000000001')
     await repo.transition(orderId, 'in_production')
     await repo.transition(orderId, 'ready')
 
@@ -142,7 +143,9 @@ describe('stock moves through sync', () => {
         },
       ],
     })
-    for (const s of ['confirmed', 'in_production', 'ready', 'delivered'] as const) {
+    await repo.transition(orderId, 'confirmed')
+    await repo.convertToInvoice(orderId, 'ad000000-0000-4000-8000-000000000002')
+    for (const s of ['in_production', 'ready', 'delivered'] as const) {
       await repo.transition(orderId, s)
     }
     await device.sync()
