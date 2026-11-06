@@ -287,21 +287,27 @@ export function OrderForm({ isOpen, onClose, products, clients, onSubmit }: Orde
                   value={line.description}
                   onChange={(e) => updateLine(line.key, { description: e.target.value })}
                 />
-                <Input
-                  aria-label="Quantity"
-                  inputMode="decimal"
-                  isNumeric
-                  value={line.quantity}
-                  onChange={(e) => updateLine(line.key, { quantity: e.target.value })}
-                />
-                <Input
-                  aria-label={`Unit price in ${currency}`}
-                  aria-describedby={isForeign ? 'order-price-hint' : undefined}
-                  inputMode="decimal"
-                  isNumeric
-                  value={line.unitPrice}
-                  onChange={(e) => updateLine(line.key, { unitPrice: e.target.value })}
-                />
+                <label className="order-line-field">
+                  <span>Quantity</span>
+                  <Input
+                    aria-label="Quantity"
+                    inputMode="decimal"
+                    isNumeric
+                    value={line.quantity}
+                    onChange={(e) => updateLine(line.key, { quantity: e.target.value })}
+                  />
+                </label>
+                <label className="order-line-field">
+                  <span>Unit price ({currency})</span>
+                  <Input
+                    aria-label={`Unit price in ${currency}`}
+                    aria-describedby={isForeign ? 'order-price-hint' : undefined}
+                    inputMode="decimal"
+                    isNumeric
+                    value={line.unitPrice}
+                    onChange={(e) => updateLine(line.key, { unitPrice: e.target.value })}
+                  />
+                </label>
                 <button
                   type="button"
                   className="rsk-icon-btn"

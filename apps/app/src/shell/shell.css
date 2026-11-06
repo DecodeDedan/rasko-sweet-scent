@@ -783,6 +783,16 @@
   border-radius: var(--rasko-radius-md);
 }
 
+.order-line-field {
+  display: grid;
+  gap: var(--rasko-space-1);
+}
+
+.order-line-field > span {
+  font-size: var(--rasko-text-12);
+  color: var(--rasko-text-secondary);
+}
+
 @media (min-width: 768px) {
   .order-line {
     grid-template-columns: 1.4fr 1.6fr 80px 120px 32px;

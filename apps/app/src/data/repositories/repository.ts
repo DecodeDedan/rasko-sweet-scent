@@ -1,7 +1,7 @@
 import { decodeRow, encodeRow, encodeValue } from '../sqlite/codec.js'
 import { tableSpec } from '../sqlite/tables.js'
 import type { TableSpec } from '../sqlite/tables.js'
-import type { SqlDatabase } from '../sqlite/types.js'
+import type { SqlDatabase, SqlExecutor } from '../sqlite/types.js'
 import { enqueue } from '../sync/outbox.js'
 
 /**
@@ -104,7 +104,33 @@ export class Repository<T extends Record<string, unknown> = Record<string, unkno
     if (this.hasColumn('created_by')) row['created_by'] ??= this.context.userId
     if (this.hasColumn('updated_by')) row['updated_by'] ??= this.context.userId
 
-    await this.writeLocal(row, 'insert')
+    await this.db.transaction(async (tx) => {
+      await this.writeLocal(tx, row, 'insert')
+    })
+    this.context.onLocalWrite?.()
+    return decodeRow(this.spec, row) as T
+  }
+
+  /**
+   * Inserts into a transaction owned by a higher-level repository.
+   *
+   * This must not start another transaction: the Tauri adapter serialises
+   * database calls, so nesting one here would wait forever for the outer
+   * transaction to finish.
+   */
+  async insertWithinTransaction(
+    tx: SqlExecutor,
+    values: Partial<T> & { id: string },
+  ): Promise<T> {
+    const timestamp = this.now()
+    const row: Record<string, unknown> = { ...values }
+
+    if (this.hasColumn('created_at')) row['created_at'] ??= timestamp
+    if (this.hasColumn('updated_at')) row['updated_at'] ??= timestamp
+    if (this.hasColumn('created_by')) row['created_by'] ??= this.context.userId
+    if (this.hasColumn('updated_by')) row['updated_by'] ??= this.context.userId
+
+    await this.writeLocal(tx, row, 'insert')
     return decodeRow(this.spec, row) as T
   }
 
@@ -116,7 +142,10 @@ export class Repository<T extends Record<string, unknown> = Record<string, unkno
     if (this.hasColumn('updated_at')) row['updated_at'] = this.now()
     if (this.hasColumn('updated_by')) row['updated_by'] = this.context.userId
 
-    await this.writeLocal(row, 'update')
+    await this.db.transaction(async (tx) => {
+      await this.writeLocal(tx, row, 'update')
+    })
+    this.context.onLocalWrite?.()
     return decodeRow(this.spec, row) as T
   }
 
@@ -131,7 +160,11 @@ export class Repository<T extends Record<string, unknown> = Record<string, unkno
     await this.update(id, { deleted_at: this.now() } as unknown as Partial<T>)
   }
 
-  private async writeLocal(row: Record<string, unknown>, op: 'insert' | 'update'): Promise<void> {
+  private async writeLocal(
+    tx: SqlExecutor,
+    row: Record<string, unknown>,
+    op: 'insert' | 'update',
+  ): Promise<void> {
     const { columns, values } = encodeRow(this.spec, row)
     const placeholders = columns.map(() => '?').join(', ')
     const assignments = columns
@@ -139,18 +172,14 @@ export class Repository<T extends Record<string, unknown> = Record<string, unkno
       .map((column) => `${column} = excluded.${column}`)
       .join(', ')
 
-    await this.db.transaction(async (tx) => {
-      await tx.execute(
-        `INSERT INTO ${this.spec.name} (${columns.join(', ')}, sync_status)
-         VALUES (${placeholders}, 'pending')
-         ON CONFLICT (id) DO UPDATE SET ${assignments}, sync_status = 'pending'`,
-        values,
-      )
-      // The payload is the server-shaped row: what the push will send verbatim.
-      await enqueue(tx, this.spec.name, String(row['id']), op, row, this.now())
-    })
-
-    this.context.onLocalWrite?.()
+    await tx.execute(
+      `INSERT INTO ${this.spec.name} (${columns.join(', ')}, sync_status)
+       VALUES (${placeholders}, 'pending')
+       ON CONFLICT (id) DO UPDATE SET ${assignments}, sync_status = 'pending'`,
+      values,
+    )
+    // The payload is the server-shaped row: what the push will send verbatim.
+    await enqueue(tx, this.spec.name, String(row['id']), op, row, this.now())
   }
 
   /** Escape hatch for aggregates a repository cannot express. Reads only. */

@@ -278,8 +278,8 @@ export class OrdersRepository {
     }
     const total = subtotal - input.discountCents
 
-    await this.db.transaction(async () => {
-      await this.orders.insert({
+    await this.db.transaction(async (tx) => {
+      await this.orders.insertWithinTransaction(tx, {
         id: input.id,
         client_id: input.clientId,
         is_walk_in: input.isWalkIn,
@@ -302,7 +302,7 @@ export class OrdersRepository {
       let position = 0
       for (const { line, quantity, unitPrice, total: lineTotal } of prepared) {
         position += 1
-        await this.items.insert({
+        await this.items.insertWithinTransaction(tx, {
           id: line.key,
           order_id: input.id,
           product_id: line.productId,
@@ -315,6 +315,7 @@ export class OrdersRepository {
         } as never)
       }
     })
+    this.context.onLocalWrite?.()
 
     const created = await this.findSummary(input.id)
     if (!created) throw new OrderRuleError('The order could not be read back after saving.')
