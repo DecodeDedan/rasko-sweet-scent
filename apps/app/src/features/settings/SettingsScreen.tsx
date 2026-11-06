@@ -26,6 +26,7 @@ import { ScopeBadge } from '../../screens/common.js'
 import { requestUpdateCheck } from '../../shell/useAppUpdate.js'
 import type { ScreenProps } from '../../screens/common.js'
 import { EmailTemplatesPanel } from '../email/EmailTemplatesPanel.js'
+import { ProductsRepository } from '../products/productsRepository.js'
 import { canEditCompanyProfile, canEditSettings } from './settingsRepository.js'
 import { useSettingsData } from './useSettings.js'
 
@@ -60,6 +61,8 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
   const [formError, setFormError] = useState<string | null>(null)
   const [isPurgeOpen, setIsPurgeOpen] = useState(false)
   const [isPurging, setIsPurging] = useState(false)
+  const [isResetLowStockOpen, setIsResetLowStockOpen] = useState(false)
+  const [isResettingLowStock, setIsResettingLowStock] = useState(false)
 
   const [companyName, setCompanyName] = useState<string | null>(null)
   const [address, setAddress] = useState<string | null>(null)
@@ -84,6 +87,7 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
         showToast({ tone: 'danger', title: 'Business data was not purged', description: result.error })
         return
       }
+
       await purgeLocalBusinessData(db)
       setIsPurgeOpen(false)
       showToast({
@@ -100,6 +104,52 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
       })
     } finally {
       setIsPurging(false)
+    }
+  }
+
+  async function resetDemoLowStockThresholds() {
+    if (!db || !identity.isSuperAdmin) return
+    setIsResettingLowStock(true)
+    try {
+      const result = await gateway.resetDemoLowStockThresholds()
+      if (result.error) {
+        showToast({ tone: 'danger', title: 'Low-stock thresholds were not reset', description: result.error })
+        return
+      }
+
+      const products = new ProductsRepository(
+        db,
+        { role: 'owner', userId: identity.userId },
+        { userId: identity.userId },
+      )
+      const demoThresholds: Record<string, number> = {
+        'RSS-ROS-001': 200,
+        'RSS-ROS-002': 200,
+        'RSS-GYP-001': 10,
+        'RSS-EUC-001': 12,
+        'RSS-ARR-001': 2,
+        'RSS-VAS-001': 5,
+      }
+      for (const product of await products.list()) {
+        const threshold = demoThresholds[product.sku]
+        if (threshold !== undefined) {
+          await products.updateProduct(product.id, { low_stock_threshold: threshold })
+        }
+      }
+      setIsResetLowStockOpen(false)
+      showToast({
+        tone: 'success',
+        title: 'Demo low-stock thresholds restored',
+        description: 'The original demo thresholds are restored on the cloud and this device.',
+      })
+    } catch (cause) {
+      showToast({
+        tone: 'danger',
+        title: 'Low-stock thresholds were not reset',
+        description: cause instanceof Error ? cause.message : 'Could not reset the thresholds.',
+      })
+    } finally {
+      setIsResettingLowStock(false)
     }
   }
 
@@ -488,8 +538,21 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
             </Field>
 
             {identity.isSuperAdmin ? (
-              <Card>
-                <div className="rsk-stack">
+              <>
+                <Card>
+                  <div className="rsk-stack">
+                    <h3>Reset demo low-stock thresholds</h3>
+                    <p>
+                      Restores the original demo thresholds for the standard catalogue products.
+                      Existing stock quantities are not changed.
+                    </p>
+                    <Button variant="danger" onClick={() => setIsResetLowStockOpen(true)}>
+                      Reset demo thresholds
+                    </Button>
+                  </div>
+                </Card>
+                <Card>
+                  <div className="rsk-stack">
                   <h3>Remove business and test data</h3>
                   <p>
                     Permanently removes synced business records from the cloud and clears the
@@ -499,8 +562,9 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
                   <Button variant="danger" onClick={() => setIsPurgeOpen(true)}>
                     Purge business data
                   </Button>
-                </div>
-              </Card>
+                  </div>
+                </Card>
+              </>
             ) : null}
 
             <Field
@@ -539,6 +603,31 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
             <p>
               This action cannot be undone. User accounts, settings and audit history will remain.
             </p>
+          </div>
+        </Modal>
+      ) : null}
+      {isResetLowStockOpen ? (
+        <Modal
+          isOpen
+          onClose={() => setIsResetLowStockOpen(false)}
+          title="Reset demo low-stock thresholds"
+          size="sm"
+          footer={
+            <>
+              <Button onClick={() => setIsResetLowStockOpen(false)}>Cancel</Button>
+              <Button
+                variant="danger"
+                isLoading={isResettingLowStock}
+                onClick={() => void resetDemoLowStockThresholds()}
+              >
+                Reset thresholds
+              </Button>
+            </>
+          }
+        >
+          <div className="rsk-stack">
+            <p>This restores the demo thresholds in the cloud and on this device.</p>
+            <p>Stock quantities and stock movement history will not be deleted.</p>
           </div>
         </Modal>
       ) : null}

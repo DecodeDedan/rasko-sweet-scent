@@ -57,6 +57,39 @@ $$;
 revoke all on function app.purge_business_data() from public;
 grant execute on function app.purge_business_data() to authenticated;
 
+create or replace function public.reset_demo_low_stock_thresholds()
+returns void
+language plpgsql
+security definer
+set search_path = public, app, pg_temp
+as $$
+begin
+  if not app.is_super_admin() then
+    raise exception 'Only a super admin can reset demo low-stock thresholds.'
+      using errcode = 'insufficient_privilege';
+  end if;
+
+  update public.products
+  set low_stock_threshold = case sku
+    when 'RSS-ROS-001' then 200
+    when 'RSS-ROS-002' then 200
+    when 'RSS-GYP-001' then 10
+    when 'RSS-EUC-001' then 12
+    when 'RSS-ARR-001' then 2
+    when 'RSS-VAS-001' then 5
+    else low_stock_threshold
+  end,
+  updated_at = now()
+  where sku in (
+    'RSS-ROS-001', 'RSS-ROS-002', 'RSS-GYP-001',
+    'RSS-EUC-001', 'RSS-ARR-001', 'RSS-VAS-001'
+  );
+end;
+$$;
+
+revoke all on function public.reset_demo_low_stock_thresholds() from public;
+grant execute on function public.reset_demo_low_stock_thresholds() to authenticated;
+
 create or replace function public.grant_super_admin(target_user_id uuid)
 returns void
 language plpgsql

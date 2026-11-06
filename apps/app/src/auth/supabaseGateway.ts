@@ -227,6 +227,11 @@ export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient
       return error ? { error: await functionErrorMessage(error) } : {}
     },
 
+    async resetDemoLowStockThresholds(): Promise<GatewayResult> {
+      const { error } = await client.rpc('reset_demo_low_stock_thresholds')
+      return error ? { error: error.message } : {}
+    },
+
     async assignCompanyEmail(userId, localPart): Promise<AssignResult> {
       const { data, error } = await client.functions.invoke('assign-company-email', {
         body: { userId, localPart: localPart.trim() },

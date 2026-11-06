@@ -75,6 +75,8 @@ export interface AuthGateway {
   makeSuperAdmin(userId: string): Promise<GatewayResult>
   /** Super admin only. Permanently removes synced business/test data server-side. */
   purgeBusinessData(): Promise<GatewayResult>
+  /** Super admin only. Restores the demo low-stock thresholds. */
+  resetDemoLowStockThresholds(): Promise<GatewayResult>
   inviteUser(input: InviteInput): Promise<GatewayResult>
   /** Moves an existing account onto a company address; its old email receives the mail. */
   assignCompanyEmail(userId: string, localPart: string): Promise<AssignResult>
