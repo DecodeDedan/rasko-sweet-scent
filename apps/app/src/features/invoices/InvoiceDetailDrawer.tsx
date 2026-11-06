@@ -1,12 +1,13 @@
 'use client'
 
-import { Ban, BellRing, Mail, Printer, Receipt, Send } from 'lucide-react'
+import { Ban, BellRing, Mail, Printer, Receipt, Send, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import {
   Button,
   Drawer,
   Field,
   Input,
+  Modal,
   StatusChip,
   Table,
   formatDate,
@@ -53,6 +54,7 @@ export function InvoiceDetailDrawer({
   const [reversalReason, setReversalReason] = useState('')
   const [voiding, setVoiding] = useState(false)
   const [voidReason, setVoidReason] = useState('')
+  const [deleting, setDeleting] = useState(false)
   const [emailing, setEmailing] = useState<Pick<
     SendEmailDialogProps,
     'kind' | 'contextLabel' | 'related'
@@ -163,6 +165,15 @@ export function InvoiceDetailDrawer({
                 onClick={() => onRecordPayment(detail)}
               >
                 Record payment
+              </Button>
+            ) : null}
+            {isStaff ? (
+              <Button
+                variant="danger"
+                leadingIcon={<Trash2 size={14} aria-hidden="true" />}
+                onClick={() => setDeleting(true)}
+              >
+                Delete
               </Button>
             ) : null}
           </>
@@ -382,6 +393,39 @@ export function InvoiceDetailDrawer({
           onClose={() => setEmailing(null)}
           onQueued={() => void reloadEmails()}
         />
+      ) : null}
+      {deleting ? (
+        <Modal
+          isOpen
+          onClose={() => setDeleting(false)}
+          title="Delete invoice"
+          size="sm"
+          footer={
+            <>
+              <Button onClick={() => setDeleting(false)}>Cancel</Button>
+              <Button
+                variant="danger"
+                isLoading={busy}
+                onClick={() =>
+                  void run(async () => {
+                    await repo.softDelete(invoice!.id)
+                    setDeleting(false)
+                    onClose()
+                  })
+                }
+              >
+                Delete invoice
+              </Button>
+            </>
+          }
+        >
+          <div className="rsk-stack">
+            <p>
+              This removes the invoice from this device and syncs the deletion to the server. Any
+              payment history linked to it is retained for audit purposes.
+            </p>
+          </div>
+        </Modal>
       ) : null}
     </Drawer>
   )

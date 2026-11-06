@@ -34,6 +34,7 @@ describe('orders repository', () => {
   // ------------------------------------------------- FR-4.2 status transitions
 
   it('moves an order forward one step at a time', async () => {
+    await asOwner.convertToInvoice(ORDER.confirmed, 'ac000000-0000-4000-8000-000000000021')
     await asOwner.transition(ORDER.confirmed, 'in_production')
     expect((await asOwner.findSummary(ORDER.confirmed))?.status).toBe('in_production')
 
@@ -60,6 +61,7 @@ describe('orders repository', () => {
     const confirmed = await asOwner.findSummary(ORDER.draftBySales)
     expect(confirmed?.confirmed_at).toBeTruthy()
 
+    await asOwner.convertToInvoice(ORDER.draftBySales, 'ac000000-0000-4000-8000-000000000022')
     await asOwner.transition(ORDER.draftBySales, 'in_production')
     await asOwner.transition(ORDER.draftBySales, 'ready')
     await asOwner.transition(ORDER.draftBySales, 'delivered')
@@ -116,6 +118,26 @@ describe('orders repository', () => {
     // A manager can.
     await asManager.softDelete(ORDER.draftBySales)
     expect(await asManager.findSummary(ORDER.draftBySales)).toBeNull()
+  })
+
+  it('lets a manager delete a closed order', async () => {
+    await db.execute(
+      `INSERT INTO stock_movements
+         (id, product_id, movement_type, quantity, unit_cost_cents, source_table,
+          source_id, occurred_at, created_at, sync_status)
+       VALUES ('ac000000-0000-4000-8000-000000000030', ?, 'sale', -20000, 6000,
+               'orders', ?, '2026-09-01T00:00:00.000Z',
+               '2026-09-01T00:00:00.000Z', 'synced')`,
+      [PRODUCT_ROSE, ORDER.closed],
+    )
+
+    await asManager.softDelete(ORDER.closed)
+    expect(await asManager.findSummary(ORDER.closed)).toBeNull()
+    const stock = await db.select<{ total: number }>(
+      'SELECT COALESCE(SUM(quantity), 0) AS total FROM stock_movements WHERE product_id = ?',
+      [PRODUCT_ROSE],
+    )
+    expect(Number(stock[0]?.total)).toBe(0)
   })
 
   it("scopes the list to a sales user's own orders", async () => {
@@ -180,8 +202,18 @@ describe('orders repository', () => {
       description: 'Stage arch, custom build',
       line_total_cents: 4500000,
     })
+
     // Quantities survive the thousandths codec.
     expect(detail?.items[0]?.quantity).toBe(120)
+  })
+
+  it('requires an invoice before moving a confirmed order into production', async () => {
+    await expect(asOwner.transition(ORDER.confirmed, 'in_production')).rejects.toThrow(
+      /create an invoice.*before moving it into production/i,
+    )
+
+    await asOwner.convertToInvoice(ORDER.confirmed, 'ac000000-0000-4000-8000-000000000020')
+    await expect(asOwner.transition(ORDER.confirmed, 'in_production')).resolves.toBeUndefined()
   })
 
   it('refuses an order with no lines', async () => {
@@ -329,10 +361,11 @@ describe('orders repository', () => {
       asOwner.convertToInvoice(ORDER.cancelled, 'ac000000-0000-4000-8000-000000000003'),
     ).rejects.toThrow(/only a confirmed order can be invoiced/i)
 
+    await asOwner.convertToInvoice(ORDER.confirmed, 'ac000000-0000-4000-8000-000000000007')
     await asOwner.transition(ORDER.confirmed, 'in_production')
     await expect(
       asOwner.convertToInvoice(ORDER.confirmed, 'ac000000-0000-4000-8000-000000000007'),
-    ).rejects.toThrow(/only a confirmed order can be invoiced/i)
+    ).rejects.toThrow(/already has an invoice/i)
   })
 
   it('reports the invoice on the order as soon as it exists', async () => {

@@ -92,6 +92,91 @@ $$;
 revoke all on function public.grant_super_admin(uuid) from public;
 grant execute on function public.grant_super_admin(uuid) to authenticated;
 
+create or replace function app.guard_order_transition()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_allowed text[];
+begin
+  if new.status = old.status or auth.uid() is null then
+    return new;
+  end if;
+
+  if old.status = 'confirmed' and new.status = 'in_production'
+     and not exists (
+       select 1 from public.invoices i
+       where i.order_id = old.id
+         and i.deleted_at is null
+         and i.status <> 'voided'
+     )
+  then
+    raise exception 'Create an invoice for this order before moving it into production.'
+      using errcode = 'check_violation';
+  end if;
+
+  v_allowed := case old.status
+    when 'draft' then array['confirmed', 'cancelled']
+    when 'confirmed' then array['in_production', 'cancelled']
+    when 'in_production' then array['ready', 'cancelled']
+    when 'ready' then array['delivered', 'cancelled']
+    when 'delivered' then array['closed', 'cancelled']
+    else array[]::text[]
+  end;
+
+  if not (new.status = any (v_allowed)) then
+    raise exception 'An order cannot go from % to %. Allowed from %: %.',
+      old.status, new.status, old.status,
+      coalesce(nullif(array_to_string(v_allowed, ', '), ''), 'nothing — this state is final')
+      using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$$;
+
+-- Removing an order must restore any stock that was deducted for it. The
+-- ledger remains append-only, so a return movement reverses the sale rather
+-- than deleting history.
+create or replace function app.return_stock_for_deleted_order()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if new.deleted_at is null or old.deleted_at is not null then
+    return new;
+  end if;
+
+  insert into public.stock_movements
+    (product_id, movement_type, quantity, unit_cost_cents, source_table,
+     source_id, occurred_at, reason, created_by)
+  select m.product_id,
+         'return',
+         -m.quantity,
+         m.unit_cost_cents,
+         'orders',
+         new.id,
+         now(),
+         'Order deleted',
+         coalesce(new.updated_by, new.created_by)
+  from public.stock_movements m
+  where m.source_table = 'orders'
+    and m.source_id = new.id
+    and m.movement_type = 'sale'
+  on conflict do nothing;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists orders_return_stock_deleted on public.orders;
+create trigger orders_return_stock_deleted
+  after update of deleted_at on public.orders
+  for each row execute function app.return_stock_for_deleted_order();
+
 -- The RPC is still checked above using the caller's JWT. This narrow trigger
 -- escape is only enabled for the duration of that validated function call.
 create or replace function app.guard_profile_privileges()

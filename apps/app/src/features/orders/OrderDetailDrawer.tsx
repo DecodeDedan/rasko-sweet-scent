@@ -106,7 +106,9 @@ export function OrderDetailDrawer({
   // refused by the server anyway (app.guard_order_transition).
   const nextMoves = order
     ? allowedTransitions(order.status).filter(
-        (to) => checkTransition(order.status, to, role).allowed,
+        (to) =>
+          checkTransition(order.status, to, role).allowed &&
+          !(to === 'in_production' && !detail?.invoiceId),
       )
     : []
 
@@ -134,7 +136,7 @@ export function OrderDetailDrawer({
                 Email
               </Button>
             ) : null}
-            {canDelete(role) && order.status !== 'closed' ? (
+            {canDelete(role) ? (
               <Button
                 variant="danger"
                 leadingIcon={<Trash2 size={14} aria-hidden="true" />}

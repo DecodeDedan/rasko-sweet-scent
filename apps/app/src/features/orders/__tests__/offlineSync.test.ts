@@ -144,6 +144,7 @@ describe('creating an order offline', () => {
 
     server.setOffline(true)
     await repo.transition(orderId, 'confirmed')
+    await repo.convertToInvoice(orderId, 'ac000000-0000-4000-8000-000000000010')
     await repo.transition(orderId, 'in_production')
     server.setOffline(false)
 

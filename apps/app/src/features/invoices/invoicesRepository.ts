@@ -313,6 +313,15 @@ export class InvoicesRepository {
     } as never)
   }
 
+  async softDelete(id: string): Promise<void> {
+    if (this.scope.role !== 'owner' && this.scope.role !== 'manager') {
+      throw new InvoiceRuleError('Only a manager or the owner can delete an invoice.')
+    }
+    const invoice = await this.findSummary(id)
+    if (!invoice) throw new InvoiceRuleError('Invoice not found on this device.')
+    await this.invoices.softDelete(id)
+  }
+
   /** FR-5.3, FR-5.4. Partial payments are simply more rows. */
   async recordPayment(input: NewPaymentInput): Promise<void> {
     const invoice = await this.findSummary(input.invoiceId)

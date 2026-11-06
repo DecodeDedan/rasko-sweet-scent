@@ -103,6 +103,11 @@ describe('payments and balances', () => {
     ).rejects.toThrow(/more than zero/i)
   })
 
+  it('lets a manager delete an invoice in any stored status', async () => {
+    await asManager.softDelete(INVOICE.unpaid)
+    expect(await asManager.findSummary(INVOICE.unpaid)).toBeNull()
+  })
+
   // ------------------------------------------------- FR-5.5 append-only
 
   it('has no way to edit or delete a payment', () => {

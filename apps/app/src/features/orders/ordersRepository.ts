@@ -1,6 +1,7 @@
 import { Repository } from '../../data/repositories/repository.js'
 import type { WriteContext } from '../../data/repositories/repository.js'
 import type { SqlDatabase } from '../../data/sqlite/types.js'
+import { newId } from '../../data/ids.js'
 import type { Role } from '../../auth/session.js'
 import { checkTransition, canDelete, canEdit } from './statusPipeline.js'
 import type { OrderStatus } from './statusPipeline.js'
@@ -105,6 +106,7 @@ export class OrdersRepository {
   private readonly orders: Repository<Record<string, unknown>>
   private readonly items: Repository<Record<string, unknown>>
   private readonly invoices: Repository<Record<string, unknown>>
+  private readonly stockMovements: Repository<Record<string, unknown>>
 
   constructor(
     private readonly db: SqlDatabase,
@@ -114,6 +116,7 @@ export class OrdersRepository {
     this.orders = new Repository(db, 'orders', context)
     this.items = new Repository(db, 'order_items', context)
     this.invoices = new Repository(db, 'invoices', context)
+    this.stockMovements = new Repository(db, 'stock_movements', context)
   }
 
   /**
@@ -345,6 +348,18 @@ export class OrdersRepository {
     const check = checkTransition(order.status, to, this.scope.role)
     if (!check.allowed) throw new OrderRuleError(check.reason ?? 'That change is not allowed.')
 
+    if (order.status === 'confirmed' && to === 'in_production') {
+      const invoice = await this.db.select<{ id: string }>(
+        `SELECT id FROM invoices
+         WHERE order_id = ? AND deleted_at IS NULL AND status <> 'voided'
+         LIMIT 1`,
+        [id],
+      )
+      if (!invoice[0]) {
+        throw new OrderRuleError('Create an invoice for this order before moving it into production.')
+      }
+    }
+
     if (to === 'cancelled' && !reason?.trim()) {
       throw new OrderRuleError('Give a reason for cancelling this order.')
     }
@@ -469,6 +484,40 @@ export class OrdersRepository {
     }
     const order = await this.findSummary(id)
     if (!order) throw new OrderRuleError('Order not found on this device.')
-    await this.orders.softDelete(id)
+    const now = this.context.now?.() ?? new Date().toISOString()
+    await this.db.transaction(async (tx) => {
+      const sales = await tx.select<Record<string, unknown>>(
+        `SELECT product_id, quantity, unit_cost_cents
+         FROM stock_movements
+         WHERE source_table = 'orders'
+           AND source_id = ?
+           AND movement_type = 'sale'
+           AND product_id IS NOT NULL
+           AND NOT EXISTS (
+             SELECT 1 FROM stock_movements returned
+             WHERE returned.source_table = 'orders'
+               AND returned.source_id = stock_movements.source_id
+               AND returned.product_id = stock_movements.product_id
+               AND returned.movement_type = 'return'
+           )`,
+        [id],
+      )
+
+      await this.orders.updateWithinTransaction(tx, id, { deleted_at: now } as never)
+      for (const sale of sales) {
+        await this.stockMovements.insertWithinTransaction(tx, {
+          id: newId(),
+          product_id: sale['product_id'],
+          movement_type: 'return',
+          quantity: -Number(sale['quantity']) / 1000,
+          unit_cost_cents: sale['unit_cost_cents'],
+          source_table: 'orders',
+          source_id: id,
+          reason: 'Order deleted',
+          occurred_at: now,
+        } as never)
+      }
+    })
+    this.context.onLocalWrite?.()
   }
 }

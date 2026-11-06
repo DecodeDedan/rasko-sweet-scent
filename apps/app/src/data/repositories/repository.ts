@@ -139,13 +139,29 @@ export class Repository<T extends Record<string, unknown> = Record<string, unkno
     if (!current) throw new Error(`${this.spec.name} ${id} not found locally.`)
 
     const row: Record<string, unknown> = { ...current, ...patch, id }
-    if (this.hasColumn('updated_at')) row['updated_at'] = this.now()
-    if (this.hasColumn('updated_by')) row['updated_by'] = this.context.userId
-
     await this.db.transaction(async (tx) => {
-      await this.writeLocal(tx, row, 'update')
+      await this.updateWithinTransaction(tx, id, patch)
     })
     this.context.onLocalWrite?.()
+    return decodeRow(this.spec, row) as T
+  }
+
+  async updateWithinTransaction(
+    tx: SqlExecutor,
+    id: string,
+    patch: Partial<T>,
+  ): Promise<T> {
+    const currentRows = await tx.select<Record<string, unknown>>(
+      `SELECT * FROM ${this.spec.name} WHERE id = ?`,
+      [id],
+    )
+    const current = currentRows[0]
+    if (!current) throw new Error(`${this.spec.name} ${id} not found locally.`)
+
+    const row: Record<string, unknown> = { ...current, ...patch, id }
+    if (this.hasColumn('updated_at')) row['updated_at'] = this.now()
+    if (this.hasColumn('updated_by')) row['updated_by'] = this.context.userId
+    await this.writeLocal(tx, row, 'update')
     return decodeRow(this.spec, row) as T
   }
 
