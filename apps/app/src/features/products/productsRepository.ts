@@ -285,14 +285,39 @@ export class ProductsRepository {
     await this.products.softDelete(id)
   }
 
-  async deleteMovement(id: string): Promise<void> {
+  async reverseMovement(id: string, reversalId: string): Promise<void> {
+    this.requireWriteAccess()
+    const rows = await this.db.select<Record<string, unknown>>(
+      'SELECT product_id, quantity, unit_cost_cents, occurred_at FROM stock_movements WHERE id = ?',
+      [id],
+    )
+    const movement = rows[0]
+    if (!movement) throw new ProductRuleError('Movement not found on this device.')
+    if (String(movement['reason'] ?? '').startsWith('Reversal of movement ')) {
+      throw new ProductRuleError('A reversal movement cannot be reversed again.')
+    }
+
+    await this.db.transaction(async (tx) => {
+      await this.movements.insertWithinTransaction(tx, {
+        id: reversalId,
+        product_id: movement['product_id'],
+        movement_type: 'adjustment',
+        quantity: -Number(movement['quantity']) / SCALE,
+        unit_cost_cents: movement['unit_cost_cents'],
+        source_table: 'manual',
+        source_id: null,
+        reason: `Reversal of movement ${id}`,
+        occurred_at: new Date().toISOString(),
+      } as never)
+    })
+    this.context.onLocalWrite?.()
+  }
+
+  async clearAllMovements(): Promise<void> {
     this.requireWriteAccess()
     await this.db.transaction(async (tx) => {
-      await tx.execute('DELETE FROM stock_movements WHERE id = ?', [id])
-      await tx.execute(
-        'DELETE FROM outbox WHERE entity_table = ? AND entity_id = ?',
-        ['stock_movements', id],
-      )
+      await tx.execute('DELETE FROM stock_movements')
+      await tx.execute('DELETE FROM outbox WHERE entity_table = ?', ['stock_movements'])
     })
     this.context.onLocalWrite?.()
   }

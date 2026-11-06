@@ -18,6 +18,7 @@ import type { ProfileRecord, Role } from './session.js'
 export interface GatewayResult {
   /** Human-readable failure, already safe to show. Absent on success. */
   error?: string
+  data?: Record<string, unknown> | null
 }
 
 /** A new account on a company address (docs/company-email.md). */
@@ -77,8 +78,10 @@ export interface AuthGateway {
   purgeBusinessData(): Promise<GatewayResult>
   /** Super admin only. Restores the demo low-stock thresholds. */
   resetDemoLowStockThresholds(): Promise<GatewayResult>
-  /** Super admin only. Permanently removes one stock movement from the cloud. */
+  /** Super admin only. Adds a compensating movement for one stock movement. */
   deleteStockMovement(id: string): Promise<GatewayResult>
+  /** Super admin only. Permanently clears every stock movement. */
+  deleteAllStockMovements(): Promise<GatewayResult>
   inviteUser(input: InviteInput): Promise<GatewayResult>
   /** Moves an existing account onto a company address; its old email receives the mail. */
   assignCompanyEmail(userId: string, localPart: string): Promise<AssignResult>

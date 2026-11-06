@@ -87,6 +87,8 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [deletingMovement, setDeletingMovement] = useState<StockMovement | null>(null)
   const [isDeletingMovement, setIsDeletingMovement] = useState(false)
+  const [isClearMovementsOpen, setIsClearMovementsOpen] = useState(false)
+  const [isClearingMovements, setIsClearingMovements] = useState(false)
 
   const canWrite = role === 'owner' || role === 'manager'
   const canDelete = identity.isSuperAdmin
@@ -183,9 +185,11 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
     try {
       const result = await gateway.deleteStockMovement(deletingMovement.id)
       if (result.error) throw new Error(result.error)
-      await repo!.deleteMovement(deletingMovement.id)
+      const reversalId = String(result.data?.['reversal_id'] ?? '')
+      if (!reversalId) throw new Error('The server did not return a reversal movement.')
+      await repo!.reverseMovement(deletingMovement.id, reversalId)
       setDeletingMovement(null)
-      showToast({ tone: 'success', title: 'Movement deleted' })
+      showToast({ tone: 'success', title: 'Movement reversed' })
       await reload()
       await loadReports()
     } catch (cause) {
@@ -196,6 +200,29 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
       })
     } finally {
       setIsDeletingMovement(false)
+    }
+
+  }
+
+  async function clearAllMovements() {
+    if (!identity.isSuperAdmin) return
+    setIsClearingMovements(true)
+    try {
+      const result = await gateway.deleteAllStockMovements()
+      if (result.error) throw new Error(result.error)
+      await repo!.clearAllMovements()
+      setIsClearMovementsOpen(false)
+      showToast({ tone: 'success', title: 'All movements deleted' })
+      await reload()
+      await loadReports()
+    } catch (cause) {
+      showToast({
+        tone: 'danger',
+        title: 'Movements were not deleted',
+        description: cause instanceof Error ? cause.message : 'Could not clear movements.',
+      })
+    } finally {
+      setIsClearingMovements(false)
     }
   }
 
@@ -280,22 +307,31 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
         description="The catalogue and current stock. Stock is the sum of recorded movements, so it always reconciles."
         meta={<ScopeBadge scope={scope} />}
         actions={
-          canWrite ? (
+          canWrite || (identity.isSuperAdmin && view === 'movements') ? (
             <>
-              <Button
-                leadingIcon={<ClipboardCheck size={15} aria-hidden="true" />}
-                onClick={() => setCountSheet(products)}
-              >
-                Count sheet
-              </Button>
-              <Button
-                variant="primary"
-                leadingIcon={<Plus size={15} aria-hidden="true" />}
-                disabled={categories.length === 0}
-                onClick={() => setIsCreating(true)}
-              >
-                Add product
-              </Button>
+              {identity.isSuperAdmin && view === 'movements' ? (
+                <Button variant="danger" onClick={() => setIsClearMovementsOpen(true)}>
+                  Delete all movements
+                </Button>
+              ) : null}
+              {canWrite ? (
+                <>
+                  <Button
+                    leadingIcon={<ClipboardCheck size={15} aria-hidden="true" />}
+                    onClick={() => setCountSheet(products)}
+                  >
+                    Count sheet
+                  </Button>
+                  <Button
+                    variant="primary"
+                    leadingIcon={<Plus size={15} aria-hidden="true" />}
+                    disabled={categories.length === 0}
+                    onClick={() => setIsCreating(true)}
+                  >
+                    Add product
+                  </Button>
+                </>
+              ) : null}
             </>
           ) : null
         }
@@ -440,9 +476,13 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
                           key: 'actions',
                           header: '',
                           render: (m: StockMovement) => (
-                            <Button size="sm" variant="danger" onClick={() => setDeletingMovement(m)}>
-                              Delete
-                            </Button>
+                            m.reason?.startsWith('Reversal of movement ') ? (
+                              <span style={{ color: 'var(--rasko-text-secondary)' }}>Reversed</span>
+                            ) : (
+                              <Button size="sm" variant="danger" onClick={() => setDeletingMovement(m)}>
+                                Reverse
+                              </Button>
+                            )
                           ),
                         },
                       ]
@@ -455,7 +495,7 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
             <Modal
               isOpen
               onClose={() => setDeletingMovement(null)}
-              title="Delete stock movement"
+              title="Reverse stock movement"
               size="sm"
               footer={
                 <>
@@ -465,14 +505,40 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
                     isLoading={isDeletingMovement}
                     onClick={() => void deleteMovement()}
                   >
-                    Delete movement
+                    Reverse movement
                   </Button>
                 </>
               }
             >
               <div className="rsk-stack">
-                <p>Delete this stock movement from the cloud and this device?</p>
-                <p>Product stock and valuation will be recalculated immediately.</p>
+                <p>Reverse this stock movement in the cloud and on this device?</p>
+                <p>The original remains in the audit history and product stock is recalculated immediately.</p>
+              </div>
+            </Modal>
+          ) : null}
+          {isClearMovementsOpen ? (
+            <Modal
+              isOpen
+              onClose={() => setIsClearMovementsOpen(false)}
+              title="Delete all stock movements"
+              size="sm"
+              footer={
+                <>
+                  <Button onClick={() => setIsClearMovementsOpen(false)}>Cancel</Button>
+                  <Button
+                    variant="danger"
+                    isLoading={isClearingMovements}
+                    onClick={() => void clearAllMovements()}
+                  >
+                    Permanently delete all
+                  </Button>
+                </>
+              }
+            >
+              <div className="rsk-stack">
+                <p>This permanently deletes every stock movement from the cloud and this device.</p>
+                <p>All stock totals, valuation and low-stock results will reset to zero.</p>
+                <p>This cannot be undone.</p>
               </div>
             </Modal>
           ) : null}

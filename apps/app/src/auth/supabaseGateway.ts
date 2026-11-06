@@ -233,7 +233,12 @@ export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient
     },
 
     async deleteStockMovement(id: string): Promise<GatewayResult> {
-      const { error } = await client.rpc('delete_stock_movement', { movement_id: id })
+      const { data, error } = await client.rpc('delete_stock_movement', { movement_id: id })
+      return error ? { error: error.message } : { data: (data as Record<string, unknown> | null) ?? null }
+    },
+
+    async deleteAllStockMovements(): Promise<GatewayResult> {
+      const { error } = await client.rpc('delete_all_stock_movements')
       return error ? { error: error.message } : {}
     },
 
