@@ -90,6 +90,25 @@ $$;
 revoke all on function public.reset_demo_low_stock_thresholds() from public;
 grant execute on function public.reset_demo_low_stock_thresholds() to authenticated;
 
+create or replace function public.delete_stock_movement(movement_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, app, pg_temp
+as $$
+begin
+  if not app.is_super_admin() then
+    raise exception 'Only a super admin can delete stock movements.'
+      using errcode = 'insufficient_privilege';
+  end if;
+
+  delete from public.stock_movements where id = movement_id;
+end;
+$$;
+
+revoke all on function public.delete_stock_movement(uuid) from public;
+grant execute on function public.delete_stock_movement(uuid) to authenticated;
+
 create or replace function public.grant_super_admin(target_user_id uuid)
 returns void
 language plpgsql

@@ -232,6 +232,11 @@ export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient
       return error ? { error: error.message } : {}
     },
 
+    async deleteStockMovement(id: string): Promise<GatewayResult> {
+      const { error } = await client.rpc('delete_stock_movement', { movement_id: id })
+      return error ? { error: error.message } : {}
+    },
+
     async assignCompanyEmail(userId, localPart): Promise<AssignResult> {
       const { data, error } = await client.functions.invoke('assign-company-email', {
         body: { userId, localPart: localPart.trim() },

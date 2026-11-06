@@ -207,6 +207,11 @@ export function createFakeGateway(options: FakeGatewayOptions = {}): FakeGateway
       return {}
     },
 
+    async deleteStockMovement() {
+      networkGuard()
+      return {}
+    },
+
     async assignCompanyEmail(userId, localPart) {
       calls.assign.push([userId, localPart])
       networkGuard()

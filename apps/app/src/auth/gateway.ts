@@ -77,6 +77,8 @@ export interface AuthGateway {
   purgeBusinessData(): Promise<GatewayResult>
   /** Super admin only. Restores the demo low-stock thresholds. */
   resetDemoLowStockThresholds(): Promise<GatewayResult>
+  /** Super admin only. Permanently removes one stock movement from the cloud. */
+  deleteStockMovement(id: string): Promise<GatewayResult>
   inviteUser(input: InviteInput): Promise<GatewayResult>
   /** Moves an existing account onto a company address; its old email receives the mail. */
   assignCompanyEmail(userId: string, localPart: string): Promise<AssignResult>

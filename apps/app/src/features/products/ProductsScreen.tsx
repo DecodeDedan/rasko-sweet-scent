@@ -7,6 +7,7 @@ import {
   Card,
   EmptyState,
   Input,
+  Modal,
   PageHeader,
   Select,
   StatusChip,
@@ -20,6 +21,7 @@ import {
 } from '@rasko/ui'
 
 import { ScopeBadge } from '../../screens/common.js'
+import { useAuth, useIdentity } from '../../auth/AuthProvider.js'
 import type { ScreenProps } from '../../screens/common.js'
 import { CategoriesPanel } from './CategoriesPanel.js'
 import { ProductForm } from './ProductForm.js'
@@ -59,6 +61,8 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
   const repo = useProductsRepository()
   const { categories, reload: reloadCategories } = useCategories()
   const { showToast } = useToast()
+  const { gateway } = useAuth()
+  const identity = useIdentity()
 
   const [view, setView] = useState<View>('catalogue')
   const [search, setSearch] = useState('')
@@ -79,8 +83,13 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
   const [isCreating, setIsCreating] = useState(false)
   const [movingStock, setMovingStock] = useState<ProductStock | null>(null)
   const [countSheet, setCountSheet] = useState<ProductStock[] | null>(null)
+  const [deleting, setDeleting] = useState<ProductStock | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deletingMovement, setDeletingMovement] = useState<StockMovement | null>(null)
+  const [isDeletingMovement, setIsDeletingMovement] = useState(false)
 
   const canWrite = role === 'owner' || role === 'manager'
+  const canDelete = identity.isSuperAdmin
 
   const loadReports = useCallback(async () => {
     if (!repo) return
@@ -144,6 +153,50 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
     } catch (cause) {
       return { error: cause instanceof Error ? cause.message : 'Could not record the movement.' }
     }
+
+  }
+
+  async function deleteProduct() {
+    if (!deleting || !canDelete) return
+    setIsDeleting(true)
+    try {
+      await repo!.softDeleteProduct(deleting.id)
+      setDeleting(null)
+      showToast({ tone: 'success', title: 'Product deleted' })
+      await reload()
+      await reloadCategories()
+    } catch (cause) {
+      showToast({
+        tone: 'danger',
+        title: 'Product was not deleted',
+        description: cause instanceof Error ? cause.message : 'Could not delete the product.',
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+
+  }
+
+  async function deleteMovement() {
+    if (!deletingMovement || !identity.isSuperAdmin) return
+    setIsDeletingMovement(true)
+    try {
+      const result = await gateway.deleteStockMovement(deletingMovement.id)
+      if (result.error) throw new Error(result.error)
+      await repo!.deleteMovement(deletingMovement.id)
+      setDeletingMovement(null)
+      showToast({ tone: 'success', title: 'Movement deleted' })
+      await reload()
+      await loadReports()
+    } catch (cause) {
+      showToast({
+        tone: 'danger',
+        title: 'Movement was not deleted',
+        description: cause instanceof Error ? cause.message : 'Could not delete the movement.',
+      })
+    } finally {
+      setIsDeletingMovement(false)
+    }
   }
 
   const catalogueColumns = [
@@ -181,6 +234,11 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
                 <Button size="sm" onClick={() => setEditing(p)}>
                   Edit
                 </Button>
+                {canDelete ? (
+                  <Button size="sm" variant="danger" onClick={() => setDeleting(p)}>
+                    Delete
+                  </Button>
+                ) : null}
               </div>
             ),
           },
@@ -376,9 +434,47 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
                     header: 'Source',
                     render: (m) => (m.source_table === 'manual' ? 'By hand' : m.source_table),
                   },
+                  ...(identity.isSuperAdmin
+                    ? [
+                        {
+                          key: 'actions',
+                          header: '',
+                          render: (m: StockMovement) => (
+                            <Button size="sm" variant="danger" onClick={() => setDeletingMovement(m)}>
+                              Delete
+                            </Button>
+                          ),
+                        },
+                      ]
+                    : []),
                 ]}
               />
             </Card>
+          ) : null}
+          {deletingMovement ? (
+            <Modal
+              isOpen
+              onClose={() => setDeletingMovement(null)}
+              title="Delete stock movement"
+              size="sm"
+              footer={
+                <>
+                  <Button onClick={() => setDeletingMovement(null)}>Cancel</Button>
+                  <Button
+                    variant="danger"
+                    isLoading={isDeletingMovement}
+                    onClick={() => void deleteMovement()}
+                  >
+                    Delete movement
+                  </Button>
+                </>
+              }
+            >
+              <div className="rsk-stack">
+                <p>Delete this stock movement from the cloud and this device?</p>
+                <p>Product stock and valuation will be recalculated immediately.</p>
+              </div>
+            </Modal>
           ) : null}
 
           {view === 'wastage' ? (
@@ -471,6 +567,30 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
             <Card>
               <p style={{ color: 'var(--rasko-text-secondary)' }}>Loading.</p>
             </Card>
+          ) : null}
+
+          {deleting ? (
+            <Modal
+              isOpen
+              onClose={() => setDeleting(null)}
+              title="Delete product"
+              size="sm"
+              footer={
+                <>
+                  <Button onClick={() => setDeleting(null)}>Cancel</Button>
+                  <Button variant="danger" isLoading={isDeleting} onClick={() => void deleteProduct()}>
+                    Delete product
+                  </Button>
+                </>
+              }
+            >
+              <div className="rsk-stack">
+                <p>
+                  Delete <strong>{deleting.name}</strong> from the catalogue?
+                </p>
+                <p>Its stock movement history is retained, but it will no longer appear in products or low-stock reports.</p>
+              </div>
+            </Modal>
           ) : null}
         </div>
       </TabPanel>

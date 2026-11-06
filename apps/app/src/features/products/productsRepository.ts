@@ -285,6 +285,18 @@ export class ProductsRepository {
     await this.products.softDelete(id)
   }
 
+  async deleteMovement(id: string): Promise<void> {
+    this.requireWriteAccess()
+    await this.db.transaction(async (tx) => {
+      await tx.execute('DELETE FROM stock_movements WHERE id = ?', [id])
+      await tx.execute(
+        'DELETE FROM outbox WHERE entity_table = ? AND entity_id = ?',
+        ['stock_movements', id],
+      )
+    })
+    this.context.onLocalWrite?.()
+  }
+
   // ----------------------------------------------- FR-6.1 categories
 
   async createCategory(id: string, name: string): Promise<void> {
