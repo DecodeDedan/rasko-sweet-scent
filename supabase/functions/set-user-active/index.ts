@@ -54,6 +54,9 @@ Deno.serve(async (request) => {
     .maybeSingle()
   if (targetError) return json({ error: 'Could not read that account.' }, 500)
   if (!target) return json({ error: 'That account no longer exists.' }, 404)
+  if (String(target.email ?? '').toLowerCase() === 'dedan.okware@raskosweetscent.com') {
+    return json({ error: 'The primary super admin cannot be offboarded.' }, 403)
+  }
   if (target.is_super_admin && !isSuperAdmin) {
     return json({ error: 'Only the super admin can change the super admin account.' }, 403)
   }

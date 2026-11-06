@@ -23,6 +23,7 @@ import {
   canAssignCompanyEmail,
   canDeleteAccount,
   canGrantSuperAdmin,
+  isPrimarySuperAdmin,
   rowControls,
 } from '../auth/userAdmin.js'
 import type { ScreenProps } from './common.js'
@@ -268,7 +269,9 @@ export function UsersScreen({ role }: ScreenProps) {
               key: 'actions',
               header: 'Actions',
               render: (p) =>
-                p.id === identity.userId ? (
+                isPrimarySuperAdmin(p) ? (
+                  <span style={{ color: 'var(--rasko-text-secondary)' }}>Protected primary admin</span>
+                ) : p.id === identity.userId ? (
                   <span style={{ color: 'var(--rasko-text-secondary)' }}>You</span>
                 ) : !rowControls(viewer, p).canToggleActive ? (
                   <span style={{ color: 'var(--rasko-text-secondary)' }}>Protected</span>

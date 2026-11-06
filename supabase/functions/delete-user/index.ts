@@ -40,6 +40,9 @@ Deno.serve(async (request) => {
     .maybeSingle()
   if (targetError) return json({ error: 'Could not read that account.' }, 500)
   if (!target) return json({ error: 'That account no longer exists.' }, 404)
+  if (String(target.email ?? '').toLowerCase() === 'dedan.okware@raskosweetscent.com') {
+    return json({ error: 'The primary super admin cannot be deleted.' }, 403)
+  }
   if (target.is_super_admin) return json({ error: 'The super admin cannot be deleted.' }, 403)
   if (target.is_active) {
     return json({ error: `Offboard ${target.full_name} before deleting the account.` }, 409)

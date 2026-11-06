@@ -6,6 +6,7 @@ import {
   canAssignCompanyEmail,
   canDeleteAccount,
   canGrantSuperAdmin,
+  isPrimarySuperAdmin,
   rowControls,
 } from '../userAdmin.js'
 
@@ -13,6 +14,14 @@ const superAdmin = { userId: 'user-admin', isSuperAdmin: true }
 const owner = { userId: 'user-owner', isSuperAdmin: false }
 
 describe('user administration rules (mirrors app.guard_profile_privileges)', () => {
+  it('protects the primary super admin account', () => {
+    const primary = makeProfile({ email: 'dedan.okware@raskosweetscent.com', isSuperAdmin: true })
+    expect(isPrimarySuperAdmin(primary)).toBe(true)
+    expect(rowControls(superAdmin, primary)).toEqual({
+      canChangeRole: false,
+      canToggleActive: false,
+    })
+  })
   it('offers the owner role only to the super admin', () => {
     expect(assignableRoles(superAdmin)).toContain('owner')
     expect(assignableRoles(owner)).toEqual(['manager', 'accountant', 'sales'])

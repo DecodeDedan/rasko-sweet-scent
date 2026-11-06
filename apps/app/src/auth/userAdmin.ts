@@ -19,6 +19,10 @@ export interface Viewer {
   isSuperAdmin: boolean
 }
 
+export function isPrimarySuperAdmin(profile: ProfileRecord): boolean {
+  return profile.email.trim().toLowerCase() === 'dedan.okware@raskosweetscent.com'
+}
+
 /** Only a super admin grants the owner role. */
 export function assignableRoles(viewer: Viewer): readonly Role[] {
   return viewer.isSuperAdmin ? ROLES : ROLES.filter((role) => role !== 'owner')
@@ -54,6 +58,9 @@ export function canGrantSuperAdmin(viewer: Viewer, target: ProfileRecord): boole
 }
 
 export function rowControls(viewer: Viewer, target: ProfileRecord): RowControls {
+  if (isPrimarySuperAdmin(target)) {
+    return { canChangeRole: false, canToggleActive: false }
+  }
   // Nobody locks themselves out, and an owner cannot step down from owner:
   // leaving the role is removing it, which only a super admin may do, and the
   // super admin must remain an owner (profiles_super_admin_is_owner).
