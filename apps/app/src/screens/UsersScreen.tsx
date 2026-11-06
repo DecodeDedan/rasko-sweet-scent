@@ -1,6 +1,6 @@
 'use client'
 
-import { Mail, Plus, Trash2, UserX, Users } from 'lucide-react'
+import { Mail, Plus, ShieldCheck, Trash2, UserX, Users } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import {
   Button,
@@ -22,6 +22,7 @@ import {
   assignableRoles,
   canAssignCompanyEmail,
   canDeleteAccount,
+  canGrantSuperAdmin,
   rowControls,
 } from '../auth/userAdmin.js'
 import type { ScreenProps } from './common.js'
@@ -51,6 +52,7 @@ export function UsersScreen({ role }: ScreenProps) {
 
   const [confirmTarget, setConfirmTarget] = useState<ProfileRecord | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ProfileRecord | null>(null)
+  const [superAdminTarget, setSuperAdminTarget] = useState<ProfileRecord | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -110,12 +112,34 @@ export function UsersScreen({ role }: ScreenProps) {
       })
       return
     }
+
     showToast({
       tone: 'success',
       title: isActive ? 'User reactivated' : 'User offboarded',
       description: isActive
         ? `${profile.fullName} can sign in again.`
         : `${profile.fullName} is signed out everywhere and their company mail has stopped.`,
+    })
+    await load()
+  }
+
+  async function handleMakeSuperAdmin(profile: ProfileRecord) {
+    setBusyId(profile.id)
+    const result = await gateway.makeSuperAdmin(profile.id)
+    setBusyId(null)
+    setSuperAdminTarget(null)
+    if (result.error) {
+      showToast({
+        tone: 'danger',
+        title: 'Super admin access not granted',
+        description: result.error,
+      })
+      return
+    }
+    showToast({
+      tone: 'success',
+      title: 'Super admin access granted',
+      description: `${profile.fullName} can now manage all administration controls.`,
     })
     await load()
   }
@@ -242,22 +266,34 @@ export function UsersScreen({ role }: ScreenProps) {
             },
             {
               key: 'actions',
-              header: '',
+              header: 'Actions',
               render: (p) =>
                 p.id === identity.userId ? (
                   <span style={{ color: 'var(--rasko-text-secondary)' }}>You</span>
                 ) : !rowControls(viewer, p).canToggleActive ? (
                   <span style={{ color: 'var(--rasko-text-secondary)' }}>Protected</span>
                 ) : p.isActive ? (
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    leadingIcon={<UserX size={14} aria-hidden="true" />}
-                    disabled={busyId === p.id}
-                    onClick={() => setConfirmTarget(p)}
-                  >
-                    Offboard
-                  </Button>
+                  <span className="rsk-row">
+                    {canGrantSuperAdmin(viewer, p) ? (
+                      <Button
+                        size="sm"
+                        disabled={busyId === p.id}
+                        leadingIcon={<ShieldCheck size={14} aria-hidden="true" />}
+                        onClick={() => setSuperAdminTarget(p)}
+                      >
+                        Make super admin
+                      </Button>
+                    ) : null}
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      leadingIcon={<UserX size={14} aria-hidden="true" />}
+                      disabled={busyId === p.id}
+                      onClick={() => setConfirmTarget(p)}
+                    >
+                      Offboard
+                    </Button>
+                  </span>
                 ) : (
                   <span className="rsk-row">
                     <Button
@@ -351,6 +387,33 @@ export function UsersScreen({ role }: ScreenProps) {
             void load()
           }}
         />
+      ) : null}
+
+      {superAdminTarget ? (
+        <Modal
+          isOpen
+          onClose={() => setSuperAdminTarget(null)}
+          title="Make this user a super admin"
+          size="sm"
+          footer={
+            <>
+              <Button onClick={() => setSuperAdminTarget(null)}>Cancel</Button>
+              <Button
+                variant="danger"
+                isLoading={busyId === superAdminTarget.id}
+                onClick={() => void handleMakeSuperAdmin(superAdminTarget)}
+              >
+                Make super admin
+              </Button>
+            </>
+          }
+        >
+          <p>
+            {superAdminTarget.fullName} will become an owner and gain access to user
+            administration and permanent business-data deletion. This cannot be undone from this
+            screen.
+          </p>
+        </Modal>
       ) : null}
     </div>
   )

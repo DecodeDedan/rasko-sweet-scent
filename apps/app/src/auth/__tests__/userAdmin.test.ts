@@ -5,6 +5,7 @@ import {
   assignableRoles,
   canAssignCompanyEmail,
   canDeleteAccount,
+  canGrantSuperAdmin,
   rowControls,
 } from '../userAdmin.js'
 
@@ -78,6 +79,25 @@ describe('user administration rules (mirrors app.guard_profile_privileges)', () 
     it('never offers the super admin account', () => {
       const admin = makeProfile({ id: 'user-admin', isSuperAdmin: true, isActive: false })
       expect(canDeleteAccount(superAdmin, admin)).toBe(false)
+    })
+
+    describe('granting super-admin access', () => {
+      it('allows the super admin to grant it to another active account', () => {
+        expect(
+          canGrantSuperAdmin(superAdmin, makeProfile({ id: 'user-sales', isActive: true })),
+        ).toBe(true)
+      })
+
+      it('does not offer it to the current admin, inactive users, or another admin', () => {
+        expect(canGrantSuperAdmin(superAdmin, makeProfile({ id: 'user-admin' }))).toBe(false)
+        expect(
+          canGrantSuperAdmin(superAdmin, makeProfile({ id: 'user-sales', isActive: false })),
+        ).toBe(false)
+        expect(
+          canGrantSuperAdmin(superAdmin, makeProfile({ id: 'user-sales', isSuperAdmin: true })),
+        ).toBe(false)
+        expect(canGrantSuperAdmin(owner, makeProfile({ id: 'user-sales' }))).toBe(false)
+      })
     })
   })
 })

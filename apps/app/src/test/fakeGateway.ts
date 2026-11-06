@@ -46,6 +46,8 @@ export interface FakeGateway extends AuthGateway {
     invite: InviteInput[]
     assign: Array<[string, string]>
     remove: string[]
+    superAdmin: string[]
+    purgeBusinessData: number
     resetRequests: string[]
   }
   setOffline(value: boolean): void
@@ -66,6 +68,8 @@ export function createFakeGateway(options: FakeGatewayOptions = {}): FakeGateway
     invite: [],
     assign: [],
     remove: [],
+    superAdmin: [],
+    purgeBusinessData: 0,
     resetRequests: [],
   }
 
@@ -178,6 +182,23 @@ export function createFakeGateway(options: FakeGatewayOptions = {}): FakeGateway
       networkGuard()
       const index = profiles.findIndex((p) => p.id === userId)
       if (index >= 0) profiles.splice(index, 1)
+      return {}
+    },
+
+    async makeSuperAdmin(userId) {
+      calls.superAdmin.push(userId)
+      networkGuard()
+      const profile = profiles.find((p) => p.id === userId)
+      if (profile) {
+        profile.role = 'owner'
+        profile.isSuperAdmin = true
+      }
+      return {}
+    },
+
+    async purgeBusinessData() {
+      calls.purgeBusinessData += 1
+      networkGuard()
       return {}
     },
 

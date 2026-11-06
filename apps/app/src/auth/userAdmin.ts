@@ -49,6 +49,10 @@ export function canDeleteAccount(viewer: Viewer, target: ProfileRecord): boolean
   )
 }
 
+export function canGrantSuperAdmin(viewer: Viewer, target: ProfileRecord): boolean {
+  return viewer.isSuperAdmin && target.id !== viewer.userId && target.isActive && !target.isSuperAdmin
+}
+
 export function rowControls(viewer: Viewer, target: ProfileRecord): RowControls {
   // Nobody locks themselves out, and an owner cannot step down from owner:
   // leaving the role is removing it, which only a super admin may do, and the

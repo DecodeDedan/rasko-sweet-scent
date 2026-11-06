@@ -217,6 +217,16 @@ export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient
       return error ? { error: await functionErrorMessage(error) } : {}
     },
 
+    async makeSuperAdmin(userId): Promise<GatewayResult> {
+      const { error } = await client.rpc('grant_super_admin', { target_user_id: userId })
+      return error ? { error: error.message } : {}
+    },
+
+    async purgeBusinessData(): Promise<GatewayResult> {
+      const { error } = await client.functions.invoke('purge-business-data', { body: {} })
+      return error ? { error: await functionErrorMessage(error) } : {}
+    },
+
     async assignCompanyEmail(userId, localPart): Promise<AssignResult> {
       const { data, error } = await client.functions.invoke('assign-company-email', {
         body: { userId, localPart: localPart.trim() },

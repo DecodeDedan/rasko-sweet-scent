@@ -936,6 +936,10 @@
   font-weight: var(--rasko-weight-semibold);
 }
 
+.doc-table th.rsk-numeric {
+  text-align: right;
+}
+
 .doc-table td {
   padding: var(--rasko-space-2);
   border-bottom: 1px solid var(--rasko-border);

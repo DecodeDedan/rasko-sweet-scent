@@ -137,11 +137,14 @@ SUPABASE_SERVICE_ROLE_KEY=<key> pnpm admin:create
 
 It asks for a name, email and password (echo off) and creates an **owner** with
 `is_super_admin` (migration `20260924000100`). The flag adds protection, not
-access: nobody else can deactivate the super admin or change their role, only
-the super admin can grant or remove the owner role, and no signed-in caller can
-set the flag at all. The profile trigger enforces it; `invite-user` and
-`set-user-active` repeat the checks because the service key bypasses the trigger;
-`auth/userAdmin.ts` mirrors them in the Users screen.
+access: nobody else can deactivate the super admin or change their role, and
+only a super admin can grant super-admin access to another active account from
+the Users screen through the `grant_super_admin` database RPC. The profile
+trigger still prevents ordinary clients from setting the flag; the RPC repeats
+the check and uses a transaction-local trigger bypass only after validating the
+caller. Super admins can also use Settings > System to permanently
+purge business/test records from the hosted database and the current device;
+profiles, company settings and the audit history are retained.
 
 ## 7. Demo accounts (policy checks only)
 

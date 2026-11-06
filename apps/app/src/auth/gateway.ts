@@ -71,6 +71,10 @@ export interface AuthGateway {
    * contact details go, the name stays on the records they made.
    */
   deleteUser(userId: string): Promise<GatewayResult>
+  /** Super admin only. Makes another active account a protected owner. */
+  makeSuperAdmin(userId: string): Promise<GatewayResult>
+  /** Super admin only. Permanently removes synced business/test data server-side. */
+  purgeBusinessData(): Promise<GatewayResult>
   inviteUser(input: InviteInput): Promise<GatewayResult>
   /** Moves an existing account onto a company address; its old email receives the mail. */
   assignCompanyEmail(userId: string, localPart: string): Promise<AssignResult>

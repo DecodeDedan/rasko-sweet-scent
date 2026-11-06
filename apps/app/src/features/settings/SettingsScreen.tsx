@@ -8,6 +8,7 @@ import {
   EmptyState,
   Field,
   Input,
+  Modal,
   PageHeader,
   Select,
   StatusChip,
@@ -18,6 +19,9 @@ import {
   useToast,
 } from '@rasko/ui'
 
+import { useAuth, useIdentity } from '../../auth/AuthProvider.js'
+import { purgeLocalBusinessData } from '../../data/sqlite/purge.js'
+import { useSync } from '../../data/sync/SyncProvider.js'
 import { ScopeBadge } from '../../screens/common.js'
 import { requestUpdateCheck } from '../../shell/useAppUpdate.js'
 import type { ScreenProps } from '../../screens/common.js'
@@ -46,11 +50,16 @@ const RATE_LABEL: Record<string, string> = {
 
 export function SettingsScreen({ role, scope }: ScreenProps) {
   const { repo, profile, tax, rates, status, error, reload } = useSettingsData()
+  const { gateway } = useAuth()
+  const identity = useIdentity()
+  const { db } = useSync()
   const { showToast } = useToast()
 
   const [view, setView] = useState<View>('company')
   const [isSaving, setIsSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [isPurgeOpen, setIsPurgeOpen] = useState(false)
+  const [isPurging, setIsPurging] = useState(false)
 
   const [companyName, setCompanyName] = useState<string | null>(null)
   const [address, setAddress] = useState<string | null>(null)
@@ -65,6 +74,34 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
 
   const canEditProfile = canEditCompanyProfile(role)
   const canEditAll = canEditSettings(role)
+
+  async function purgeBusinessData() {
+    if (!db || !identity.isSuperAdmin) return
+    setIsPurging(true)
+    try {
+      const result = await gateway.purgeBusinessData()
+      if (result.error) {
+        showToast({ tone: 'danger', title: 'Business data was not purged', description: result.error })
+        return
+      }
+      await purgeLocalBusinessData(db)
+      setIsPurgeOpen(false)
+      showToast({
+        tone: 'success',
+        title: 'Business data purged',
+        description: 'Synced business and test records were removed from the server and this device.',
+      })
+      await reload()
+    } catch (cause) {
+      showToast({
+        tone: 'danger',
+        title: 'Business data was not purged',
+        description: cause instanceof Error ? cause.message : 'Could not complete the purge.',
+      })
+    } finally {
+      setIsPurging(false)
+    }
+  }
 
   if (!repo) {
     return (
@@ -450,6 +487,22 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
               <Input value={String(status?.deviceRows ?? 0)} disabled readOnly />
             </Field>
 
+            {identity.isSuperAdmin ? (
+              <Card>
+                <div className="rsk-stack">
+                  <h3>Remove business and test data</h3>
+                  <p>
+                    Permanently removes synced business records from the cloud and clears the
+                    business mirror on this device. User accounts, company settings and audit
+                    history are kept.
+                  </p>
+                  <Button variant="danger" onClick={() => setIsPurgeOpen(true)}>
+                    Purge business data
+                  </Button>
+                </div>
+              </Card>
+            ) : null}
+
             <Field
               label="Version"
               hint="New versions are checked for every 15 minutes and offered as soon as they are found."
@@ -462,6 +515,33 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
           </div>
         </Card>
       </TabPanel>
+
+      {isPurgeOpen ? (
+        <Modal
+          isOpen
+          onClose={() => setIsPurgeOpen(false)}
+          title="Purge all business data"
+          size="sm"
+          footer={
+            <>
+              <Button onClick={() => setIsPurgeOpen(false)}>Cancel</Button>
+              <Button variant="danger" isLoading={isPurging} onClick={() => void purgeBusinessData()}>
+                Permanently purge data
+              </Button>
+            </>
+          }
+        >
+          <div className="rsk-stack">
+            <p>
+              This permanently deletes orders, invoices, payments, stock, clients, suppliers,
+              payroll and queued email data from the cloud and this device.
+            </p>
+            <p>
+              This action cannot be undone. User accounts, settings and audit history will remain.
+            </p>
+          </div>
+        </Modal>
+      ) : null}
     </div>
   )
 }
