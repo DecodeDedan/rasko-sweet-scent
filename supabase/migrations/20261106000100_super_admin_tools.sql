@@ -1,5 +1,8 @@
 -- Super-admin-only destructive maintenance. The edge function authenticates
 -- the caller; this function supplies the transaction and database boundary.
+alter table public.company_settings
+  add column if not exists mpesa_paybill_account text;
+
 create or replace function app.purge_business_data()
 returns void
 language plpgsql
@@ -108,6 +111,8 @@ $$;
 
 revoke all on function public.delete_stock_movement(uuid) from public;
 grant execute on function public.delete_stock_movement(uuid) to authenticated;
+
+notify pgrst, 'reload schema';
 
 create or replace function public.grant_super_admin(target_user_id uuid)
 returns void

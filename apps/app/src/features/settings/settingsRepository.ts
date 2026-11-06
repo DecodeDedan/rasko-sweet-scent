@@ -48,6 +48,7 @@ export interface CompanyProfile {
   logo_url: string | null
   is_vat_registered: boolean
   mpesa_paybill: string | null
+  mpesa_paybill_account: string | null
   mpesa_till: string | null
   bank_details: Record<string, string> | null
   stock_deduction_point: 'order_confirmed' | 'delivered' | null
@@ -138,6 +139,7 @@ export class SettingsRepository {
       logo_url: (row['logo_url'] as string | null) ?? null,
       is_vat_registered: Number(row['is_vat_registered'] ?? 0) !== 0,
       mpesa_paybill: (row['mpesa_paybill'] as string | null) ?? null,
+      mpesa_paybill_account: (row['mpesa_paybill_account'] as string | null) ?? null,
       mpesa_till: (row['mpesa_till'] as string | null) ?? null,
       bank_details: parseJson<Record<string, string> | null>(row['bank_details'], null),
       stock_deduction_point:

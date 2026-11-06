@@ -360,7 +360,9 @@ export function InvoiceDocument({ detail, company, onClose }: InvoiceDocumentPro
             <p>
               <Hand>
                 {[
-                  company.mpesa_paybill ? `M-Pesa paybill ${company.mpesa_paybill}` : null,
+                  company.mpesa_paybill
+                    ? `M-Pesa Paybill ${company.mpesa_paybill}${company.mpesa_paybill_account ? `, Account ${company.mpesa_paybill_account}` : ''}`
+                    : null,
                   company.mpesa_till ? `M-Pesa till ${company.mpesa_till}` : null,
                 ]
                   .filter(Boolean)

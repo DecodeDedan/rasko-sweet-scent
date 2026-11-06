@@ -71,6 +71,7 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
   const [email, setEmail] = useState<string | null>(null)
   const [kraPin, setKraPin] = useState<string | null>(null)
   const [paybill, setPaybill] = useState<string | null>(null)
+  const [paybillAccount, setPaybillAccount] = useState<string | null>(null)
   const [till, setTill] = useState<string | null>(null)
   const [bankName, setBankName] = useState<string | null>(null)
   const [bankAccount, setBankAccount] = useState<string | null>(null)
@@ -192,6 +193,7 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
         email: value(email, profile?.email) || null,
         kra_pin: value(kraPin, profile?.kra_pin) || null,
         mpesa_paybill: value(paybill, profile?.mpesa_paybill) || null,
+        mpesa_paybill_account: value(paybillAccount, profile?.mpesa_paybill_account) || null,
         mpesa_till: value(till, profile?.mpesa_till) || null,
         bank_details: bank,
       })
@@ -339,15 +341,24 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
               />
             </Field>
 
-            <Field label="M-Pesa paybill">
+            <Field label="M-Pesa Paybill number">
               <Input
                 value={value(paybill, profile?.mpesa_paybill)}
                 disabled={!canEditProfile}
+                inputMode="numeric"
                 onChange={(event) => setPaybill(event.target.value)}
               />
             </Field>
 
-            <Field label="M-Pesa till">
+            <Field label="Account number to Paybill">
+              <Input
+                value={value(paybillAccount, profile?.mpesa_paybill_account)}
+                disabled={!canEditProfile}
+                onChange={(event) => setPaybillAccount(event.target.value)}
+              />
+            </Field>
+
+            <Field label="M-Pesa till number">
               <Input
                 value={value(till, profile?.mpesa_till)}
                 disabled={!canEditProfile}

@@ -428,7 +428,7 @@ export class OrdersRepository {
 
     const companyRows = await this.db.select<Record<string, unknown>>(
       `SELECT company_name, address, phone, email, kra_pin, logo_url,
-              mpesa_paybill, mpesa_till, bank_details
+              mpesa_paybill, mpesa_paybill_account, mpesa_till, bank_details
        FROM company_settings LIMIT 1`,
     )
     const company = companyRows[0]
@@ -459,6 +459,7 @@ export class OrdersRepository {
             kra_pin: company['kra_pin'],
             logo_url: company['logo_url'],
             mpesa_paybill: company['mpesa_paybill'],
+            mpesa_paybill_account: company['mpesa_paybill_account'],
             mpesa_till: company['mpesa_till'],
             bank_details: company['bank_details'],
           }

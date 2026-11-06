@@ -121,6 +121,7 @@ export interface CompanySettings {
   email: string | null
   kra_pin: string | null
   mpesa_paybill: string | null
+  mpesa_paybill_account: string | null
   mpesa_till: string | null
   bank_details: Record<string, unknown> | null
   is_vat_registered: boolean

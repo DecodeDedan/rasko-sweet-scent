@@ -260,6 +260,8 @@ export class InvoicesRepository {
       email: row['email'] == null ? null : String(row['email']),
       kra_pin: row['kra_pin'] == null ? null : String(row['kra_pin']),
       mpesa_paybill: row['mpesa_paybill'] == null ? null : String(row['mpesa_paybill']),
+      mpesa_paybill_account:
+        row['mpesa_paybill_account'] == null ? null : String(row['mpesa_paybill_account']),
       mpesa_till: row['mpesa_till'] == null ? null : String(row['mpesa_till']),
       bank_details:
         row['bank_details'] == null

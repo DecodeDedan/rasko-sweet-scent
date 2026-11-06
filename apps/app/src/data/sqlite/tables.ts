@@ -420,6 +420,7 @@ export const TABLES: readonly TableSpec[] = [
       c('logo_url', 'text'),
       c('is_vat_registered', 'bool'),
       c('mpesa_paybill', 'text'),
+      c('mpesa_paybill_account', 'text'),
       c('mpesa_till', 'text'),
       c('bank_details', 'json'),
       c('stock_deduction_point', 'text'),
