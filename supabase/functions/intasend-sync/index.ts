@@ -33,7 +33,8 @@ Deno.serve(async (request) => {
   const intasend = intasendConfig()
   if ('error' in intasend) return json({ error: 'IntaSend is not configured.' }, 503)
 
-  if (Date.now() - lastRunAt < MIN_INTERVAL_MS) return json({ skipped: 'Synced under a minute ago.' })
+  if (Date.now() - lastRunAt < MIN_INTERVAL_MS)
+    return json({ skipped: 'Synced under a minute ago.' })
   lastRunAt = Date.now()
 
   const url = Deno.env.get('SUPABASE_URL')

@@ -528,8 +528,14 @@ read with our key. Wallet top-up stays on the IntaSend dashboard; the balance
 and statement are read into the app (below).
 Built and tested (migration `20260929000100`, `_shared/payouts/`). **Run against
 the IntaSend sandbox on 2026-11-24**: one TF106 failure (refunded by IntaSend)
-and one TS100 success, KSh 625 plus a KSh 10 charge. The bank (PesaLink) path is
-not yet run there; it needs the sandbox wallet above KSh 100 plus the fee. Before
+and one TS100 success, KSh 625 plus a KSh 10 charge. The bank (PesaLink) path
+ran end to end twice (KSh 100, TEST run October 2026): both reached IntaSend,
+were refused TF106 and refunded within a minute, and were recorded as failed with
+no fee. **IntaSend strips leading zeros from the PesaLink account**: we send the
+documented sandbox account "001001001001" as text and IntaSend quotes back
+"1001001001". Real Kenyan account numbers often begin with 0, so **confirm with
+IntaSend in writing that leading zeros reach the bank before any live bank
+payout**, and pay one small live bank transfer before a payroll. Before
 going live, confirm fees, the float's custodian bank and idempotency with
 IntaSend in writing. See `docs/intasend-setup.md`.
 
