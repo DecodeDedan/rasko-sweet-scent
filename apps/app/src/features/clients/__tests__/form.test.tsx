@@ -51,6 +51,17 @@ describe('ClientForm validation', () => {
     )
   })
 
+  it('keeps an international number for a buyer abroad', async () => {
+    const { onSubmit, user } = setup()
+    await user.type(screen.getByLabelText(/^Name/), 'Aalsmeer Importer')
+    await user.type(screen.getByLabelText('Phone'), '+31 20 123 4567')
+    await user.click(screen.getByRole('button', { name: 'Add client' }))
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Aalsmeer Importer', phone: '+31201234567' }),
+    )
+  })
+
   it('rejects credit terms that are not a whole number of days', async () => {
     const { onSubmit, user } = setup()
     await user.type(screen.getByLabelText(/^Name/), 'Test Client')

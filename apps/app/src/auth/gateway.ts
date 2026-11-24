@@ -76,6 +76,8 @@ export interface AuthGateway {
   makeSuperAdmin(userId: string): Promise<GatewayResult>
   /** Super admin only. Permanently removes synced business/test data server-side. */
   purgeBusinessData(): Promise<GatewayResult>
+  /** Owner only. Permanently removes payroll/test records without clearing other modules. */
+  purgePayrollData(): Promise<GatewayResult>
   /** Super admin only. Restores the demo low-stock thresholds. */
   resetDemoLowStockThresholds(): Promise<GatewayResult>
   /** Super admin only. Adds a compensating movement for one stock movement. */
@@ -92,4 +94,9 @@ export interface AuthGateway {
   // Not an auth call, but the one other edge function the UI reads, kept here
   // so tests fake it the same way. Advisory: paying never waits on it.
   payoutWallet(): Promise<PayoutWallet | { error: string }>
+  /**
+   * Copies IntaSend's wallet statement to the server now (intasend-sync); the
+   * next pull brings it to this device. The server also runs it every 15 minutes.
+   */
+  syncIntasendStatement(): Promise<GatewayResult>
 }

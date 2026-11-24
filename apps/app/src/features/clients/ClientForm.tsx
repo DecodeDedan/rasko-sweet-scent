@@ -1,23 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { Button, Field, Input, Modal, Select } from '@rasko/ui'
+import { Button, Field, Input, Modal, Select, normalisePhone } from '@rasko/ui'
 
 import { CLIENT_TYPES, CLIENT_TYPE_LABEL } from './types.js'
 import type { Client, ClientType } from './types.js'
 
-/** FR-3.1. Kenyan mobile numbers, stored E.164 (+254...). */
-function normalisePhone(input: string): string | null {
-  const digits = input.replace(/\D/g, '')
-  if (!digits) return null
-  const national = digits.startsWith('254') ? digits.slice(3) : digits.replace(/^0+/, '')
-  return `+254${national}`
-}
-
+/** FR-3.1, widened for buyers abroad: Kenyan national format or any +country number. */
 function isValidPhone(input: string): boolean {
   if (!input.trim()) return true // optional
-  const normalised = normalisePhone(input)
-  return normalised !== null && /^\+254[17]\d{8}$/.test(normalised)
+  return normalisePhone(input) !== null
 }
 
 /**
@@ -75,7 +67,9 @@ export function ClientForm({ isOpen, onClose, client, onSubmit }: ClientFormProp
       return
     }
     if (!isValidPhone(phone)) {
-      setError('Enter a Kenyan mobile number, for example 0712 004 518.')
+      setError(
+        'Enter a Kenyan mobile number, for example 0712 004 518, or an international number starting with its country code, for example +31 20 123 4567.',
+      )
       return
     }
     if (!isValidEmail(email)) {
@@ -148,7 +142,10 @@ export function ClientForm({ isOpen, onClose, client, onSubmit }: ClientFormProp
           />
         </Field>
 
-        <Field label="Phone" hint="Kenyan mobile, for example 0712 004 518.">
+        <Field
+          label="Phone"
+          hint="Kenyan mobile as 0712 004 518. Abroad: start with + and the country code."
+        >
           <Input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" />
         </Field>
 

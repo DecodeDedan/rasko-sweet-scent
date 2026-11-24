@@ -28,6 +28,14 @@ tauri-plugin-updater = "2"
 # Restarts the app once an update is installed.
 tauri-plugin-process = "2"
 
+# Printing and saving PDFs from WKWebView (src/pdf.rs). The same versions
+# wry already builds, so nothing new is downloaded or compiled twice.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSString", "NSURL", "NSDictionary", "NSGeometry", "NSObject"] }
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "objc2-core-foundation", "NSPrintInfo", "NSPrintOperation", "NSSavePanel", "NSPanel", "NSWindow", "NSResponder", "NSView", "NSApplication"] }
+objc2-web-kit = { version = "0.3", default-features = false, features = ["std", "objc2-app-kit", "WKWebView"] }
+
 [profile.release]
 codegen-units = 1
 lto = true

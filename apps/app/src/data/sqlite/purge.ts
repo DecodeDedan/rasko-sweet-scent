@@ -6,6 +6,10 @@ import type { SqlDatabase } from './types.js'
  * pushed back or remain hidden behind an old cursor.
  */
 const BUSINESS_TABLES = [
+  'packhouse_delivery_lines',
+  'packhouse_deliveries',
+  'ledger_entries',
+  'casual_work_entries',
   'payroll_payouts',
   'supplier_payments',
   'reversals',
@@ -37,5 +41,26 @@ export async function purgeLocalBusinessData(db: SqlDatabase): Promise<void> {
     await tx.execute('DELETE FROM outbox')
     await tx.execute('DELETE FROM outbox_dead')
     await tx.execute('DELETE FROM sync_state')
+  })
+}
+
+export async function purgeLocalPayrollData(db: SqlDatabase): Promise<void> {
+  const PAYROLL_TABLES = [
+    'payroll_payouts',
+    'payroll_items',
+    'payroll_runs',
+    'casual_work_entries',
+    'advances',
+    'employees',
+  ] as const
+
+  await db.transaction(async (tx) => {
+    for (const table of PAYROLL_TABLES) {
+      await tx.execute(`DELETE FROM ${table}`)
+      await tx.execute('DELETE FROM sync_state WHERE table_name = ?', [table])
+    }
+    await tx.execute(`DELETE FROM outbox WHERE entity_table IN (?, ?, ?, ?, ?, ?)`, [
+      ...PAYROLL_TABLES,
+    ])
   })
 }

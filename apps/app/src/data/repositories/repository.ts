@@ -118,10 +118,7 @@ export class Repository<T extends Record<string, unknown> = Record<string, unkno
    * database calls, so nesting one here would wait forever for the outer
    * transaction to finish.
    */
-  async insertWithinTransaction(
-    tx: SqlExecutor,
-    values: Partial<T> & { id: string },
-  ): Promise<T> {
+  async insertWithinTransaction(tx: SqlExecutor, values: Partial<T> & { id: string }): Promise<T> {
     const timestamp = this.now()
     const row: Record<string, unknown> = { ...values }
 
@@ -146,11 +143,7 @@ export class Repository<T extends Record<string, unknown> = Record<string, unkno
     return decodeRow(this.spec, row) as T
   }
 
-  async updateWithinTransaction(
-    tx: SqlExecutor,
-    id: string,
-    patch: Partial<T>,
-  ): Promise<T> {
+  async updateWithinTransaction(tx: SqlExecutor, id: string, patch: Partial<T>): Promise<T> {
     const currentRows = await tx.select<Record<string, unknown>>(
       `SELECT * FROM ${this.spec.name} WHERE id = ?`,
       [id],
@@ -158,7 +151,11 @@ export class Repository<T extends Record<string, unknown> = Record<string, unkno
     const current = currentRows[0]
     if (!current) throw new Error(`${this.spec.name} ${id} not found locally.`)
 
-    const row: Record<string, unknown> = { ...current, ...patch, id }
+    // `current` is the stored (encoded) row, unlike update(), which reads
+    // through findById. Decode it before the merge: writeLocal encodes the
+    // whole row again, and a quantity missing from the patch would otherwise
+    // be multiplied by 1000 on every update.
+    const row: Record<string, unknown> = { ...decodeRow(this.spec, current), ...patch, id }
     if (this.hasColumn('updated_at')) row['updated_at'] = this.now()
     if (this.hasColumn('updated_by')) row['updated_by'] = this.context.userId
     await this.writeLocal(tx, row, 'update')

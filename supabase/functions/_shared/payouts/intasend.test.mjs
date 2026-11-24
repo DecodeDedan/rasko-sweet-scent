@@ -11,6 +11,7 @@ function answer({
   tx = 'TS100',
   amount = '23456.00',
   reference = 'TJRHC8IET4',
+  charge = '10.00',
 } = {}) {
   return {
     tracking_id: 'f89e8b57-f647-4960-933a-63874746005f',
@@ -26,6 +27,7 @@ function answer({
         provider_reference: reference,
         provider_account_name: ' Jane Wanjiku',
         amount,
+        charge,
       },
     ],
   }
@@ -86,6 +88,10 @@ test('settles a successful transaction with its reference and recipient', () => 
   assert.equal(result.receipt, 'TJRHC8IET4')
   assert.equal(result.recipient, 'Jane Wanjiku')
   assert.equal(result.trackingId, 'f89e8b57-f647-4960-933a-63874746005f')
+  // IntaSend's own charge, as it reported it for the sandbox payout of 2026-11-24.
+  assert.equal(result.feeCents, 1000)
+  assert.equal(interpretStatus(answer({ charge: null }), 23456).feeCents, null)
+  assert.equal(interpretStatus(answer({ tx: 'TF106' }), 23456).feeCents, null)
 })
 
 test('never settles a success that does not add up', () => {
@@ -154,4 +160,22 @@ test('reads the KES settlement wallet balance, bare or paginated', async () => {
   assert.equal(disbursingWallet([wallets[1]]).walletId, 'W2')
   assert.equal(disbursingWallet([wallets[0]]), null)
   assert.equal(disbursingWallet({ detail: 'Invalid token' }), null)
+})
+
+test('turns the IntaSend wallet statement into rows, in cents', async () => {
+  const { walletTransactionRows } = await import('./intasend.js')
+  // As the sandbox reported it on 2026-11-24.
+  const rows = walletTransactionRows({
+    count: 3,
+    results: [
+      { transaction_id: 'T3', trans_type: 'PAYOUT', value: -635.0, running_balance: 365.0, currency: 'KES', narrative: 'Payout: #LQPLOOR', status: 'AVAILABLE', created_at: '2026-11-24T23:57:03.811102+03:00' },
+      { transaction_id: 'T1', trans_type: 'SALE', value: 1000.0, running_balance: 1000.0, currency: 'KES', narrative: 'Direct Bill', status: 'AVAILABLE', created_at: '2026-11-24T23:43:25.752601+03:00' },
+      { trans_type: 'PAYOUT', value: 1 },
+    ],
+  })
+  assert.deepEqual(rows.map((r) => [r.transaction_id, r.value_cents, r.running_balance_cents]), [
+    ['T3', -63500, 36500],
+    ['T1', 100000, 100000],
+  ])
+  assert.equal(rows[0].occurred_at, '2026-11-24T20:57:03.811Z')
 })

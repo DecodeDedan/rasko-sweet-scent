@@ -135,13 +135,19 @@ function payoutProvider(): Provider | null {
   return value === 'daraja' || value === 'intasend' ? value : null
 }
 
-async function periodOf(admin: SupabaseClient, runId: string): Promise<string> {
-  const { data: run } = await admin
-    .from('payroll_runs')
-    .select('period_year, period_month')
-    .eq('id', runId)
-    .maybeSingle()
-  return run ? `${MONTHS[run.period_month - 1]} ${run.period_year}` : ''
+/**
+ * "Rasko Sweet Scent salary November 2026": what the employee's M-Pesa or bank
+ * statement shows beside the payment. The sender name itself is the business
+ * name registered with IntaSend or Safaricom, which no API call can change.
+ */
+async function salaryNarrative(admin: SupabaseClient, runId: string): Promise<string> {
+  const [{ data: run }, { data: company }] = await Promise.all([
+    admin.from('payroll_runs').select('period_year, period_month').eq('id', runId).maybeSingle(),
+    admin.from('company_settings').select('company_name').limit(1).maybeSingle(),
+  ])
+  const period = run ? `${MONTHS[run.period_month - 1]} ${run.period_year}` : ''
+  const name = String(company?.company_name ?? '').trim()
+  return [name, name ? 'salary' : 'Salary', period].filter(Boolean).join(' ')
 }
 
 Deno.serve(async (request) => {
@@ -212,14 +218,14 @@ Deno.serve(async (request) => {
   if (!payout) return json({ skipped: 'not queued' })
 
   await record(admin, payout.id, { attempts: payout.attempts + 1 })
-  const period = await periodOf(admin, payout.payroll_run_id)
+  const narrative = await salaryNarrative(admin, payout.payroll_run_id)
 
   if (intasend) {
     const status = await sendIntasendPayout(
       admin,
       intasend.config,
       payout as ClaimedPayout,
-      `Salary ${period}`.trim(),
+      narrative,
     )
     return json({ sent: payout.id, status }, status === 'failed' ? 422 : 200)
   }
@@ -243,7 +249,7 @@ Deno.serve(async (request) => {
     payoutId: payout.id,
     amountShillings: Number(payout.amount_cents) / 100,
     msisdn: payout.msisdn,
-    remarks: `Salary ${period}`.trim(),
+    remarks: narrative,
     occasion: 'Rasko Sweet Scent payroll',
   })
 

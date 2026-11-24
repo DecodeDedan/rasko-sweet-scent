@@ -1,0 +1,48 @@
+/*
+ * The delivery drawer is narrow (about 520px), so each variety is a block of
+ * labelled figures rather than a six-column table that scrolls sideways.
+ */
+
+.packhouse-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--rasko-space-3);
+  margin: 0;
+}
+
+.packhouse-facts dd,
+.packhouse-line__figures dd {
+  margin: 0;
+}
+
+.packhouse-line {
+  border: 1px solid var(--rasko-border);
+  border-radius: var(--rasko-radius-md);
+  padding: var(--rasko-space-3);
+}
+
+.packhouse-line__name {
+  margin: 0 0 var(--rasko-space-2);
+  font-weight: var(--rasko-weight-semibold);
+  color: var(--rasko-text);
+}
+
+.packhouse-line__figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+  gap: var(--rasko-space-2);
+  margin: 0;
+}
+
+.packhouse-line__figures dd {
+  text-align: left;
+  font-size: var(--rasko-text-16);
+  font-weight: var(--rasko-weight-semibold);
+  color: var(--rasko-text);
+}
+
+.packhouse-line__reasons {
+  margin: var(--rasko-space-2) 0 0;
+  font-size: var(--rasko-text-13);
+  color: var(--rasko-text-secondary);
+}

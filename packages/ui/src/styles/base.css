@@ -92,6 +92,8 @@ table {
 .rsk-numeric {
   font-variant-numeric: tabular-nums;
   text-align: right;
+  /* "KES 23,500.00" split over two lines reads as two figures. */
+  white-space: nowrap;
 }
 
 /*

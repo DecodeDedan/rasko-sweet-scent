@@ -40,6 +40,22 @@ const MODULE_COPY: Record<ModuleId, { title: string; body: string }> = {
     title: 'Suppliers',
     body: 'Purchases, stock received into the shed, and what you owe each supplier.',
   },
+  packhouse: {
+    title: 'Pack house',
+    body: 'Record each delivery to a buyer’s pack house, key in their intake report, and turn the accepted stems into an order. Rejected stems are booked as wastage with the pack house’s reason codes.',
+  },
+  ledger: {
+    title: 'Ledger',
+    body: 'Where the money is: cash, M-Pesa and bank, with a running cash book. Client payments, supplier payments and salaries appear on their own; record expenses and other income here.',
+  },
+  reports: {
+    title: 'Reports',
+    body: 'Print a statement of account for any client, and see income and expenditure for any period.',
+  },
+  payroll: {
+    title: 'Payroll',
+    body: 'Prepare monthly salaries, calculate statutory deductions and approve runs. Owners can pay approved salaries by M-Pesa or bank transfer through IntaSend.',
+  },
   settings: {
     title: 'Settings',
     body: 'The company details printed on every document, the wording of client emails, tax and statutory rates.',
@@ -64,7 +80,11 @@ const TOUR_ORDER: readonly ModuleId[] = [
   'orders',
   'invoices',
   'products',
+  'packhouse',
   'suppliers',
+  'ledger',
+  'reports',
+  'payroll',
   'settings',
   'users',
   'audit',

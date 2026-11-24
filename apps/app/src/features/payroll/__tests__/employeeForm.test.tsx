@@ -62,4 +62,32 @@ describe('EmployeeForm bank account', () => {
     await user.selectOptions(screen.getByLabelText('Payment method'), 'mpesa')
     expect(screen.queryByLabelText('Account number')).toBeNull()
   })
+
+  it('hides salary and statutory fields for casual employees', async () => {
+    const onSubmit = vi.fn(async (_values: EmployeeFormValues) => ({}))
+    render(<EmployeeForm isOpen onClose={() => {}} onSubmit={onSubmit} />)
+    const user = userEvent.setup()
+
+    await user.type(screen.getByLabelText(/^Full name/), 'John Casual')
+    await user.type(screen.getByLabelText(/^National ID/), 'CASUAL-001')
+    await user.selectOptions(screen.getByLabelText(/^Salary type/), 'casual')
+
+    expect(screen.queryByLabelText(/^Monthly salary/)).toBeNull()
+    expect(screen.queryByLabelText(/^Daily rate/)).toBeNull()
+    expect(screen.queryByLabelText(/^KRA PIN/)).toBeNull()
+    expect(screen.queryByLabelText(/^NSSF number/)).toBeNull()
+    expect(screen.queryByLabelText(/^SHIF number/)).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Save employee' }))
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        salary_type: 'casual',
+        basic_pay_cents: 0,
+        allowances: [],
+        kra_pin: null,
+        nssf_number: null,
+        shif_number: null,
+      }),
+    )
+  })
 })

@@ -71,6 +71,41 @@ beforeEach(async () => {
 })
 
 describe('payroll runs (FR-8.4)', () => {
+  it('keeps casual labour separate and records it as piece work', async () => {
+    await db.execute(
+      `INSERT INTO employees (id, full_name, national_id, salary_type, basic_pay_cents,
+                              allowances, payment_method, is_active, created_at, updated_at, sync_status)
+       VALUES (?, 'John Casual', 'CASUAL-001', 'casual', 0, '[]', 'mpesa', 1, ?, ?, 'synced')`,
+      ['e0000000-0000-4000-8000-000000000003', NOW, NOW],
+    )
+
+    const repo = repoFor(db)
+    await repo.addCasualEntry({
+      id: 'c0000000-0000-4000-8000-000000000001',
+      employeeId: 'e0000000-0000-4000-8000-000000000003',
+      workDate: '2026-09-16',
+      workType: 'Sort stems',
+      unit: 'stem',
+      quantity: 500,
+      rateCents: 250,
+    })
+
+    const entries = await repo.listCasualEntries()
+    expect(entries).toHaveLength(1)
+    expect(entries[0]).toMatchObject({
+      employeeName: 'John Casual',
+      work_type: 'Sort stems',
+      quantity: 500,
+      amount_cents: 125_000,
+      paid_at: null,
+    })
+
+    const run = await repo.prepareRun({ id: crypto.randomUUID(), year: 2026, month: 9 })
+    expect(run.items.map((item) => item.employee_id)).not.toContain(
+      'e0000000-0000-4000-8000-000000000003',
+    )
+  })
+
   it('computes every active employee and totals the run', async () => {
     const repo = repoFor(db)
     const run = await repo.prepareRun({ id: crypto.randomUUID(), year: 2026, month: 9 })

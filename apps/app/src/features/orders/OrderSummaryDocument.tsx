@@ -3,6 +3,7 @@
 import { formatDate, formatDateTime, formatMoney, formatQuantity } from '@rasko/ui'
 
 import { DocumentOverlay } from '../../shell/DocumentOverlay.js'
+import { nairobiDay, nairobiToday, pdfFileName } from '../../shell/print.js'
 
 import { ORDER_STATUS_LABEL } from './statusPipeline.js'
 import type { OrderDetail } from './types.js'
@@ -32,7 +33,13 @@ export function OrderSummaryDocument({
   const { order, items } = detail
 
   return (
-    <DocumentOverlay onClose={onClose}>
+    <DocumentOverlay
+      onClose={onClose}
+      fileName={pdfFileName(
+        [`Order ${order.order_number ?? 'draft'}`, order.clientName],
+        order.created_at ? nairobiDay(order.created_at) : nairobiToday(),
+      )}
+    >
       <article className="doc-page">
         <header className="doc-header">
           <div>

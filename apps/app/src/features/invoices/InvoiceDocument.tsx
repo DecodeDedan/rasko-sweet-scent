@@ -5,6 +5,7 @@ import { Mail, MapPin, Phone } from 'lucide-react'
 import { formatDate, formatQuantity } from '@rasko/ui'
 
 import { DocumentOverlay } from '../../shell/DocumentOverlay.js'
+import { pdfFileName } from '../../shell/print.js'
 
 import { BrandMark } from '../../shell/BrandMark.js'
 import { InvoiceStamp } from './InvoiceStamp.js'
@@ -189,7 +190,13 @@ export function InvoiceDocument({ detail, company, onClose }: InvoiceDocumentPro
   const blankRows = Math.max(0, MIN_LEDGER_ROWS - printed.length - written)
 
   return (
-    <DocumentOverlay onClose={onClose}>
+    <DocumentOverlay
+      onClose={onClose}
+      fileName={pdfFileName(
+        [`Invoice ${invoice.invoice_number ?? 'draft'}`, clientName],
+        invoice.issue_date,
+      )}
+    >
       <article className="doc-page inv">
         <header className="inv-head">
           <BrandMark height={96} className="inv-mark" />

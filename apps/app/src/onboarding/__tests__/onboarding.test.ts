@@ -17,6 +17,22 @@ describe('first-run tour', () => {
     expect(targets).toContain('nav-clients')
   })
 
+  it('adds payroll to the owner and accountant tours', () => {
+    const ownerTargets = tourSteps({
+      firstName: 'Wanjiru',
+      role: 'owner',
+      modules: ids('owner'),
+    }).flatMap((step) => (step.target ? [step.target] : []))
+    const accountantTargets = tourSteps({
+      firstName: 'Wanjiru',
+      role: 'accountant',
+      modules: ids('accountant'),
+    }).flatMap((step) => (step.target ? [step.target] : []))
+
+    expect(ownerTargets).toContain('nav-payroll')
+    expect(accountantTargets).toContain('nav-payroll')
+  })
+
   it('opens and closes with centre dialogs and greets by first name', () => {
     const steps = tourSteps({ firstName: 'Dedan', role: 'owner', modules: ids('owner') })
     expect(steps[0]).toMatchObject({ id: 'welcome', title: 'Welcome, Dedan' })

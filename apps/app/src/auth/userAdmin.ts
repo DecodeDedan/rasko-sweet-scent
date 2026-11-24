@@ -54,7 +54,9 @@ export function canDeleteAccount(viewer: Viewer, target: ProfileRecord): boolean
 }
 
 export function canGrantSuperAdmin(viewer: Viewer, target: ProfileRecord): boolean {
-  return viewer.isSuperAdmin && target.id !== viewer.userId && target.isActive && !target.isSuperAdmin
+  return (
+    viewer.isSuperAdmin && target.id !== viewer.userId && target.isActive && !target.isSuperAdmin
+  )
 }
 
 export function rowControls(viewer: Viewer, target: ProfileRecord): RowControls {

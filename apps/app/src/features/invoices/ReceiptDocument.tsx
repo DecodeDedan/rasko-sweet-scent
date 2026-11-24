@@ -3,6 +3,7 @@
 import { formatDateTime, formatMoney } from '@rasko/ui'
 
 import { DocumentOverlay } from '../../shell/DocumentOverlay.js'
+import { nairobiDay, pdfFileName } from '../../shell/print.js'
 
 import { PAYMENT_METHOD_LABEL } from './types.js'
 import type { CompanySettings, InvoiceDetail, PaymentRecord } from './types.js'
@@ -29,7 +30,13 @@ export function ReceiptDocument({
   const net = payment.amount_cents - payment.reversedCents
 
   return (
-    <DocumentOverlay onClose={onClose}>
+    <DocumentOverlay
+      onClose={onClose}
+      fileName={pdfFileName(
+        [`Receipt ${invoice.invoice_number ?? ''}`.trim(), invoice.clientName, payment.reference],
+        nairobiDay(payment.paid_at),
+      )}
+    >
       <article className="doc-page">
         <header className="doc-header">
           <div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarClock, DatabaseZap, Plus, Users, Wallet } from 'lucide-react'
+import { CalendarClock, DatabaseZap, Plus, Trash2, Users, Wallet } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import {
   Button,
@@ -22,7 +22,11 @@ import {
 
 import { ScopeBadge } from '../../screens/common.js'
 import type { ScreenProps } from '../../screens/common.js'
+import { useAuth } from '../../auth/AuthProvider.js'
+import { useSync } from '../../data/sync/SyncProvider.js'
+import { purgeLocalPayrollData } from '../../data/sqlite/purge.js'
 import { useCompanySettings } from '../invoices/useInvoices.js'
+import { toCents } from '../invoices/currency.js'
 import { EmployeeForm } from './EmployeeForm.js'
 import type { EmployeeFormValues } from './EmployeeForm.js'
 import { PayslipDocument, periodLabel } from './PayslipDocument.js'
@@ -38,6 +42,7 @@ import {
 } from './types.js'
 import type {
   Advance,
+  CasualWorkEntry,
   Employee,
   PayrollItem,
   PayrollRun,
@@ -54,11 +59,12 @@ function newId(): string {
   )
 }
 
-type View = 'runs' | 'employees' | 'advances'
+type View = 'runs' | 'employees' | 'casual' | 'advances'
 
 const TABS: ReadonlyArray<{ id: View; label: string }> = [
   { id: 'runs', label: 'Payroll runs' },
   { id: 'employees', label: 'Employees' },
+  { id: 'casual', label: 'Casual labour' },
   { id: 'advances', label: 'Advances' },
 ]
 
@@ -88,9 +94,11 @@ function advanceChip(advance: Advance) {
 
 export function PayrollScreen({ role, scope }: ScreenProps) {
   const repo = usePayrollRepository()
+  const { gateway } = useAuth()
+  const { db } = useSync()
   const company = useCompanySettings()
   const { showToast } = useToast()
-  const { runs, employees, advances, error, reload } = usePayrollData()
+  const { runs, employees, advances, casualEntries, error, reload } = usePayrollData()
 
   const [view, setView] = useState<View>('runs')
   const [openRun, setOpenRun] = useState<PayrollRunDetail | null>(null)
@@ -98,6 +106,10 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
   const [isAddingEmployee, setIsAddingEmployee] = useState(false)
   const [isPreparing, setIsPreparing] = useState(false)
   const [isRequestingAdvance, setIsRequestingAdvance] = useState(false)
+  const [isAddingCasualWork, setIsAddingCasualWork] = useState(false)
+  const [casualToPay, setCasualToPay] = useState<CasualWorkEntry | null>(null)
+  const [isPurging, setIsPurging] = useState(false)
+  const [isPurgeOpen, setIsPurgeOpen] = useState(false)
   const [payslip, setPayslip] = useState<{ item: PayrollItem; run: PayrollRun } | null>(null)
 
   const canPrepare = canPreparePayroll(role)
@@ -197,6 +209,42 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
     }
   }
 
+  async function purgePayroll() {
+    if (role !== 'owner') return
+    if (!db) {
+      showToast({ tone: 'danger', title: 'Local storage is unavailable' })
+      return
+    }
+    setIsPurging(true)
+    try {
+      const result = await gateway.purgePayrollData()
+      if (result.error) {
+        showToast({
+          tone: 'danger',
+          title: 'Payroll data was not removed',
+          description: result.error,
+        })
+        return
+      }
+      await purgeLocalPayrollData(db)
+      setIsPurgeOpen(false)
+      await reload()
+      showToast({
+        tone: 'success',
+        title: 'Payroll data removed',
+        description: 'Employees, runs, advances, casual work and payouts were cleared.',
+      })
+    } catch (cause) {
+      showToast({
+        tone: 'danger',
+        title: 'Payroll data was not removed',
+        description: cause instanceof Error ? cause.message : 'Could not clear payroll.',
+      })
+    } finally {
+      setIsPurging(false)
+    }
+  }
+
   return (
     <div className="rsk-stack">
       <PageHeader
@@ -205,6 +253,15 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
         meta={<ScopeBadge scope={scope} />}
         actions={
           <>
+            {role === 'owner' ? (
+              <Button
+                variant="ghost"
+                leadingIcon={<Trash2 size={15} aria-hidden="true" />}
+                onClick={() => setIsPurgeOpen(true)}
+              >
+                Clear payroll data
+              </Button>
+            ) : null}
             {canPrepare ? (
               <Button
                 variant="primary"
@@ -300,7 +357,8 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
                           Approve
                         </Button>
                       ) : null}
-                      {(run.status === 'approved' || run.status === 'paid') && canApprove ? (
+                      {/* A run is paid only once every payslip is: nothing is left to send. */}
+                      {run.status === 'approved' && canApprove ? (
                         <Button variant="ghost" onClick={() => setPayingRun(run)}>
                           Pay salaries
                         </Button>
@@ -348,7 +406,12 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
               {
                 key: 'type',
                 header: 'Paid',
-                render: (employee) => (employee.salary_type === 'daily' ? 'Daily rate' : 'Monthly'),
+                render: (employee) =>
+                  employee.salary_type === 'casual'
+                    ? 'Casual labour'
+                    : employee.salary_type === 'daily'
+                      ? 'Daily rate'
+                      : 'Monthly',
               },
               {
                 key: 'pay',
@@ -379,6 +442,76 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
             ]}
           />
         </Card>
+      </TabPanel>
+
+      <TabPanel id="casual" activeId={view}>
+        <div className="rsk-stack">
+          {canEditEmployees(role) ? (
+            <Button
+              variant="secondary"
+              leadingIcon={<Plus size={15} aria-hidden="true" />}
+              onClick={() => setIsAddingCasualWork(true)}
+              disabled={
+                employees.filter(
+                  (employee) => employee.is_active && employee.salary_type === 'casual',
+                ).length === 0
+              }
+            >
+              Record work
+            </Button>
+          ) : null}
+
+          <Card isFlush>
+            <Table
+              rows={casualEntries}
+              getRowKey={(entry) => entry.id}
+              empty={
+                <EmptyState
+                  icon={<Wallet size={20} aria-hidden="true" />}
+                  title="No casual labour recorded"
+                  description="Add a casual employee, then record stems or other work with a quantity and rate."
+                />
+              }
+              columns={[
+                { key: 'date', header: 'Date', render: (entry) => formatDate(entry.work_date) },
+                { key: 'employee', header: 'Employee', render: (entry) => entry.employeeName },
+                { key: 'work', header: 'Work', render: (entry) => entry.work_type },
+                {
+                  key: 'quantity',
+                  header: 'Quantity',
+                  isNumeric: true,
+                  render: (entry) => `${entry.quantity.toLocaleString()} ${entry.unit}`,
+                },
+                {
+                  key: 'earned',
+                  header: 'Earned',
+                  isNumeric: true,
+                  render: (entry) => formatKes(entry.amount_cents),
+                },
+                {
+                  key: 'status',
+                  header: 'Status',
+                  render: (entry) =>
+                    entry.paid_at ? (
+                      <StatusChip tone="success">Paid</StatusChip>
+                    ) : (
+                      <StatusChip tone="warning">Unpaid</StatusChip>
+                    ),
+                },
+                {
+                  key: 'actions',
+                  header: 'Actions',
+                  render: (entry) =>
+                    !entry.paid_at && role === 'owner' ? (
+                      <Button variant="ghost" onClick={() => setCasualToPay(entry)}>
+                        Mark paid
+                      </Button>
+                    ) : null,
+                },
+              ]}
+            />
+          </Card>
+        </div>
       </TabPanel>
 
       <TabPanel id="advances" activeId={view}>
@@ -447,9 +580,52 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
         />
       ) : null}
 
+      {isAddingCasualWork ? (
+        <CasualWorkForm
+          employees={employees.filter(
+            (employee) => employee.is_active && employee.salary_type === 'casual',
+          )}
+          onClose={() => setIsAddingCasualWork(false)}
+          onSubmit={async (input) => {
+            try {
+              await repo.addCasualEntry({ id: newId(), ...input })
+              showToast({ tone: 'success', title: 'Casual work recorded' })
+              await reload()
+              return {}
+            } catch (cause) {
+              return {
+                error: cause instanceof Error ? cause.message : 'Could not record casual work.',
+              }
+            }
+          }}
+        />
+      ) : null}
+
+      {casualToPay ? (
+        <CasualPaymentForm
+          entry={casualToPay}
+          onClose={() => setCasualToPay(null)}
+          onSubmit={async (input) => {
+            try {
+              await repo.markCasualPaid({ id: casualToPay.id, ...input })
+              showToast({ tone: 'success', title: 'Casual payment recorded' })
+              await reload()
+              setCasualToPay(null)
+              return {}
+            } catch (cause) {
+              return {
+                error: cause instanceof Error ? cause.message : 'Could not record payment.',
+              }
+            }
+          }}
+        />
+      ) : null}
+
       {isPreparing ? (
         <PrepareRunForm
-          employees={employees.filter((employee) => employee.is_active)}
+          employees={employees.filter(
+            (employee) => employee.is_active && employee.salary_type !== 'casual',
+          )}
           onClose={() => setIsPreparing(false)}
           onSubmit={async (input) => {
             try {
@@ -576,7 +752,232 @@ export function PayrollScreen({ role, scope }: ScreenProps) {
           }}
         />
       ) : null}
+
+      {isPurgeOpen ? (
+        <Modal
+          isOpen
+          onClose={() => setIsPurgeOpen(false)}
+          title="Clear payroll data"
+          description="This cannot be undone."
+          size="sm"
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setIsPurgeOpen(false)} disabled={isPurging}>
+                Cancel
+              </Button>
+              <Button variant="danger" isLoading={isPurging} onClick={() => void purgePayroll()}>
+                Clear payroll data
+              </Button>
+            </>
+          }
+        >
+          <p>
+            Removes employees, payroll runs, payslip records, advances, casual work records and
+            payout records. Clients, orders, invoices, stock and supplier data stay.
+          </p>
+        </Modal>
+      ) : null}
     </div>
+  )
+}
+
+function CasualWorkForm({
+  employees,
+  onClose,
+  onSubmit,
+}: {
+  employees: readonly Employee[]
+  onClose: () => void
+  onSubmit: (input: {
+    employeeId: string
+    workDate: string
+    workType: string
+    unit: string
+    quantity: number
+    rateCents: number
+    notes: string
+  }) => Promise<{ error?: string }>
+}) {
+  const [employeeId, setEmployeeId] = useState(employees[0]?.id ?? '')
+  const [workDate, setWorkDate] = useState(new Date().toISOString().slice(0, 10))
+  const [workType, setWorkType] = useState('Stems')
+  const [unit, setUnit] = useState('stem')
+  const [quantity, setQuantity] = useState('')
+  const [rate, setRate] = useState('')
+  const [notes, setNotes] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+
+  async function handleSubmit() {
+    setError(null)
+    const quantityValue = Number(quantity)
+    const rateCents = toCents(rate)
+    if (!employeeId) return setError('Choose a casual employee.')
+    if (!workType.trim()) return setError('Enter the type of work.')
+    if (!Number.isFinite(quantityValue) || quantityValue <= 0) {
+      return setError('Enter a quantity greater than zero.')
+    }
+    if (!Number.isFinite(rateCents) || rateCents < 0) {
+      return setError('Enter a valid rate.')
+    }
+    setIsSaving(true)
+    const result = await onSubmit({
+      employeeId,
+      workDate,
+      workType: workType.trim(),
+      unit,
+      quantity: quantityValue,
+      rateCents,
+      notes: notes.trim(),
+    })
+    setIsSaving(false)
+    if (result.error) setError(result.error)
+  }
+
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title="Record casual labour"
+      description="This work is kept outside monthly payroll."
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={() => void handleSubmit()} disabled={isSaving}>
+            {isSaving ? 'Saving' : 'Record work'}
+          </Button>
+        </>
+      }
+    >
+      <div className="rsk-stack">
+        {error ? (
+          <p className="auth-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <Field label="Employee" isRequired>
+          <Select
+            value={employeeId}
+            onChange={(event) => setEmployeeId(event.target.value)}
+            options={employees.map((employee) => ({
+              value: employee.id,
+              label: employee.full_name,
+            }))}
+          />
+        </Field>
+        <Field label="Work date" isRequired>
+          <Input
+            type="date"
+            value={workDate}
+            onChange={(event) => setWorkDate(event.target.value)}
+          />
+        </Field>
+        <Field label="Type of work" isRequired>
+          <Input
+            value={workType}
+            placeholder="Stems sorted, harvesting, packing"
+            onChange={(event) => setWorkType(event.target.value)}
+          />
+        </Field>
+        <Field label="Unit">
+          <Select
+            value={unit}
+            onChange={(event) => setUnit(event.target.value)}
+            options={[
+              { value: 'stem', label: 'Stem' },
+              { value: 'bundle', label: 'Bundle' },
+              { value: 'piece', label: 'Piece' },
+              { value: 'task', label: 'Task' },
+              { value: 'hour', label: 'Hour' },
+              { value: 'day', label: 'Day' },
+            ]}
+          />
+        </Field>
+        <Field label="Quantity" isRequired>
+          <Input
+            value={quantity}
+            inputMode="decimal"
+            onChange={(event) => setQuantity(event.target.value)}
+          />
+        </Field>
+        <Field label={`Rate per ${unit}`} isRequired>
+          <Input
+            value={rate}
+            inputMode="decimal"
+            onChange={(event) => setRate(event.target.value)}
+          />
+        </Field>
+        <Field label="Notes">
+          <Input value={notes} onChange={(event) => setNotes(event.target.value)} />
+        </Field>
+      </div>
+    </Modal>
+  )
+}
+
+function CasualPaymentForm({
+  entry,
+  onClose,
+  onSubmit,
+}: {
+  entry: CasualWorkEntry
+  onClose: () => void
+  onSubmit: (input: { method: 'mpesa' | 'bank'; reference: string }) => Promise<{ error?: string }>
+}) {
+  const [method, setMethod] = useState<'mpesa' | 'bank'>('mpesa')
+  const [reference, setReference] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+
+  async function handleSubmit() {
+    setError(null)
+    if (!reference.trim()) return setError('Enter the payment receipt or reference.')
+    setIsSaving(true)
+    const result = await onSubmit({ method, reference: reference.trim() })
+    setIsSaving(false)
+    if (result.error) setError(result.error)
+  }
+
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title="Mark casual labour paid"
+      description={`${entry.employeeName} · ${formatKes(entry.amount_cents)} for ${entry.quantity} ${entry.unit}`}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={() => void handleSubmit()} disabled={isSaving}>
+            {isSaving ? 'Saving' : 'Mark paid'}
+          </Button>
+        </>
+      }
+    >
+      <div className="rsk-stack">
+        {error ? (
+          <p className="auth-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <Field label="Payment method">
+          <Select
+            value={method}
+            onChange={(event) => setMethod(event.target.value as 'mpesa' | 'bank')}
+            options={[
+              { value: 'mpesa', label: 'M-Pesa' },
+              { value: 'bank', label: 'Bank transfer' },
+            ]}
+          />
+        </Field>
+        <Field label={method === 'mpesa' ? 'M-Pesa receipt' : 'Bank reference'} isRequired>
+          <Input value={reference} onChange={(event) => setReference(event.target.value)} />
+        </Field>
+      </div>
+    </Modal>
   )
 }
 

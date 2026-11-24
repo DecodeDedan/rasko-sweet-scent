@@ -831,10 +831,21 @@
 
 .doc-toolbar {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: var(--rasko-space-2);
   max-width: 210mm;
   margin: 0 auto var(--rasko-space-4);
+}
+
+/* Where the PDF went; a long path wraps rather than pushing the buttons off. */
+.doc-toolbar__status {
+  flex: 1 1 16rem;
+  margin: 0;
+  font-size: var(--rasko-text-13);
+  color: var(--rasko-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .doc-page {

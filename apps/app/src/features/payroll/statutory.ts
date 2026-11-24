@@ -77,7 +77,7 @@ export interface PayrollInput {
   otherDeductions?: readonly OtherDeduction[]
   /** Daily-rate employees only; monthly staff ignore it. */
   daysWorked?: number
-  salaryType?: 'monthly' | 'daily'
+  salaryType?: 'monthly' | 'daily' | 'casual'
 }
 
 export interface PayrollResult {

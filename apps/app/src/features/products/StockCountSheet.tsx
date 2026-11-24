@@ -3,6 +3,7 @@
 import { formatDate, formatQuantity } from '@rasko/ui'
 
 import { DocumentOverlay } from '../../shell/DocumentOverlay.js'
+import { nairobiToday, pdfFileName } from '../../shell/print.js'
 
 import type { ProductStock } from './types.js'
 
@@ -25,7 +26,10 @@ export function StockCountSheet({
   const today = new Date().toISOString().slice(0, 10)
 
   return (
-    <DocumentOverlay onClose={onClose}>
+    <DocumentOverlay
+      onClose={onClose}
+      fileName={pdfFileName(['Stock count sheet'], nairobiToday())}
+    >
       <article className="doc-page">
         <header className="doc-header">
           <div>

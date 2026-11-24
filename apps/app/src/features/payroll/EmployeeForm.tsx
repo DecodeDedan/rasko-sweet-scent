@@ -120,7 +120,7 @@ export function EmployeeForm({
     }
 
     const payCents = toCents(basicPay)
-    if (!Number.isFinite(payCents) || payCents < 0) {
+    if (salaryType !== 'casual' && (!Number.isFinite(payCents) || payCents < 0)) {
       return setError(
         salaryType === 'daily' ? 'Enter a valid daily rate.' : 'Enter a valid monthly salary.',
       )
@@ -144,14 +144,14 @@ export function EmployeeForm({
     const result = await onSubmit({
       full_name: fullName.trim(),
       national_id: nationalId.trim(),
-      kra_pin: kraPin.trim() || null,
-      nssf_number: nssf.trim() || null,
-      shif_number: shif.trim() || null,
+      kra_pin: salaryType === 'casual' ? null : kraPin.trim() || null,
+      nssf_number: salaryType === 'casual' ? null : nssf.trim() || null,
+      shif_number: salaryType === 'casual' ? null : shif.trim() || null,
       phone: phone.trim() || null,
       position: position.trim() || null,
       salary_type: salaryType,
-      basic_pay_cents: payCents,
-      allowances: prepared,
+      basic_pay_cents: salaryType === 'casual' ? 0 : payCents,
+      allowances: salaryType === 'casual' ? [] : prepared,
       payment_method: method || null,
       payment_details: bank
         ? {
@@ -214,17 +214,21 @@ export function EmployeeForm({
           />
         </Field>
 
-        <Field label="KRA PIN">
-          <Input value={kraPin} onChange={(event) => setKraPin(event.target.value)} />
-        </Field>
+        {salaryType !== 'casual' ? (
+          <>
+            <Field label="KRA PIN">
+              <Input value={kraPin} onChange={(event) => setKraPin(event.target.value)} />
+            </Field>
 
-        <Field label="NSSF number">
-          <Input value={nssf} onChange={(event) => setNssf(event.target.value)} />
-        </Field>
+            <Field label="NSSF number">
+              <Input value={nssf} onChange={(event) => setNssf(event.target.value)} />
+            </Field>
 
-        <Field label="SHIF number">
-          <Input value={shif} onChange={(event) => setShif(event.target.value)} />
-        </Field>
+            <Field label="SHIF number">
+              <Input value={shif} onChange={(event) => setShif(event.target.value)} />
+            </Field>
+          </>
+        ) : null}
 
         <Field label="Salary type" isRequired>
           <Select
@@ -233,17 +237,20 @@ export function EmployeeForm({
             options={[
               { value: 'monthly', label: 'Monthly salary' },
               { value: 'daily', label: 'Daily rate' },
+              { value: 'casual', label: 'Casual labour' },
             ]}
           />
         </Field>
 
-        <Field label={salaryType === 'daily' ? 'Daily rate' : 'Monthly salary'} isRequired>
-          <Input
-            value={basicPay}
-            inputMode="decimal"
-            onChange={(event) => setBasicPay(event.target.value)}
-          />
-        </Field>
+        {salaryType !== 'casual' ? (
+          <Field label={salaryType === 'daily' ? 'Daily rate' : 'Monthly salary'} isRequired>
+            <Input
+              value={basicPay}
+              inputMode="decimal"
+              onChange={(event) => setBasicPay(event.target.value)}
+            />
+          </Field>
+        ) : null}
 
         <Field label="Payment method">
           <Select
@@ -286,63 +293,67 @@ export function EmployeeForm({
           </>
         ) : null}
 
-        {allowances.map((allowance, index) => (
-          <div key={allowance.key} className="rsk-stack">
-            <Field label={`Allowance ${index + 1} — name`}>
-              <Input
-                value={allowance.label}
-                placeholder="Housing"
-                onChange={(event) =>
-                  setAllowances((current) =>
-                    current.map((candidate) =>
-                      candidate.key === allowance.key
-                        ? { ...candidate, label: event.target.value }
-                        : candidate,
-                    ),
-                  )
-                }
-              />
-            </Field>
-            <Field label="Amount per month">
-              <Input
-                value={allowance.amount}
-                inputMode="decimal"
-                onChange={(event) =>
-                  setAllowances((current) =>
-                    current.map((candidate) =>
-                      candidate.key === allowance.key
-                        ? { ...candidate, amount: event.target.value }
-                        : candidate,
-                    ),
-                  )
-                }
-              />
-            </Field>
-            <Button
-              variant="ghost"
-              leadingIcon={<Trash2 size={15} aria-hidden="true" />}
-              onClick={() =>
-                setAllowances((current) =>
-                  current.filter((candidate) => candidate.key !== allowance.key),
-                )
-              }
-            >
-              Remove allowance {index + 1}
-            </Button>
-          </div>
-        ))}
+        {salaryType !== 'casual'
+          ? allowances.map((allowance, index) => (
+              <div key={allowance.key} className="rsk-stack">
+                <Field label={`Allowance ${index + 1} — name`}>
+                  <Input
+                    value={allowance.label}
+                    placeholder="Housing"
+                    onChange={(event) =>
+                      setAllowances((current) =>
+                        current.map((candidate) =>
+                          candidate.key === allowance.key
+                            ? { ...candidate, label: event.target.value }
+                            : candidate,
+                        ),
+                      )
+                    }
+                  />
+                </Field>
+                <Field label="Amount per month">
+                  <Input
+                    value={allowance.amount}
+                    inputMode="decimal"
+                    onChange={(event) =>
+                      setAllowances((current) =>
+                        current.map((candidate) =>
+                          candidate.key === allowance.key
+                            ? { ...candidate, amount: event.target.value }
+                            : candidate,
+                        ),
+                      )
+                    }
+                  />
+                </Field>
+                <Button
+                  variant="ghost"
+                  leadingIcon={<Trash2 size={15} aria-hidden="true" />}
+                  onClick={() =>
+                    setAllowances((current) =>
+                      current.filter((candidate) => candidate.key !== allowance.key),
+                    )
+                  }
+                >
+                  Remove allowance {index + 1}
+                </Button>
+              </div>
+            ))
+          : null}
 
-        <Button
-          variant="secondary"
-          onClick={() =>
-            setAllowances((current) => [
-              ...current,
-              { key: `allowance-${current.length + 1}-${Date.now()}`, label: '', amount: '0.00' },
-            ])
-          }
-        >
-          Add allowance
-        </Button>
+        {salaryType !== 'casual' ? (
+          <Button
+            variant="secondary"
+            onClick={() =>
+              setAllowances((current) => [
+                ...current,
+                { key: `allowance-${current.length + 1}-${Date.now()}`, label: '', amount: '0.00' },
+              ])
+            }
+          >
+            Add allowance
+          </Button>
+        ) : null}
 
         <Field label="Status">
           <Select

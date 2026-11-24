@@ -104,7 +104,10 @@ const TX_NEW = 'TP101'
  *
  * @param {unknown} body
  * @param {number} sentShillings
- * @returns {{ status: 'accepted' | 'paid' | 'failed' | 'unknown', trackingId: string | null, resultCode: string | null, description: string, receipt: string | null, recipient: string | null }}
+ * `feeCents` is IntaSend's own charge for a paid transfer (`transactions[0].charge`),
+ * taken from the wallet on top of the amount; null when IntaSend does not say.
+ *
+ * @returns {{ status: 'accepted' | 'paid' | 'failed' | 'unknown', trackingId: string | null, resultCode: string | null, description: string, receipt: string | null, recipient: string | null, feeCents: number | null }}
  */
 export function interpretStatus(body, sentShillings) {
   const answer = body && typeof body === 'object' ? /** @type {Record<string, any>} */ (body) : {}
@@ -129,6 +132,7 @@ export function interpretStatus(body, sentShillings) {
     description: description.slice(0, 500),
     receipt: null,
     recipient: null,
+    feeCents: null,
     ...extra,
   })
 
@@ -147,7 +151,10 @@ export function interpretStatus(body, sentShillings) {
       return result('unknown', txCode, `IntaSend reported success without a reference. ${check}`)
     }
     const recipient = String(transaction.provider_account_name ?? '').trim() || null
-    return result('paid', txCode, reason || 'Paid.', { receipt, recipient })
+    // A missing charge is unknown, not zero (Number(null) would read as 0).
+    const charge = transaction.charge == null ? NaN : Number(transaction.charge)
+    const feeCents = Number.isFinite(charge) && charge >= 0 ? Math.round(charge * 100) : null
+    return result('paid', txCode, reason || 'Paid.', { receipt, recipient, feeCents })
   }
   if (TX_FAILED.has(txCode)) return result('failed', txCode, reason || 'The payment failed.')
   if (txCode === TX_UNDETERMINED) {
@@ -200,4 +207,46 @@ export function disbursingWallet(body) {
     availableCents: Math.round(available * 100),
     updatedAt: wallet.updated_at ? String(wallet.updated_at) : null,
   }
+}
+
+/** GET /api/v1/wallets/{wallet_id}/transactions/ (paginated with `next`). */
+export const walletTransactionsPath = (walletId) =>
+  `/api/v1/wallets/${encodeURIComponent(walletId)}/transactions/`
+
+/**
+ * IntaSend's wallet statement as rows for intasend_wallet_transactions:
+ * deposits (SALE), payouts and their fees (PAYOUT, negative), and credits for
+ * failed payouts (PAYOUT, positive). Amounts become integer cents; a row
+ * without an id, a numeric value or a time is dropped rather than guessed.
+ *
+ * @param {unknown} body
+ * @returns {Array<{ transaction_id: string, trans_type: string, value_cents: number, running_balance_cents: number, currency: string, narrative: string | null, status: string | null, occurred_at: string }>}
+ */
+export function walletTransactionRows(body) {
+  const list = Array.isArray(body)
+    ? body
+    : body && typeof body === 'object' && Array.isArray(/** @type {any} */ (body).results)
+      ? /** @type {any} */ (body).results
+      : []
+  return list.flatMap((item) => {
+    const value = Number(item?.value)
+    const balance = Number(item?.running_balance)
+    const id = item?.transaction_id ? String(item.transaction_id) : ''
+    const at = item?.created_at ? new Date(String(item.created_at)) : null
+    if (!id || !Number.isFinite(value) || !Number.isFinite(balance) || !at || Number.isNaN(at.getTime())) {
+      return []
+    }
+    return [
+      {
+        transaction_id: id,
+        trans_type: String(item.trans_type ?? 'UNKNOWN').slice(0, 40),
+        value_cents: Math.round(value * 100),
+        running_balance_cents: Math.round(balance * 100),
+        currency: String(item.currency ?? 'KES').slice(0, 3),
+        narrative: item.narrative ? String(item.narrative).slice(0, 240) : null,
+        status: item.status ? String(item.status).slice(0, 40) : null,
+        occurred_at: at.toISOString(),
+      },
+    ]
+  })
 }

@@ -17,7 +17,7 @@ import {
   useToast,
 } from '@rasko/ui'
 
-import { printPage } from '../../shell/print.js'
+import { nairobiToday, pdfFileName, printPage } from '../../shell/print.js'
 
 import { useIdentity } from '../../auth/AuthProvider.js'
 import { useSync } from '../../data/sync/SyncProvider.js'
@@ -37,19 +37,7 @@ import type {
   WastageAlert,
 } from './dashboardRepository.js'
 import { SalesTrendChart } from './SalesTrendChart.js'
-
-/** FR-2.7. A Blob download is the whole feature — no library, works offline. */
-function downloadCsv(filename: string, csv: string): void {
-  const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
+import { downloadCsv } from '../../shell/download.js'
 
 interface DashboardData {
   summary: DailySummary
@@ -191,7 +179,11 @@ export function DashboardScreen({ role, scope }: ScreenProps) {
             >
               Export sales
             </Button>
-            <Button variant="primary" onClick={() => void printPage()} disabled={!data}>
+            <Button
+              variant="primary"
+              onClick={() => void printPage(pdfFileName(['Dashboard summary'], nairobiToday()))}
+              disabled={!data}
+            >
               Print or save as PDF
             </Button>
           </>

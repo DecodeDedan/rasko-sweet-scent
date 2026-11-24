@@ -64,6 +64,8 @@ export {
   formatKes,
   formatMoney,
   formatPhone,
+  isE164Phone,
+  normalisePhone,
   formatQuantity,
 } from './utils/format.js'
 

@@ -1,7 +1,7 @@
 import type { Role } from '../../auth/session.js'
 import type { Allowance, OtherDeduction, RatesSnapshot } from './statutory.js'
 
-export type SalaryType = 'monthly' | 'daily'
+export type SalaryType = 'monthly' | 'daily' | 'casual'
 export type PaymentMethod = 'mpesa' | 'bank'
 
 export type AdvanceStatus = 'pending' | 'approved' | 'rejected' | 'recovered'
@@ -102,6 +102,25 @@ export interface Advance {
   approved_at: string | null
   approved_by: string | null
   recovered_in_run_id: string | null
+}
+
+export interface CasualWorkEntry {
+  id: string
+  employee_id: string
+  employeeName: string
+  work_date: string
+  work_type: string
+  unit: string
+  quantity: number
+  rate_cents: number
+  amount_cents: number
+  notes: string | null
+  paid_at: string | null
+  payment_method: PaymentMethod | null
+  payment_reference: string | null
+  created_at: string | null
+  updated_at: string | null
+  deleted_at: string | null
 }
 
 export interface PayrollRun {

@@ -3187,6 +3187,10 @@ dependencies = [
 name = "rss-management-system"
 version = "0.1.12"
 dependencies = [
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
+ "objc2-web-kit",
  "serde",
  "serde_json",
  "tauri",

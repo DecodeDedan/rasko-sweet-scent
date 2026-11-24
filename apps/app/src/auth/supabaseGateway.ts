@@ -227,6 +227,11 @@ export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient
       return error ? { error: await functionErrorMessage(error) } : {}
     },
 
+    async purgePayrollData(): Promise<GatewayResult> {
+      const { error } = await client.functions.invoke('purge-payroll-data', { body: {} })
+      return error ? { error: await functionErrorMessage(error) } : {}
+    },
+
     async resetDemoLowStockThresholds(): Promise<GatewayResult> {
       const { error } = await client.rpc('reset_demo_low_stock_thresholds')
       return error ? { error: error.message } : {}
@@ -234,7 +239,9 @@ export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient
 
     async deleteStockMovement(id: string): Promise<GatewayResult> {
       const { data, error } = await client.rpc('delete_stock_movement', { movement_id: id })
-      return error ? { error: error.message } : { data: (data as Record<string, unknown> | null) ?? null }
+      return error
+        ? { error: error.message }
+        : { data: (data as Record<string, unknown> | null) ?? null }
     },
 
     async deleteAllStockMovements(): Promise<GatewayResult> {
@@ -264,6 +271,13 @@ export function createSupabaseGateway(client: SupabaseClient = getSupabaseClient
         }
       }
       return { error: 'The wallet balance could not be read.' }
+    },
+
+    async syncIntasendStatement(): Promise<GatewayResult> {
+      const { data, error } = await client.functions.invoke('intasend-sync', { body: {} })
+      if (error) return { error: await functionErrorMessage(error) }
+      const answer = (data ?? {}) as Record<string, unknown>
+      return typeof answer.error === 'string' ? { error: answer.error } : {}
     },
   }
 }

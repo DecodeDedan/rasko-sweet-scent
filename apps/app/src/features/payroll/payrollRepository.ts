@@ -11,10 +11,12 @@ import {
   canEditEmployees,
   canPreparePayroll,
   canRequestAdvance,
+  canSeePayroll,
   canTransitionRun,
 } from './types.js'
 import type {
   Advance,
+  CasualWorkEntry,
   Employee,
   EmployeeSnapshot,
   PayrollItem,
@@ -22,6 +24,7 @@ import type {
   PayrollRunDetail,
   PayrollRunStatus,
   PayrollTotals,
+  PaymentMethod,
 } from './types.js'
 
 /**
@@ -93,18 +96,20 @@ export class PayrollRepository {
   private readonly advances: Repository<Record<string, unknown>>
   private readonly runs: Repository<Record<string, unknown>>
   private readonly items: Repository<Record<string, unknown>>
+  private readonly casualWork: Repository<Record<string, unknown>>
 
   constructor(
     private readonly db: SqlDatabase,
     private readonly role: Role,
     private readonly userId: string | null,
-    context: WriteContext,
+    private readonly context: WriteContext,
     private readonly clock: () => string = () => new Date().toISOString(),
   ) {
     this.employees = new Repository(db, 'employees', context)
     this.advances = new Repository(db, 'advances', context)
     this.runs = new Repository(db, 'payroll_runs', context)
     this.items = new Repository(db, 'payroll_items', context)
+    this.casualWork = new Repository(db, 'casual_work_entries', context)
   }
 
   // ------------------------------------------------------------- FR-8.1/8.2
@@ -164,6 +169,99 @@ export class PayrollRepository {
       throw new PayrollRuleError('Only the owner can add or change employee records (FR-8.8).')
     }
     await this.employees.update(id, patch)
+  }
+
+  // ---------------------------------------------------------- Casual labour
+
+  async listCasualEntries(employeeId?: string): Promise<CasualWorkEntry[]> {
+    if (!canSeePayroll(this.role)) {
+      throw new PayrollRuleError('This role cannot view casual labour records.')
+    }
+    const rows = await this.db.select<Record<string, unknown>>(
+      `SELECT w.*, COALESCE(e.full_name, 'Unknown employee') AS employee_name
+       FROM casual_work_entries w
+       LEFT JOIN employees e ON e.id = w.employee_id
+       WHERE w.deleted_at IS NULL
+         ${employeeId ? 'AND w.employee_id = ?' : ''}
+       ORDER BY w.work_date DESC, w.created_at DESC`,
+      employeeId ? [employeeId] : [],
+    )
+    return rows.map((row) => ({
+      id: String(row['id']),
+      employee_id: String(row['employee_id']),
+      employeeName: String(row['employee_name'] ?? ''),
+      work_date: String(row['work_date']),
+      work_type: String(row['work_type']),
+      unit: String(row['unit']),
+      quantity: Number(row['quantity'] ?? 0) / 1000,
+      rate_cents: Number(row['rate_cents'] ?? 0),
+      amount_cents: Math.round(
+        (Number(row['quantity'] ?? 0) * Number(row['rate_cents'] ?? 0)) / 1000,
+      ),
+      notes: (row['notes'] as string | null) ?? null,
+      paid_at: (row['paid_at'] as string | null) ?? null,
+      payment_method: (row['payment_method'] as PaymentMethod | null) ?? null,
+      payment_reference: (row['payment_reference'] as string | null) ?? null,
+      created_at: (row['created_at'] as string | null) ?? null,
+      updated_at: (row['updated_at'] as string | null) ?? null,
+      deleted_at: (row['deleted_at'] as string | null) ?? null,
+    }))
+  }
+
+  async addCasualEntry(input: {
+    id: string
+    employeeId: string
+    workDate: string
+    workType: string
+    unit: string
+    quantity: number
+    rateCents: number
+    notes?: string
+  }): Promise<void> {
+    if (!canEditEmployees(this.role)) {
+      throw new PayrollRuleError('Only the owner can record casual labour payments.')
+    }
+    if (!input.workDate || !input.workType.trim()) {
+      throw new PayrollRuleError('Choose a date and enter the type of work.')
+    }
+    if (!Number.isFinite(input.quantity) || input.quantity <= 0) {
+      throw new PayrollRuleError('Enter a quantity greater than zero.')
+    }
+    if (!Number.isInteger(input.rateCents) || input.rateCents < 0) {
+      throw new PayrollRuleError('Enter a valid rate.')
+    }
+    const employee = await this.findEmployee(input.employeeId)
+    if (!employee || employee.salary_type !== 'casual') {
+      throw new PayrollRuleError('Casual work can only be recorded for a casual employee.')
+    }
+    await this.casualWork.insert({
+      id: input.id,
+      employee_id: input.employeeId,
+      work_date: input.workDate,
+      work_type: input.workType.trim(),
+      unit: input.unit.trim() || 'task',
+      quantity: input.quantity,
+      rate_cents: input.rateCents,
+      notes: input.notes?.trim() || null,
+    })
+  }
+
+  async markCasualPaid(input: {
+    id: string
+    method: 'mpesa' | 'bank'
+    reference: string
+  }): Promise<void> {
+    if (this.role !== 'owner') {
+      throw new PayrollRuleError('Only the owner can pay casual labour.')
+    }
+    if (!input.reference.trim()) {
+      throw new PayrollRuleError('Enter the M-Pesa receipt or bank reference.')
+    }
+    await this.casualWork.update(input.id, {
+      paid_at: this.clock(),
+      payment_method: input.method,
+      payment_reference: input.reference.trim(),
+    })
   }
 
   // --------------------------------------------------------------- FR-8.3
@@ -314,7 +412,9 @@ export class PayrollRepository {
       throw new PayrollRuleError('A payroll run already exists for that month.')
     }
 
-    const employees = await this.listEmployees()
+    const employees = (await this.listEmployees()).filter(
+      (employee) => employee.salary_type !== 'casual',
+    )
     if (employees.length === 0) {
       throw new PayrollRuleError('There are no active employees to pay.')
     }
@@ -322,18 +422,12 @@ export class PayrollRepository {
     const rates = await this.currentRates()
     const now = this.clock()
 
-    await this.runs.insert({
-      id: input.id,
-      period_year: input.year,
-      period_month: input.month,
-      status: 'draft',
-      prepared_at: now,
-      prepared_by: this.userId,
-      rates_snapshot: rates,
-      totals: EMPTY_TOTALS,
-    })
-
+    // Everything is computed first and written in one transaction: a run left
+    // half-written by a crash could never be prepared again, because the
+    // month already has a run.
     const totals: PayrollTotals = { ...EMPTY_TOTALS }
+    const payslips: Array<{ item: Record<string, unknown> & { id: string }; advances: Advance[] }> =
+      []
 
     for (const employee of employees) {
       const pending = await this.approvedAdvancesFor(employee.id)
@@ -350,9 +444,8 @@ export class PayrollRepository {
         rates,
       )
 
-      const itemId = crypto.randomUUID()
-      await this.items.insert({
-        id: itemId,
+      const item = {
+        id: crypto.randomUUID(),
         payroll_run_id: input.id,
         employee_id: employee.id,
         employee_snapshot: this.snapshotOf(employee),
@@ -369,15 +462,8 @@ export class PayrollRepository {
         other_deductions: [],
         net_pay_cents: result.netPayCents,
         payment_method: employee.payment_method,
-      })
-
-      // Marking recovery in the same pass is what makes an advance one-shot.
-      for (const advance of pending) {
-        await this.advances.update(advance.id, {
-          status: 'recovered',
-          recovered_in_run_id: input.id,
-        })
       }
+      payslips.push({ item, advances: pending })
 
       totals.employeeCount += 1
       totals.grossCents += result.grossCents
@@ -389,7 +475,29 @@ export class PayrollRepository {
       totals.netPayCents += result.netPayCents
     }
 
-    await this.runs.update(input.id, { status: 'prepared', totals })
+    await this.db.transaction(async (tx) => {
+      await this.runs.insertWithinTransaction(tx, {
+        id: input.id,
+        period_year: input.year,
+        period_month: input.month,
+        status: 'prepared',
+        prepared_at: now,
+        prepared_by: this.userId,
+        rates_snapshot: rates,
+        totals,
+      })
+      for (const { item, advances } of payslips) {
+        await this.items.insertWithinTransaction(tx, item)
+        // Marking recovery in the same write is what makes an advance one-shot.
+        for (const advance of advances) {
+          await this.advances.updateWithinTransaction(tx, advance.id, {
+            status: 'recovered',
+            recovered_in_run_id: input.id,
+          })
+        }
+      }
+    })
+    this.context.onLocalWrite?.()
 
     const detail = await this.runDetail(input.id)
     if (!detail) throw new PayrollRuleError('The payroll run could not be read back after saving.')

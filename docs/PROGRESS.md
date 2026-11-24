@@ -27,9 +27,12 @@ Supabase (not only a mock).
 | 5.5 | Invoices & payments                            | FR-5.1 – FR-5.8 | **Done**                    |
 | 5.6 | Products & inventory                           | FR-6.1 – FR-6.8 | **Done**                    |
 | 5.7 | Suppliers & purchases                          | FR-7.1 – FR-7.6 | **Done**                    |
-| 5.8 | Employees & payroll                            | FR-8.1 – FR-8.9 | **Built — not active**      |
+| 5.8 | Employees & payroll                            | FR-8.1 – FR-8.9 | **Active**                  |
 | 5.2 | Dashboard & reports                            | FR-2.1 – FR-2.8 | **Done**                    |
 | 5.9 | Settings, audit & sync UI                      | FR-9.1 – FR-9.6 | **Done**                    |
+| —   | Pack house deliveries & intake QC              | added 2026-11   | **Built** — needs sign-off  |
+| —   | Ledger, cash book, expenses                    | added 2026-11   | **Built** — needs sign-off  |
+| —   | Statement of account, income & expenditure     | added 2026-11   | **Built** — needs sign-off  |
 | —   | Marketing website                              | §10.3           | **Built** — content pending |
 
 ## Clients (FR-3.1 – FR-3.6) — done
@@ -127,6 +130,70 @@ Commitments stay visible in the upcoming-deliveries view.
 If it is ever switched to confirmation, the cancellation path needs a decision too —
 goods on a cancelled-but-undelivered order are either a return or wastage, and that
 is a business question, not a technical one.
+
+## Additions of 2026-11-24 — built, awaiting owner sign-off
+
+Requested by the owner outside the PRD. None of it changes an existing
+requirement; each needs a PRD entry once signed off.
+
+**Pack house** (`features/packhouse`, migration `20261124000300`). Modelled on
+the buyer's "Outgrower product quality check & receipt confirmation" sheet
+(Kabuku pack house, week 46). A delivery records the delivery note and gate
+pass; its intake records GRN, arrival temperature, QC officer, pack house
+manager and, per variety and stem length, stems received, rejected at primary
+and secondary QC, and the sheet's reason codes 1–47. Accepted and short are
+derived. "Raise order and book wastage" creates a draft order for the accepted
+stems at catalogue prices (so stock and invoicing use the existing pipeline)
+and books rejected and short stems as wastage, each exactly once. The quality
+tab reports acceptance by variety and the most frequent reason codes.
+
+**Ledger** (`features/ledger`, migration `20261124000200`). Money accounts
+(cash, M-Pesa, bank; one default per kind and currency), categories, and
+entries for money in, money out and transfers. The cash book is derived on
+read from payments, reversals, supplier payments, paid payslips, paid casual
+labour and ledger entries, with an opening balance per account. Payments made
+elsewhere land in the default account for their method; money in a currency
+with no default account is shown as unassigned, never dropped.
+
+**Reports** (`features/reports`). Statement of account per client and period,
+one per currency, with balance brought forward, running balance, aged closing
+balance, print/PDF and CSV; its closing balance equals the client balance
+(pinned by `statement.test.ts`). Income and expenditure is cash basis, per
+currency, transfers excluded.
+
+**International client phones** (migration `20261124000100`). Clients accept
+any E.164 number typed with `+` or `00`; national format is still read as
+Kenyan. Staff, supplier and company phones keep the Kenyan rule.
+
+**Decisions for sign-off**
+
+| Decision                                                             | Why                                                                    | Reversible from              |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------- |
+| Pack houses are ordinary clients                                     | They are who is invoiced; a second party table would duplicate clients | —                            |
+| Rejection codes are the 1–47 list on the supplied sheet              | The intake report quotes the number                                    | `packhouse/types.ts`         |
+| Accepted stems are priced at the catalogue price in KES              | Buyer prices vary; the draft order is edited before confirming         | The draft order              |
+| Payments land in the default account for their method                | Payments carry a method, not an account                                | Ledger → Accounts            |
+| Seeded accounts: Cash on hand, M-Pesa, Bank (KES), and 22 categories | Payments need a home from day one                                      | Ledger → Accounts/Categories |
+| Manager records ledger entries; owner and accountant correct them    | Petty cash is spent on the farm; corrections are a finance job         | RLS, `ledger/types.ts`       |
+
+**Fixed on the way.** `Repository.updateWithinTransaction` merged the stored
+(encoded) row with the patch and re-encoded it, so a quantity not in the patch
+was multiplied by 1000. Only the order soft-delete used it before (no quantity
+columns), so no stored data was affected. The business purge now clears
+`casual_work_entries`, ledger entries and pack house rows, without which it
+would fail on a foreign key; both purges have `public` wrappers because
+PostgREST exposes only `public`.
+
+**Correction and repair (same day).** The update bug above was live, not
+latent: since commit `37979a0` (2026-11-06) plain `update()` went through the
+same function, so every edit multiplied untouched quantities by 1000 on the
+device and queued an upload the server refused (it carried `sync_status`).
+`data/sqlite/repairEncodedPayloads.ts` runs once per device on upgrade: edits
+to tables without quantities are rebuilt and sent again; edits to tables with
+quantities are held back in the failed-upload list with a message asking for
+them to be made again, and those tables are pulled again from the server so
+the damaged local copies are replaced. Good rows refused only because they
+shared a batch are sent again.
 
 ## Standing decisions on open PRD questions
 
@@ -298,12 +365,17 @@ the moment two devices received the same purchase offline.
 false. Movements always store `unit_cost_cents`, so valuation is correct either
 way; turning it on lets one odd purchase whipsaw the catalogue cost.
 
-## Employees & payroll (FR-8.1 – FR-8.9) — built, not active
+## Employees & payroll (FR-8.1 – FR-8.9) — active
 
-Payroll is currently removed from the active navigation, onboarding tour, and
-screen registry at the owner's request. Its feature code, local tables, server
-policies, and migrations are retained so it can be reintroduced deliberately
-after the business is ready to use it.
+Payroll is available to owner, manager and accountant roles according to the
+PRD matrix. Owners approve and pay approved runs; managers have view-only
+access; accountants prepare runs. Direct salary payouts use the existing
+IntaSend integration for M-Pesa and Kenyan bank transfers.
+
+Employees are classified as monthly/permanent or casual. Casual employees are
+excluded from monthly payroll; piece work is recorded in the separate Casual
+labour tab by date, work type, unit, quantity and rate per unit. Casual
+payments are recorded separately with a receipt or bank reference.
 
 | Requirement               | Where                                                                                   |
 | ------------------------- | --------------------------------------------------------------------------------------- |
@@ -452,8 +524,23 @@ request, released without IntaSend's second approval step because the typed
 total is the approval; bank employees are paid only when their record carries
 a bank and account number, otherwise they are listed for payment by hand;
 IntaSend's callback is never trusted as it stands, only its status endpoint
-read with our key. Wallet top-up and balance stay on the IntaSend dashboard.
-Built and tested (migration `20260929000100`, `_shared/payouts/`); **not yet
-run against the IntaSend sandbox**, which needs a sandbox secret key. Before
+read with our key. Wallet top-up stays on the IntaSend dashboard; the balance
+and statement are read into the app (below).
+Built and tested (migration `20260929000100`, `_shared/payouts/`). **Run against
+the IntaSend sandbox on 2026-11-24**: one TF106 failure (refunded by IntaSend)
+and one TS100 success, KSh 625 plus a KSh 10 charge. The bank (PesaLink) path is
+not yet run there; it needs the sandbox wallet above KSh 100 plus the fee. Before
 going live, confirm fees, the float's custodian bank and idempotency with
 IntaSend in writing. See `docs/intasend-setup.md`.
+
+### IntaSend wallet reconciliation (2026-11-25)
+
+Ledger → IntaSend shows what IntaSend holds, what the books say the wallet holds,
+the difference, and IntaSend's statement line by line, each marked in the books,
+refunded failed payout, in the opening balance, or not in the books. The server
+reads IntaSend every 15 minutes (`intasend-sync`, `pg_cron`); owners, managers
+and accountants see it (RLS `can_see_finance`). Decision for sign-off: a
+statement line matches a book line of the same amount within two days.
+Payout narratives now carry the company name; the sender name a recipient sees
+is the business name registered with IntaSend.
+

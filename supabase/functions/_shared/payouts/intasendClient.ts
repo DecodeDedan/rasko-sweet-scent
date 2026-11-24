@@ -102,6 +102,8 @@ function patchFor(answer: ReturnType<typeof interpretStatus>): Record<string, un
   if (answer.status === 'paid') {
     patch.recipient_name = answer.recipient
     patch.settled_at = new Date().toISOString()
+    // IntaSend's charge for the transfer, so the books record it (Ledger).
+    if (answer.feeCents !== null) patch.fee_cents = answer.feeCents
   }
   return patch
 }

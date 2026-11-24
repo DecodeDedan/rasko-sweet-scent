@@ -48,6 +48,7 @@ export interface FakeGateway extends AuthGateway {
     remove: string[]
     superAdmin: string[]
     purgeBusinessData: number
+    purgePayrollData: number
     resetRequests: string[]
   }
   setOffline(value: boolean): void
@@ -70,6 +71,7 @@ export function createFakeGateway(options: FakeGatewayOptions = {}): FakeGateway
     remove: [],
     superAdmin: [],
     purgeBusinessData: 0,
+    purgePayrollData: 0,
     resetRequests: [],
   }
 
@@ -202,6 +204,12 @@ export function createFakeGateway(options: FakeGatewayOptions = {}): FakeGateway
       return {}
     },
 
+    async purgePayrollData() {
+      calls.purgePayrollData += 1
+      networkGuard()
+      return {}
+    },
+
     async resetDemoLowStockThresholds() {
       networkGuard()
       return {}
@@ -229,6 +237,11 @@ export function createFakeGateway(options: FakeGatewayOptions = {}): FakeGateway
     async payoutWallet() {
       networkGuard()
       return options.wallet ?? { provider: 'daraja' }
+    },
+
+    async syncIntasendStatement() {
+      networkGuard()
+      return {}
     },
   }
 

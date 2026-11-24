@@ -1,7 +1,7 @@
 /**
  * Display formatting for the conventions PRD §7 fixes:
  * money as "KES 12,500.00", dates as DD/MM/YYYY, times in Africa/Nairobi,
- * phone numbers in +254 form.
+ * phone numbers in E.164 (+254 for Kenya, any country code for buyers abroad).
  *
  * These live in the design system rather than the app because they are part of
  * how the brand renders figures — pair them with the `rsk-numeric` class, which
@@ -77,9 +77,111 @@ export function formatQuantity(value: number, unit?: string): string {
   return unit ? `${text} ${unit}` : text
 }
 
-/** Renders a stored +2547XXXXXXXX number as +254 7XX XXX XXX. */
+/**
+ * ITU country calling codes are prefix-free: these are every 1- and 2-digit
+ * code; anything else is 3 digits. That is enough to split a stored E.164
+ * number into "+CC national" without shipping a full numbering-plan library.
+ */
+const SHORT_CALLING_CODES = new Set([
+  '1',
+  '7',
+  '20',
+  '27',
+  '30',
+  '31',
+  '32',
+  '33',
+  '34',
+  '36',
+  '39',
+  '40',
+  '41',
+  '43',
+  '44',
+  '45',
+  '46',
+  '47',
+  '48',
+  '49',
+  '51',
+  '52',
+  '53',
+  '54',
+  '55',
+  '56',
+  '57',
+  '58',
+  '60',
+  '61',
+  '62',
+  '63',
+  '64',
+  '65',
+  '66',
+  '81',
+  '82',
+  '84',
+  '86',
+  '90',
+  '91',
+  '92',
+  '93',
+  '94',
+  '95',
+  '98',
+])
+
+function callingCodeLength(digits: string): number {
+  if (SHORT_CALLING_CODES.has(digits.slice(0, 1))) return 1
+  if (SHORT_CALLING_CODES.has(digits.slice(0, 2))) return 2
+  return 3
+}
+
+/** E.164: a plus, a non-zero first digit, at most fifteen digits in all. */
+const E164 = /^\+[1-9]\d{7,14}$/
+const KENYAN_MOBILE = /^\+254[17]\d{8}$/
+
+/**
+ * Turns whatever was typed into stored E.164, or null when it cannot be one.
+ *
+ * A number typed with a leading "+" or "00" is international and kept as
+ * given. Anything else is Kenyan national format (0712 004 518, 712004518,
+ * 254712004518), because that is how almost every number here is typed.
+ */
+export function normalisePhone(input: string): string | null {
+  const trimmed = input.trim()
+  if (!trimmed) return null
+  const digits = trimmed.replace(/\D/g, '')
+  if (!digits) return null
+
+  if (trimmed.startsWith('+') || trimmed.startsWith('00')) {
+    const international = `+${trimmed.startsWith('00') ? digits.slice(2) : digits}`
+    // A Kenyan number typed with its code still has to be a Kenyan mobile:
+    // "+254 0712..." keeps the trunk zero and would otherwise pass as E.164.
+    if (international.startsWith('+254')) {
+      return KENYAN_MOBILE.test(international) ? international : null
+    }
+    return E164.test(international) ? international : null
+  }
+
+  const national = digits.startsWith('254') ? digits.slice(3) : digits.replace(/^0+/, '')
+  const kenyan = `+254${national}`
+  return KENYAN_MOBILE.test(kenyan) ? kenyan : null
+}
+
+/** True for a stored number this system accepts: any E.164, Kenyan or not. */
+export function isE164Phone(phone: string): boolean {
+  return E164.test(phone)
+}
+
+/**
+ * +254712345678 -> "+254 712 345 678"; +31201234567 -> "+31 201 234 567".
+ * Anything that is not E.164 is returned untouched rather than mangled.
+ */
 export function formatPhone(phone: string): string {
-  const match = /^\+254(\d)(\d{2})(\d{3})(\d{3})$/.exec(phone)
-  if (!match) return phone
-  return `+254 ${match[1]}${match[2]} ${match[3]} ${match[4]}`
+  if (!E164.test(phone)) return phone
+  const digits = phone.slice(1)
+  const codeLength = callingCodeLength(digits)
+  const national = digits.slice(codeLength).replace(/(\d{3})(?=\d{3})/g, '$1 ')
+  return `+${digits.slice(0, codeLength)} ${national}`
 }

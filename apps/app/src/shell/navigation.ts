@@ -1,5 +1,8 @@
 import {
+  BarChart3,
   ClipboardList,
+  Landmark,
+  Warehouse,
   FileText,
   LayoutDashboard,
   Package,
@@ -9,6 +12,7 @@ import {
   Truck,
   UserCog,
   Users,
+  WalletCards,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -21,6 +25,10 @@ export type ModuleId =
   | 'invoices'
   | 'products'
   | 'suppliers'
+  | 'packhouse'
+  | 'ledger'
+  | 'reports'
+  | 'payroll'
   | 'settings'
   | 'users'
   | 'audit'
@@ -121,6 +129,54 @@ export const MODULES: readonly ModuleDefinition[] = [
       owner: all(),
       manager: all(),
       accountant: all('View'),
+      sales: none(),
+    },
+  },
+  {
+    id: 'packhouse',
+    label: 'Pack house',
+    icon: Warehouse,
+    capability: 'Pack house deliveries & intake QC',
+    access: {
+      owner: all('Full'),
+      manager: all('Full'),
+      accountant: all('View only'),
+      sales: none(),
+    },
+  },
+  {
+    id: 'ledger',
+    label: 'Ledger',
+    icon: Landmark,
+    capability: 'Ledger & cash book',
+    access: {
+      owner: all('Full'),
+      manager: all('Record only'),
+      accountant: all('Full'),
+      sales: none(),
+    },
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    icon: BarChart3,
+    capability: 'Statements of account & financial reports',
+    access: {
+      owner: all('Full'),
+      manager: all('Full'),
+      accountant: all('Full'),
+      sales: none(),
+    },
+  },
+  {
+    id: 'payroll',
+    label: 'Payroll',
+    icon: WalletCards,
+    capability: 'Payroll',
+    access: {
+      owner: all('Full'),
+      manager: all('View only'),
+      accountant: all('Prepare only'),
       sales: none(),
     },
   },

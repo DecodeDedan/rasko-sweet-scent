@@ -6,7 +6,7 @@ import { useIdentity } from '../../auth/AuthProvider.js'
 import { useSync } from '../../data/sync/SyncProvider.js'
 import { useSyncedEffect } from '../../data/sync/useSyncedEffect.js'
 import { PayrollRepository } from './payrollRepository.js'
-import type { Advance, Employee, PayrollRun } from './types.js'
+import type { Advance, CasualWorkEntry, Employee, PayrollRun } from './types.js'
 
 export function usePayrollRepository(): PayrollRepository | null {
   const { db, notifyLocalWrite } = useSync()
@@ -26,6 +26,7 @@ export function usePayrollData() {
   const [runs, setRuns] = useState<PayrollRun[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [advances, setAdvances] = useState<Advance[]>([])
+  const [casualEntries, setCasualEntries] = useState<CasualWorkEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,14 +37,16 @@ export function usePayrollData() {
     }
     try {
       setError(null)
-      const [runRows, employeeRows, advanceRows] = await Promise.all([
+      const [runRows, employeeRows, advanceRows, casualRows] = await Promise.all([
         repo.listRuns(),
         repo.listEmployees({ includeInactive: true }),
         repo.listAdvances(),
+        repo.listCasualEntries(),
       ])
       setRuns(runRows)
       setEmployees(employeeRows)
       setAdvances(advanceRows)
+      setCasualEntries(casualRows)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not read payroll.')
     } finally {
@@ -53,5 +56,5 @@ export function usePayrollData() {
 
   useSyncedEffect(load)
 
-  return { runs, employees, advances, isLoading, error, reload: load }
+  return { runs, employees, advances, casualEntries, isLoading, error, reload: load }
 }

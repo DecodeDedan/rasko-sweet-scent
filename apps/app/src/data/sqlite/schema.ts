@@ -1,9 +1,10 @@
 import { TABLES, cursorColumn } from './tables.js'
 import type { ColumnKind, TableSpec } from './tables.js'
+import { repairEncodedPayloads, requeueForeignKeyRefusals } from './repairEncodedPayloads.js'
 import type { SqlDatabase, SqlExecutor } from './types.js'
 
 /** Local schema version. Bump when the generated DDL changes. */
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 5
 
 const SQLITE_TYPE: Record<ColumnKind, string> = {
   uuid: 'TEXT',
@@ -139,5 +140,8 @@ export async function migrateLocalSchema(db: SqlDatabase): Promise<void> {
        ON CONFLICT (key) DO UPDATE SET value = excluded.value`,
       [String(SCHEMA_VERSION)],
     )
+    // Once per device, after the tables exist (repairEncodedPayloads.ts).
+    await repairEncodedPayloads(tx)
+    await requeueForeignKeyRefusals(tx)
   })
 }

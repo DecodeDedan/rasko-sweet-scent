@@ -298,9 +298,13 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
 - **Printed documents are HTML, not a PDF library.** `OrderSummaryDocument` is an A4
   print view; both WebViews save a print job as PDF. Every document goes through
   `shell/DocumentOverlay.tsx`, which mounts it on `<body>` outside `.shell`; `@media print`
-  hides `.shell` only while one is open. Print with `printPage()` (`shell/print.ts`), never
-  `window.print()`: macOS WebKit ignores it inside an app, so there the Rust command
-  `print_page` prints the webview. A document drawn inside `.shell` prints blank.
+  hides `.shell` only while one is open. Print with `printPage(fileName)` and save with
+  `savePdf(fileName)` (`shell/print.ts`), never `window.print()`: macOS WebKit ignores it
+  inside an app, so there `src-tauri/src/pdf.rs` drives AppKit (`print_page`, `save_pdf`:
+  a save panel, then the PDF written straight to that file). Every document passes
+  `DocumentOverlay` a `fileName` built with `pdfFileName([what, who], date)`; on Windows the
+  page title carries that name into the print dialog. A document drawn inside `.shell`
+  prints blank.
 - **In tests, both the desktop table and the mobile cards render.** jsdom loads no
   stylesheet, so `rsk-desktop-only` / `rsk-mobile-only` hide nothing. Scope queries to
   one container or a document-wide `getByText` matches twice.
@@ -376,6 +380,43 @@ photos`. Editing `content/photos.ts` directly is overwritten on the next run.
   it is not in the active navigation, onboarding tour, or screen registry.
 - **The website build fails on purpose while the WhatsApp number is missing.**
   That is `scripts/check-content.mjs`, not a broken build.
+
+- **The cash book is derived, like stock and balances** (`features/ledger`). Never
+  store a running balance. A new module that moves money must add its rows to
+  `CASH_LINES_SQL` in `ledgerRepository.ts`, or the books silently miss it.
+- **Pack house accepted stems are derived** (received − primary − secondary).
+  Settling a delivery writes the order and the wastage once each, guarded by
+  `order_id` and `wastage_recorded_at`; after settling, the intake is frozen.
+- **`updateWithinTransaction` decodes the stored row before merging.** It once
+  merged the encoded row and multiplied every untouched quantity by 1000.
+  Live from 2026-11-06 to 2026-11-24; `repairEncodedPayloads.ts` repairs devices
+  once on upgrade. Never put a non-column key in an outbox payload.
+- **Salaries paid through IntaSend leave the IntaSend wallet, and IntaSend charges on top.**
+  The Ledger files them under the `wallet` account kind, not M-Pesa or Bank, and books
+  `payroll_payouts.fee_cents` (IntaSend's `transactions[0].charge`, written on settlement)
+  as "Bank and M-Pesa charges". Topping up the wallet is a Transfer into it.
+- **The IntaSend wallet is reconciled to IntaSend's own statement** (Ledger → IntaSend).
+  `intasend-sync` copies `/api/v1/wallets/{id}/transactions/` into
+  `intasend_wallet_transactions` (server-written, pull-only, migration 20261125000200)
+  every 15 minutes by `pg_cron` and on "Refresh from IntaSend". `features/ledger/reconcile.ts`
+  matches each line once: a payout debit to amount + fee, a failed payout's debit and
+  credit to each other, anything else to a wallet ledger line within two days. Lines
+  before the account's opening date are its opening balance. Read-only towards IntaSend.
+- **The name on a payout is IntaSend's registered business name**, not something the API
+  sets. The dispatcher puts `company_settings.company_name` in the narrative
+  ("Rasko Sweet Scent salary November 2026").
+- **`TABLES` order is the push order, so parents come first.** A child pushed before
+  its parent is refused by the foreign key and parked as failed: recovered advances
+  were lost this way until `advances` moved after `payroll_runs`.
+  `data/__tests__/syncOrder.test.ts` reads every foreign key from the migrations and
+  fails if the order breaks one.
+- **Statutory rates are reference data the server must hold.** On 2026-11-24 the live
+  project had none (removed outside the app), so no payroll could be prepared; they were
+  restored through Settings with the NSSF year-4 limits (9,000 / 108,000 from
+  2026-02-01).
+- **Client phones are any E.164 number; every other phone is Kenyan.**
+  `normalisePhone` in `@rasko/ui` reads `+`/`00` as international and anything
+  else as Kenyan national format.
 
 ## Source-of-truth rules
 

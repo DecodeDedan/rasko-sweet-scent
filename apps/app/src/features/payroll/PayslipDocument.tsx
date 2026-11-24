@@ -3,6 +3,7 @@
 import { formatDate, formatKes } from '@rasko/ui'
 
 import { DocumentOverlay } from '../../shell/DocumentOverlay.js'
+import { pdfFileName } from '../../shell/print.js'
 
 import type { CompanySettings } from '../invoices/types.js'
 import type { PayrollItem, PayrollRun } from './types.js'
@@ -56,7 +57,13 @@ export function PayslipDocument({
   )
 
   return (
-    <DocumentOverlay onClose={onClose}>
+    <DocumentOverlay
+      onClose={onClose}
+      fileName={pdfFileName(
+        ['Payslip', employee.full_name],
+        `${run.period_year}-${String(run.period_month).padStart(2, '0')}`,
+      )}
+    >
       <article className="doc-page">
         <header className="doc-header">
           <div>
