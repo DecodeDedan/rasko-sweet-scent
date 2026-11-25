@@ -26,7 +26,10 @@ Deno.serve(async (request) => {
   const { error } = await caller.rpc('purge_business_data')
   if (error) {
     console.error(`purge-business-data: ${error.message}`)
-    return json({ error: 'The business data purge could not be completed. Nothing was changed.' }, 500)
+    return json(
+      { error: 'The business data purge could not be completed. Nothing was changed.' },
+      500,
+    )
   }
 
   return json({ ok: true })

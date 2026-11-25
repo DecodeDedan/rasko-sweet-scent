@@ -90,7 +90,10 @@ jobs:
   macos:
     name: macOS Apple Silicon package
     needs: windows
-    runs-on: macos-14
+    # macos-latest is always a supported Apple Silicon image. A pinned label
+    # (macos-14) was retired by GitHub and cancelled the v0.1.12 and v0.1.13
+    # macOS jobs before they started.
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v4

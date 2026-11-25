@@ -270,7 +270,9 @@ export function UsersScreen({ role }: ScreenProps) {
               header: 'Actions',
               render: (p) =>
                 isPrimarySuperAdmin(p) ? (
-                  <span style={{ color: 'var(--rasko-text-secondary)' }}>Protected primary admin</span>
+                  <span style={{ color: 'var(--rasko-text-secondary)' }}>
+                    Protected primary admin
+                  </span>
                 ) : p.id === identity.userId ? (
                   <span style={{ color: 'var(--rasko-text-secondary)' }}>You</span>
                 ) : !rowControls(viewer, p).canToggleActive ? (
@@ -412,9 +414,8 @@ export function UsersScreen({ role }: ScreenProps) {
           }
         >
           <p>
-            {superAdminTarget.fullName} will become an owner and gain access to user
-            administration and permanent business-data deletion. This cannot be undone from this
-            screen.
+            {superAdminTarget.fullName} will become an owner and gain access to user administration
+            and permanent business-data deletion. This cannot be undone from this screen.
           </p>
         </Modal>
       ) : null}

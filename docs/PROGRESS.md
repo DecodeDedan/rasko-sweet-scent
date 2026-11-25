@@ -549,4 +549,3 @@ and accountants see it (RLS `can_see_finance`). Decision for sign-off: a
 statement line matches a book line of the same amount within two days.
 Payout narratives now carry the company name; the sender name a recipient sees
 is the business name registered with IntaSend.
-

@@ -356,7 +356,9 @@ export class OrdersRepository {
         [id],
       )
       if (!invoice[0]) {
-        throw new OrderRuleError('Create an invoice for this order before moving it into production.')
+        throw new OrderRuleError(
+          'Create an invoice for this order before moving it into production.',
+        )
       }
     }
 

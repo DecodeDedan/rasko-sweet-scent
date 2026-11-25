@@ -33,7 +33,8 @@ Deno.serve(async (request) => {
     .from('profiles')
     .update({ role: 'owner', is_super_admin: true })
     .eq('id', userId)
-  if (updateError) return json({ error: `Could not grant super-admin access: ${updateError.message}` }, 500)
+  if (updateError)
+    return json({ error: `Could not grant super-admin access: ${updateError.message}` }, 500)
 
   return json({ ok: true })
 })

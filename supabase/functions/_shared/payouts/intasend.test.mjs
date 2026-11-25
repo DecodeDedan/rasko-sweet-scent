@@ -168,14 +168,35 @@ test('turns the IntaSend wallet statement into rows, in cents', async () => {
   const rows = walletTransactionRows({
     count: 3,
     results: [
-      { transaction_id: 'T3', trans_type: 'PAYOUT', value: -635.0, running_balance: 365.0, currency: 'KES', narrative: 'Payout: #LQPLOOR', status: 'AVAILABLE', created_at: '2026-11-24T23:57:03.811102+03:00' },
-      { transaction_id: 'T1', trans_type: 'SALE', value: 1000.0, running_balance: 1000.0, currency: 'KES', narrative: 'Direct Bill', status: 'AVAILABLE', created_at: '2026-11-24T23:43:25.752601+03:00' },
+      {
+        transaction_id: 'T3',
+        trans_type: 'PAYOUT',
+        value: -635.0,
+        running_balance: 365.0,
+        currency: 'KES',
+        narrative: 'Payout: #LQPLOOR',
+        status: 'AVAILABLE',
+        created_at: '2026-11-24T23:57:03.811102+03:00',
+      },
+      {
+        transaction_id: 'T1',
+        trans_type: 'SALE',
+        value: 1000.0,
+        running_balance: 1000.0,
+        currency: 'KES',
+        narrative: 'Direct Bill',
+        status: 'AVAILABLE',
+        created_at: '2026-11-24T23:43:25.752601+03:00',
+      },
       { trans_type: 'PAYOUT', value: 1 },
     ],
   })
-  assert.deepEqual(rows.map((r) => [r.transaction_id, r.value_cents, r.running_balance_cents]), [
-    ['T3', -63500, 36500],
-    ['T1', 100000, 100000],
-  ])
+  assert.deepEqual(
+    rows.map((r) => [r.transaction_id, r.value_cents, r.running_balance_cents]),
+    [
+      ['T3', -63500, 36500],
+      ['T1', 100000, 100000],
+    ],
+  )
   assert.equal(rows[0].occurred_at, '2026-11-24T20:57:03.811Z')
 })

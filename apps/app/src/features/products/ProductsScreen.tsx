@@ -155,7 +155,6 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
     } catch (cause) {
       return { error: cause instanceof Error ? cause.message : 'Could not record the movement.' }
     }
-
   }
 
   async function deleteProduct() {
@@ -176,7 +175,6 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
     } finally {
       setIsDeleting(false)
     }
-
   }
 
   async function deleteMovement() {
@@ -201,7 +199,6 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
     } finally {
       setIsDeletingMovement(false)
     }
-
   }
 
   async function clearAllMovements() {
@@ -475,15 +472,18 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
                         {
                           key: 'actions',
                           header: '',
-                          render: (m: StockMovement) => (
+                          render: (m: StockMovement) =>
                             m.reason?.startsWith('Reversal of movement ') ? (
                               <span style={{ color: 'var(--rasko-text-secondary)' }}>Reversed</span>
                             ) : (
-                              <Button size="sm" variant="danger" onClick={() => setDeletingMovement(m)}>
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                onClick={() => setDeletingMovement(m)}
+                              >
                                 Reverse
                               </Button>
-                            )
-                          ),
+                            ),
                         },
                       ]
                     : []),
@@ -512,7 +512,10 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
             >
               <div className="rsk-stack">
                 <p>Reverse this stock movement in the cloud and on this device?</p>
-                <p>The original remains in the audit history and product stock is recalculated immediately.</p>
+                <p>
+                  The original remains in the audit history and product stock is recalculated
+                  immediately.
+                </p>
               </div>
             </Modal>
           ) : null}
@@ -644,7 +647,11 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
               footer={
                 <>
                   <Button onClick={() => setDeleting(null)}>Cancel</Button>
-                  <Button variant="danger" isLoading={isDeleting} onClick={() => void deleteProduct()}>
+                  <Button
+                    variant="danger"
+                    isLoading={isDeleting}
+                    onClick={() => void deleteProduct()}
+                  >
                     Delete product
                   </Button>
                 </>
@@ -654,7 +661,10 @@ export function ProductsScreen({ role, scope }: ScreenProps) {
                 <p>
                   Delete <strong>{deleting.name}</strong> from the catalogue?
                 </p>
-                <p>Its stock movement history is retained, but it will no longer appear in products or low-stock reports.</p>
+                <p>
+                  Its stock movement history is retained, but it will no longer appear in products
+                  or low-stock reports.
+                </p>
               </div>
             </Modal>
           ) : null}

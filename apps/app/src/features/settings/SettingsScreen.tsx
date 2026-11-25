@@ -85,7 +85,11 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
     try {
       const result = await gateway.purgeBusinessData()
       if (result.error) {
-        showToast({ tone: 'danger', title: 'Business data was not purged', description: result.error })
+        showToast({
+          tone: 'danger',
+          title: 'Business data was not purged',
+          description: result.error,
+        })
         return
       }
 
@@ -94,7 +98,8 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
       showToast({
         tone: 'success',
         title: 'Business data purged',
-        description: 'Synced business and test records were removed from the server and this device.',
+        description:
+          'Synced business and test records were removed from the server and this device.',
       })
       await reload()
     } catch (cause) {
@@ -114,7 +119,11 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
     try {
       const result = await gateway.resetDemoLowStockThresholds()
       if (result.error) {
-        showToast({ tone: 'danger', title: 'Low-stock thresholds were not reset', description: result.error })
+        showToast({
+          tone: 'danger',
+          title: 'Low-stock thresholds were not reset',
+          description: result.error,
+        })
         return
       }
 
@@ -564,15 +573,15 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
                 </Card>
                 <Card>
                   <div className="rsk-stack">
-                  <h3>Remove business and test data</h3>
-                  <p>
-                    Permanently removes synced business records from the cloud and clears the
-                    business mirror on this device. User accounts, company settings and audit
-                    history are kept.
-                  </p>
-                  <Button variant="danger" onClick={() => setIsPurgeOpen(true)}>
-                    Purge business data
-                  </Button>
+                    <h3>Remove business and test data</h3>
+                    <p>
+                      Permanently removes synced business records from the cloud and clears the
+                      business mirror on this device. User accounts, company settings and audit
+                      history are kept.
+                    </p>
+                    <Button variant="danger" onClick={() => setIsPurgeOpen(true)}>
+                      Purge business data
+                    </Button>
                   </div>
                 </Card>
               </>
@@ -600,7 +609,11 @@ export function SettingsScreen({ role, scope }: ScreenProps) {
           footer={
             <>
               <Button onClick={() => setIsPurgeOpen(false)}>Cancel</Button>
-              <Button variant="danger" isLoading={isPurging} onClick={() => void purgeBusinessData()}>
+              <Button
+                variant="danger"
+                isLoading={isPurging}
+                onClick={() => void purgeBusinessData()}
+              >
                 Permanently purge data
               </Button>
             </>
